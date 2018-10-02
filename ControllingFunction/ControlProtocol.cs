@@ -10,6 +10,8 @@ namespace Ropu.ContollingFunction
         readonly Registra _registra;
         readonly Socket _socket;
         const int AnyPort = IPEndPoint.MinPort;
+        const int MaxUdpSize = 0x10000;
+
         static readonly IPEndPoint Any = new IPEndPoint(IPAddress.Any, AnyPort);
 
         public ControlProtocol(Registra registra)
@@ -22,8 +24,7 @@ namespace Ropu.ContollingFunction
         public void ProcessPackets()
         {
 
-            const int MaxUDPSize = 0x10000;
-            byte[] _buffer = new byte[MaxUDPSize];
+            byte[] _buffer = new byte[MaxUdpSize];
             EndPoint any = Any;
 
             while(true)
@@ -31,7 +32,7 @@ namespace Ropu.ContollingFunction
                 int ammountRead = _socket.ReceiveFrom(_buffer, ref any);
 
                 var receivedBytes = new Span<byte>(_buffer, 0, ammountRead);
-                HandlePacket(receivedBytes);
+                HandlePacket(receivedBytes, ((IPEndPoint)any).Address);
             }
         }
 
@@ -51,7 +52,7 @@ namespace Ropu.ContollingFunction
                 (data[1])); 
         }
 
-        void HandlePacket(Span<byte> data)
+        void HandlePacket(Span<byte> data, IPAddress ipaddress)
         {
             switch((ControlPacketType)data[0])
             {
@@ -60,7 +61,7 @@ namespace Ropu.ContollingFunction
                     uint userId = ParseUint(data.Slice(1));
                     ushort rtpPort = ParseUshort(data.Slice(5));
                     ushort controlPlanePort = ParseUshort(data.Slice(7));
-                    var registration = new Registration(userId, rtpPort, controlPlanePort);
+                    var registration = new Registration(userId, rtpPort, new IPEndPoint(ipaddress, controlPlanePort));
                     _registra.Register(registration);
                     
                     break;
@@ -68,8 +69,36 @@ namespace Ropu.ContollingFunction
             }
         }
 
+        readonly byte[] _sendBuffer = new byte[MaxUdpSize];
+
+        void WriteUint(byte[] buffer, uint value, int start)
+        {
+            buffer[start]     = (byte)((value & 0xFF000000) >> 24);
+            buffer[start + 1] = (byte)((value & 0x00FF0000) >> 16);
+            buffer[start + 2] = (byte)((value & 0x0000FF00) >> 8);
+            buffer[start + 3] = (byte) (value & 0x000000FF);
+        }
+
+        void WriteUshort(byte[] buffer, uint value, int start)
+        {
+            buffer[start]     = (byte)((value & 0x0000FF00) >> 8);
+            buffer[start + 1] = (byte) (value & 0x000000FF);
+        }
+
         void SendRegisterResponse(Registration registration)
         {
+            // Packet Type 1
+            _sendBuffer[0] = (byte)ControlPacketType.RegistrationResponse;
+            // User ID (uint32)
+            WriteUint(_sendBuffer, registration.UserId, 1);
+            // RTP Port (uint16)
+            WriteUshort(_sendBuffer, 6970, 5);
+            // Codec (byte) (defined via an enum, this is the codec/bitrate used by the system, you must support it, this is required so the server doesn’t have to transcode, which is an expensive operation)
+            _sendBuffer[7] = (byte)Codecs.Opus;
+            // Bitrate (uint16)
+            WriteUshort(_sendBuffer, 8000, 8);
+
+            _socket.SendTo(_sendBuffer, 0, 10, SocketFlags.None, registration.ControlEndpoint);
         }
     }
 }

@@ -6,11 +6,11 @@ namespace Ropu.ContollingFunction
 {
     public class Registration : IControlPacket
     {
-        public Registration(uint userId, ushort rtpPort, ushort controlPlanePort)
+        public Registration(uint userId, ushort rtpPort, IPEndPoint controlEndpoint)
         {
             UserId = userId;
             RtpPort = rtpPort;
-            ControlPlanePort = controlPlanePort;
+            ControlEndpoint = controlEndpoint;
         }
 
         public ControlPacketType PacketType => ControlPacketType.Registration;
@@ -26,7 +26,7 @@ namespace Ropu.ContollingFunction
             get;
         }
 
-        public ushort ControlPlanePort
+        public IPEndPoint ControlEndpoint
         {
             get;
         }
