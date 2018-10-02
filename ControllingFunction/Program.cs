@@ -9,7 +9,7 @@ namespace Ropu.ContollingFunction
         static void Main(string[] args)
         {
             var registra = new Registra();
-            var controlProtocol = new ControlProtocol(registra);
+            var controlProtocol = new ControlProtocol(registra, 5060);
             controlProtocol.ProcessPackets();
         }   
     }

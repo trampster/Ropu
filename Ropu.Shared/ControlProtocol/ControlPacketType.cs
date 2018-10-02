@@ -1,4 +1,4 @@
-namespace Ropu.ContollingFunction
+namespace Ropu.Shared.ControlProtocol
 {
     public enum ControlPacketType
     {

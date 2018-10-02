@@ -37,11 +37,11 @@ Packet Type 0 (byte)
 User ID (uint32)
 RTP Port (uint16)
 Control Plane Port (uint16)
+Floor Control Port (uint16)
 
 #### Registration Response
 Packet Type 1 (byte)
 User ID (uint32)
-RTP Port (uint16)
 Codec (byte) (defined via an enum, this is the codec/bitrate used by the system, you must support it, this is required so the server doesn’t have to transcode, which is an expensive operation)
 Bitrate (uint16)
 

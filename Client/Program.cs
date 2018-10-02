@@ -7,43 +7,26 @@ namespace Ropu.Client
 {
     class Program
     {
+        const uint _userId = 1234;
+        const ushort _rtpPort = 1000;
+        const ushort _controlPort = 5061;
+        const ushort _floorControlPort = 1002;
+
         static void Main(string[] args)
         {
             var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            IPEndPoint controllingFunctionEndpoint = new IPEndPoint(IPAddress.Parse("192.168.1.6"), 5060);
 
-            socket.Bind(new IPEndPoint(IPAddress.Any, 5061));
-
-
-            const int MaxUDPSize = 0x10000;
-
-            byte[] buffer = new byte[MaxUDPSize];
-
-            EndPoint mediaControllerEndpoint = new IPEndPoint(IPAddress.Parse("192.168.1.6"), 5060);
-
-            var payload = new byte[]
-            {
-                1,2,3,4,5,6,7,8,9,10
-            };
+            var controllingFunctionClient = new ControllingFunctionClient(_controlPort, controllingFunctionEndpoint);
+            controllingFunctionClient.StartListening();
+            Console.WriteLine("Sending Registration");
+            controllingFunctionClient.Register(_userId, _rtpPort, _controlPort, _floorControlPort);
             while(true)
             {
-                int length = BuildMediaPacket(1234, payload, buffer);
-                socket.SendTo(buffer, 0, length, SocketFlags.None, mediaControllerEndpoint);
-                System.Threading.Thread.Sleep(5000);
+                System.Threading.Thread.Sleep(1000);
             }
+
         }
 
-        static int BuildMediaPacket(ushort callId, byte[] payload, byte[] buffer)
-        {
-            buffer[0] = (byte)((callId & 0xFF00) >> 8);
-            buffer[1] = (byte)(callId & 0xFF);
-
-            int bufferIndex = 2;
-            for(int payloadIndex = 0; payloadIndex < payload.Length; payloadIndex++)
-            {
-                buffer[bufferIndex] = payload[payloadIndex];
-                bufferIndex++;
-            }
-            return bufferIndex;
-        }
     }
 }

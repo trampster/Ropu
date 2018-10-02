@@ -1,20 +1,19 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using Ropu.Shared.ControlProtocol;
 
 namespace Ropu.ContollingFunction
 {
-    public class Registration : IControlPacket
+    public class Registration
     {
-        public Registration(uint userId, ushort rtpPort, IPEndPoint controlEndpoint)
+        public Registration(uint userId, ushort rtpPort, ushort floorControlPort, IPEndPoint controlEndpoint)
         {
             UserId = userId;
             RtpPort = rtpPort;
             ControlEndpoint = controlEndpoint;
+            FloorControlPort = floorControlPort;
         }
-
-        public ControlPacketType PacketType => ControlPacketType.Registration;
-
 
         public uint UserId
         {
@@ -22,6 +21,11 @@ namespace Ropu.ContollingFunction
         }
 
         public ushort RtpPort
+        {
+            get;
+        }
+
+        public ushort FloorControlPort
         {
             get;
         }
