@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using Ropu.Client.StateModel;
 using Ropu.Shared;
 
 namespace Ropu.Client
@@ -13,15 +15,11 @@ namespace Ropu.Client
         const ushort _floorControlPort = 1002;
 
         ControllingFunctionClient _controllingFunctionClient;
-        int _state = (int)State.Unregistered;
 
-        State CurrentState => (State)_state;
-
-        enum State
-        {
-            Unregistered,
-            Registered, //registered but not in a call or trying to make a call
-        }
+        RopuState _start;
+        RopuState _registered;
+        RopuState _unregistered;
+        StateManager<EventId> _stateManager;
 
         readonly System.Timers.Timer _regisrationAttemptTimer;
 
@@ -33,20 +31,28 @@ namespace Ropu.Client
             _regisrationAttemptTimer.Interval = 5000;
             _regisrationAttemptTimer.AutoReset = false;
             _regisrationAttemptTimer.Elapsed += (sender, args) => RegistrationAttemptTimerExpired();
+            
+            _start = new RopuState(StateId.Start);
+            _registered = new RopuState(StateId.Registered);
+            _unregistered = new RopuState(StateId.Unregistered)
+            {
+                Entry = () => Register(),
+                Exit = () => _regisrationAttemptTimer.Stop(),
+            };
+            _unregistered.AddTransition(EventId.RegistrationResponseReceived, _registered);
+
+            _stateManager = new StateManager<EventId>(_start);
         }
 
         public void Start()
         {
             _controllingFunctionClient.StartListening();
-            Register();
+            _stateManager.SetState(_unregistered, _start);
         }
 
         void RegistrationAttemptTimerExpired()
         {
-            if(CurrentState == State.Unregistered)
-            {
-                Register();
-            }
+            Register();
         }
 
         void Register()
@@ -58,19 +64,7 @@ namespace Ropu.Client
 
         public void RegistrationResponseReceived(Codec codec, ushort bitrate)
         {
-            SetState(State.Registered, State.Unregistered); //set the state to registered only if it currently is unregistered
-            _regisrationAttemptTimer.Stop();
-        }
-
-        bool SetState(State newState, State currentState)
-        {
-            State was = (State)Interlocked.CompareExchange(ref _state, (int)newState, (int)currentState);
-            if(was != currentState)
-            {
-                return false;//someone else changed the state, caller should reevaluate if this state transition is still valid.
-            }
-            Console.WriteLine($"State changed {currentState} -> {newState}");
-            return true;
+            _stateManager.HandleEvent(EventId.RegistrationResponseReceived);
         }
     }
 }
