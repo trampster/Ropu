@@ -11,15 +11,19 @@ namespace Ropu.Client
     {
         readonly Socket _socket;
         const int MaxUdpSize = 0x10000;
-        readonly byte[] _sendBuffer = new byte[MaxUdpSize];
+        [ThreadStatic]
+        static byte[] _sendBuffer;
         readonly IPEndPoint _remoteEndPoint;
         const int AnyPort = IPEndPoint.MinPort;
         static readonly IPEndPoint Any = new IPEndPoint(IPAddress.Any, AnyPort);
         readonly Thread _thread;
+        readonly int _localPort;
+        IControllingFunctionPacketHandler _controllingFunctionHandler;
 
 
         public ControllingFunctionClient(int localPort, IPEndPoint remoteEndPoint)
         {
+            _localPort = localPort;
             _remoteEndPoint = remoteEndPoint;
             _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             _socket.Bind(new IPEndPoint(IPAddress.Any, localPort));
@@ -27,20 +31,35 @@ namespace Ropu.Client
             _thread = new Thread(ProcessPackets);
         }
 
-        public void Register(uint userId, ushort rtpPort, ushort controlPort, ushort floorControlPort)
+        public void SetControllingFunctionHandler(IControllingFunctionPacketHandler controllingFunctionHandler)
         {
-            //packet type (byte)
-            _sendBuffer[0] = (byte)ControlPacketType.Registration;
-            // User ID (uint32)
-            _sendBuffer.WriteUint(userId, 1);
-            // RTP Port (uint16)
-            _sendBuffer.WriteUshort(rtpPort, 5);
-            // Control Plane Port (uint16)
-            _sendBuffer.WriteUshort(controlPort, 7);
-            // Floor Plane Port (uint16)
-            _sendBuffer.WriteUshort(floorControlPort, 9);
+            _controllingFunctionHandler = controllingFunctionHandler;
+        }
 
-            _socket.SendTo(_sendBuffer, 0, 11, SocketFlags.None, _remoteEndPoint);
+        static byte[] SendBuffer()
+        {
+            if(_sendBuffer == null)
+            {
+                _sendBuffer = new byte[MaxUdpSize];
+            }
+            return _sendBuffer;
+        }
+
+        public void Register(uint userId, ushort rtpPort, ushort floorControlPort)
+        {
+            var sendBuffer = SendBuffer();
+            //packet type (byte)
+            sendBuffer[0] = (byte)ControlPacketType.Registration;
+            // User ID (uint32)
+            sendBuffer.WriteUint(userId, 1);
+            // RTP Port (uint16)
+            sendBuffer.WriteUshort(rtpPort, 5);
+            // Control Plane Port (uint16)
+            sendBuffer.WriteUshort((ushort)_localPort, 7);
+            // Floor Plane Port (uint16)
+            sendBuffer.WriteUshort(floorControlPort, 9);
+
+            _socket.SendTo(sendBuffer, 0, 11, SocketFlags.None, _remoteEndPoint);
         }
 
         public void StartListening()
@@ -69,7 +88,12 @@ namespace Ropu.Client
             {
                 case ControlPacketType.RegistrationResponse:
                 {
-                    Console.WriteLine("Got Registration Response");
+                    // User ID (uint32), we are going to assume this is correct, to save the clock cycles of varifying it
+                    // Codec (byte) (defined via an enum, this is the codec/bitrate used by the system, you must support it, this is required so the server doesn’t have to transcode, which is an expensive operation)
+                    Codec codec = (Codec)data[5];
+                    // Bitrate (uint16)
+                    ushort bitrate = data.Slice(6).ParseUshort();
+                    _controllingFunctionHandler?.RegistrationResponseReceived(codec, bitrate);
                     break;
                 }
             }

@@ -39,32 +39,16 @@ namespace Ropu.ContollingFunction
             }
         }
 
-        uint ParseUint(Span<byte> data)
-        {
-            return (uint)(
-                (data[0] << 24) +
-                (data[1] << 16) +
-                (data[2] << 8) +
-                data[3]); 
-        }
-
-        ushort ParseUshort(Span<byte> data)
-        {
-            return (ushort)(
-                (data[0] << 8) +
-                (data[1])); 
-        }
-
         void HandlePacket(Span<byte> data, IPAddress ipaddress)
         {
             switch((ControlPacketType)data[0])
             {
                 case ControlPacketType.Registration:
                 {
-                    uint userId = ParseUint(data.Slice(1));
-                    ushort rtpPort = ParseUshort(data.Slice(5));
-                    ushort controlPlanePort = ParseUshort(data.Slice(7));
-                    ushort floorControlPort = ParseUshort(data.Slice(9));
+                    uint userId = data.Slice(1).ParseUint();
+                    ushort rtpPort = data.Slice(5).ParseUshort();
+                    ushort controlPlanePort = data.Slice(7).ParseUshort();
+                    ushort floorControlPort = data.Slice(9).ParseUshort();
                     var registration = new Registration(userId, rtpPort, floorControlPort, new IPEndPoint(ipaddress, controlPlanePort));
                     _registra.Register(registration);
                     SendRegisterResponse(registration);
