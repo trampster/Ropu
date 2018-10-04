@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Ropu.ContollingFunction
+namespace Ropu.ControllingFunction
 {
     public class Registra
     {

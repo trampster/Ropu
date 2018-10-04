@@ -5,23 +5,27 @@ using System.Net.Sockets;
 using Ropu.Shared;
 using Ropu.Shared.ControlProtocol;
 
-namespace Ropu.ContollingFunction
+namespace Ropu.ControllingFunction
 {
     public class ControlProtocol
     {
-        readonly Registra _registra;
         readonly Socket _socket;
         readonly int _port;
         const int AnyPort = IPEndPoint.MinPort;
         const int MaxUdpSize = 0x10000;
 
         static readonly IPEndPoint Any = new IPEndPoint(IPAddress.Any, AnyPort);
+        IControlMessageHandler _messageHandler;
 
-        public ControlProtocol(Registra registra, int port)
+        public ControlProtocol(int port)
         {
             _port = port;
-            _registra = registra;
             _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+        }
+
+        public void SetMessageHandler(IControlMessageHandler messageHandler)
+        {
+            _messageHandler = messageHandler;
         }
 
         public void ProcessPackets()
@@ -49,9 +53,16 @@ namespace Ropu.ContollingFunction
                     ushort rtpPort = data.Slice(5).ParseUshort();
                     ushort controlPlanePort = data.Slice(7).ParseUshort();
                     ushort floorControlPort = data.Slice(9).ParseUshort();
-                    var registration = new Registration(userId, rtpPort, floorControlPort, new IPEndPoint(ipaddress, controlPlanePort));
-                    _registra.Register(registration);
-                    SendRegisterResponse(registration);
+                    _messageHandler.Registration(userId, rtpPort, floorControlPort, new IPEndPoint(ipaddress, controlPlanePort));
+                    break;
+                }
+                case ControlPacketType.StartGroupCall:
+                {
+                    // User ID (uint32)
+                    uint userId = data.Slice(1).ParseUint();
+                    // Group ID (uint32)
+                    uint groupId = data.Slice(5).ParseUint();
+                    _messageHandler.StartGroupCall(userId, groupId);
                     break;
                 }
             }
@@ -59,21 +70,7 @@ namespace Ropu.ContollingFunction
 
         readonly byte[] _sendBuffer = new byte[MaxUdpSize];
 
-        void WriteUint(byte[] buffer, uint value, int start)
-        {
-            buffer[start]     = (byte)((value & 0xFF000000) >> 24);
-            buffer[start + 1] = (byte)((value & 0x00FF0000) >> 16);
-            buffer[start + 2] = (byte)((value & 0x0000FF00) >> 8);
-            buffer[start + 3] = (byte) (value & 0x000000FF);
-        }
-
-        void WriteUshort(byte[] buffer, uint value, int start)
-        {
-            buffer[start]     = (byte)((value & 0x0000FF00) >> 8);
-            buffer[start + 1] = (byte) (value & 0x000000FF);
-        }
-
-        void SendRegisterResponse(Registration registration)
+        public void SendRegisterResponse(Registration registration)
         {
             // Packet Type 1
             _sendBuffer[0] = (byte)ControlPacketType.RegistrationResponse;

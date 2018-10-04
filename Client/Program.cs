@@ -8,21 +8,47 @@ namespace Ropu.Client
     class Program
     {
         const ushort _controlPort = 5061;
-
+        static RopuClient _ropuClient;
         static void Main(string[] args)
         {
             IPEndPoint controllingFunctionEndpoint = new IPEndPoint(IPAddress.Parse("192.168.1.6"), 5060);
 
             var controllingFunctionClient = new ControllingFunctionClient(_controlPort, controllingFunctionEndpoint);
 
-            var ropuClient = new RopuClient(controllingFunctionClient);
-            ropuClient.Start();
+            _ropuClient = new RopuClient(controllingFunctionClient);
+            _ropuClient.Start();
+
+            Console.Write(">");
 
             while(true)
             {
-                System.Threading.Thread.Sleep(1000);
+                var command = Console.ReadLine();
+                HandleCommand(command);
+                Console.Write(">");
             }
         }
+
+        static void HandleCommand(string commandLine)
+        {
+            if(string.IsNullOrEmpty(commandLine))
+            {
+                return;
+            }
+            char command = commandLine[0];
+
+            switch(command)
+            {
+                case 'g':
+                    var group = uint.Parse(commandLine.AsSpan(1));
+                    _ropuClient.StartCall(group);
+                    break;
+                default:
+                    Console.WriteLine("I'm not sure what you mean.");
+                    break;
+
+            }
+        }
+
 
     }
 }

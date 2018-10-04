@@ -1,5 +1,6 @@
 
 using System;
+using System.Net;
 
 namespace Ropu.Shared
 {
@@ -19,6 +20,13 @@ namespace Ropu.Shared
             return (ushort)(
                 (data[0] << 8) +
                 (data[1])); 
+        }
+
+        public static IPEndPoint ParseIPEndPoint(this Span<byte> data)
+        {
+            var address = new IPAddress(data);
+            ushort port = data.Slice(4).ParseUshort();
+            return new IPEndPoint(address, port);
         }
     }
 }

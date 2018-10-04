@@ -19,29 +19,40 @@ namespace Ropu.Client
         RopuState _start;
         RopuState _registered;
         RopuState _unregistered;
+        RopuState _startingCall;
         StateManager<EventId> _stateManager;
 
-        readonly System.Timers.Timer _regisrationAttemptTimer;
+        readonly Ropu.Shared.Timer _retryTimer;
 
         public RopuClient(ControllingFunctionClient controllingFunctionClient)
         {
             _controllingFunctionClient = controllingFunctionClient;
             _controllingFunctionClient.SetControllingFunctionHandler(this);
-            _regisrationAttemptTimer = new System.Timers.Timer();
-            _regisrationAttemptTimer.Interval = 5000;
-            _regisrationAttemptTimer.AutoReset = false;
-            _regisrationAttemptTimer.Elapsed += (sender, args) => RegistrationAttemptTimerExpired();
-            
+            _retryTimer = new Ropu.Shared.Timer();
             _start = new RopuState(StateId.Start);
             _registered = new RopuState(StateId.Registered);
+            _registered.AddTransition(EventId.CallRequest, () => _startingCall);
             _unregistered = new RopuState(StateId.Unregistered)
             {
                 Entry = () => Register(),
-                Exit = () => _regisrationAttemptTimer.Stop(),
+                Exit = () => _retryTimer.Cancel(),
             };
-            _unregistered.AddTransition(EventId.RegistrationResponseReceived, _registered);
+            _unregistered.AddTransition(EventId.RegistrationResponseReceived, () => _registered);
+            _startingCall = new RopuState(StateId.StartingCall)
+            {
+                Exit = () => _retryTimer.Cancel()
+            };
 
             _stateManager = new StateManager<EventId>(_start);
+        }
+
+        System.Timers.Timer CreateTimer(int interval, Action callback)
+        {
+            var timer = new System.Timers.Timer();
+            timer.Interval = interval;
+            timer.AutoReset = false;
+            timer.Elapsed += (sender, args) => callback();
+            return timer;
         }
 
         public void Start()
@@ -55,16 +66,47 @@ namespace Ropu.Client
             Register();
         }
 
+        void StartCallTimerExpired()
+        {
+            Register();
+        }
+
         void Register()
         {
             Console.WriteLine("Sending Registration");
             _controllingFunctionClient.Register(_userId, _rtpPort, _floorControlPort);
-            _regisrationAttemptTimer.Start();
+            _retryTimer.Duration = 2000;
+            _retryTimer.Callback = Register;
+            _retryTimer.Start();
+        }
+
+        public void StartCall(uint groupId)
+        {
+            Console.WriteLine("sending StartGroupCall");
+            _controllingFunctionClient.StartGroupCall(_userId, groupId);
+            StartRetryTimer(1000, () => StartCall(groupId));
+            if(_stateManager.CurrentState != _startingCall)
+            {
+                _stateManager.HandleEvent(EventId.CallRequest);
+            }
+        }
+
+        void StartRetryTimer(int duration, Action callback)
+        {
+            _retryTimer.Duration = 1000;
+            _retryTimer.Callback = callback;
+            _retryTimer.Start();
         }
 
         public void RegistrationResponseReceived(Codec codec, ushort bitrate)
         {
             _stateManager.HandleEvent(EventId.RegistrationResponseReceived);
+        }
+
+        public void CallStarted(uint groupId, ushort callId, IPEndPoint mediaEndpoint, IPEndPoint floorControlEndpoint)
+        {
+            _stateManager.HandleEvent(EventId.CallRequest);
+
         }
     }
 }

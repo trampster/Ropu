@@ -62,6 +62,19 @@ namespace Ropu.Client
             _socket.SendTo(sendBuffer, 0, 11, SocketFlags.None, _remoteEndPoint);
         }
 
+        public void StartGroupCall(uint userId, uint groupId)
+        {
+            var sendBuffer = SendBuffer();
+            //packet type (byte)
+            sendBuffer[0] = (byte)ControlPacketType.StartGroupCall;
+            // User ID (uint32)
+            sendBuffer.WriteUint(userId, 1);
+            // Group ID (uint32)
+            sendBuffer.WriteUint(groupId, 5);
+
+            _socket.SendTo(sendBuffer, 0, 11, SocketFlags.None, _remoteEndPoint);
+        }
+
         public void StartListening()
         {
             _thread.Start();
@@ -87,15 +100,26 @@ namespace Ropu.Client
             switch((ControlPacketType)data[0])
             {
                 case ControlPacketType.RegistrationResponse:
-                {
-                    // User ID (uint32), we are going to assume this is correct, to save the clock cycles of varifying it
+                    // User ID (uint32), skip
                     // Codec (byte) (defined via an enum, this is the codec/bitrate used by the system, you must support it, this is required so the server doesn’t have to transcode, which is an expensive operation)
                     Codec codec = (Codec)data[5];
                     // Bitrate (uint16)
                     ushort bitrate = data.Slice(6).ParseUshort();
                     _controllingFunctionHandler?.RegistrationResponseReceived(codec, bitrate);
                     break;
-                }
+                case ControlPacketType.CallStarted:
+                    // User Id (uint32), skip
+                    // Group ID (uint32)
+                    uint groupId = data.Slice(5).ParseUint();
+                    // Call ID (uint16) unique identifier for the call, to be included in the media stream
+                    ushort callId = data.Slice(9).ParseUshort();
+                    // Media Endpoint (4 bytes IP Address, 2 bytes port)
+                    var mediaEndpoint = data.Slice(11).ParseIPEndPoint();
+                    // Floor Control Endpoint (4 bytes IP Address, 2 bytes port)
+                    var floorControlEndpoint = data.Slice(17).ParseIPEndPoint();
+                    _controllingFunctionHandler?.CallStarted(groupId, callId, mediaEndpoint, floorControlEndpoint);
+                    break;
+                
             }
         }
     }

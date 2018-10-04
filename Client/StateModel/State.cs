@@ -19,9 +19,9 @@ namespace Ropu.Client.StateModel
         public  Action Entry {get;set;}
         public Action Exit {get;set;}
 
-        public void AddTransition(EventT eventId, State<Id, EventT> state)
+        public void AddTransition(EventT eventId, Func<State<Id, EventT>> getState)
         {
-            _transitions.Add(new Transition<EventT, State<Id, EventT>>(eventId, state));
+            _transitions.Add(new Transition<EventT, State<Id, EventT> >(eventId, getState));
         }
 
         public IState<EventT> Transition(EventT eventType)

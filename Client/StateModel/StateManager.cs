@@ -44,7 +44,11 @@ namespace Ropu.Client.StateModel
             {
                 var current = CurrentState;
                 var newState = current.Transition(eventType);
-                if(newState == null) return; //no transition defined
+                if(newState == null) 
+                {
+                    Console.WriteLine($"No Transition from state {current} for even {eventType}");
+                    return; //no transition defined
+                }
                 var original = SetState(newState, current);
                 if(original == current)
                 {

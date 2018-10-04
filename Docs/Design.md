@@ -55,14 +55,12 @@ Packet Type 6
 Unit ID (uint32)
 Timeout (uint16) (in seconds after this time the server will remove your registration)
 
-#### Start Group Call (IPv4)
+#### Start Group Call
 Packet Type 7
 User ID (uint32)
 Group ID (uint32)
-Media Endpoint (4 bytes IP Address, 2 bytes port)
-Floor Control Endpoint (4 bytes IP Address, 2 bytes port)
 
-#### Call Started (IPv6)
+#### Call Started (IPv4)
 Packet Type 8
 User Id (uint32)
 Group ID (uint32)

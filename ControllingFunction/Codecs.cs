@@ -1,4 +1,4 @@
-namespace Ropu.ContollingFunction
+namespace Ropu.ControllingFunction
 {
     public enum Codecs
     {

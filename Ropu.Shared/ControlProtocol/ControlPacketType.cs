@@ -12,6 +12,6 @@ namespace Ropu.Shared.ControlProtocol
         GroupUnsubscribe = 7,
         Presence = 8,
         StartGroupCall = 9,
-        StartCallResponse = 10
+        CallStarted = 10
     }
 }

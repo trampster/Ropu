@@ -6,12 +6,16 @@ namespace Ropu.Client
     {
         Start,
         Unregistered,
-        Registered
+        Registered,
+        StartingCall,
+        CallInProgress
     }
 
     public enum EventId
     {
-        RegistrationResponseReceived
+        RegistrationResponseReceived,
+        CallRequest,
+        CallStarted,
     }
 
     public class RopuState : State<StateId, EventId>

@@ -1,14 +1,18 @@
+using System;
+
 namespace Ropu.Client.StateModel
 {
     public class Transition<EventT, StateT>
     {
-        public Transition(EventT eventType, StateT state)
+        readonly Func<StateT> _getState;
+
+        public Transition(EventT eventType, Func<StateT> getState)
         {
             Event = eventType;
-            State = state;
+            _getState = getState;
         }
 
         public EventT Event {get;}
-        public StateT State {get;}
+        public StateT State => _getState();
     }
 }
