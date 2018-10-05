@@ -60,8 +60,8 @@ namespace Ropu.ControllingFunction
                 {
                     // User ID (uint32)
                     uint userId = data.Slice(1).ParseUint();
-                    // Group ID (uint32)
-                    uint groupId = data.Slice(5).ParseUint();
+                    // Group ID (uint16)
+                    uint groupId = data.Slice(5).ParseUshort();
                     _messageHandler.StartGroupCall(userId, groupId);
                     break;
                 }

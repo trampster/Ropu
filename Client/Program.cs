@@ -9,9 +9,10 @@ namespace Ropu.Client
     {
         const ushort _controlPort = 5061;
         static RopuClient _ropuClient;
+        const string ServerIP =  "192.168.1.6";
         static void Main(string[] args)
         {
-            IPEndPoint controllingFunctionEndpoint = new IPEndPoint(IPAddress.Parse("172.16.182.32"), 5060);
+            IPEndPoint controllingFunctionEndpoint = new IPEndPoint(IPAddress.Parse(ServerIP), 5060);
 
             var controllingFunctionClient = new ControllingFunctionClient(_controlPort, controllingFunctionEndpoint);
 
@@ -39,7 +40,7 @@ namespace Ropu.Client
             switch(command)
             {
                 case 'g':
-                    var group = uint.Parse(commandLine.AsSpan(1));
+                    var group = ushort.Parse(commandLine.AsSpan(1));
                     _ropuClient.StartCall(group);
                     break;
                 case 'm':
@@ -54,7 +55,7 @@ namespace Ropu.Client
 
         static void SendMedia()
         {
-            var ipAddress = IPAddress.Parse("172.16.182.32");
+            var ipAddress = IPAddress.Parse(ServerIP);
             var mediaClient = new MediaClient(4242, new IPEndPoint(ipAddress, 5062));
             var payload = new byte[] {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20};
             while(true)

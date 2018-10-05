@@ -80,7 +80,7 @@ namespace Ropu.Client
             _retryTimer.Start();
         }
 
-        public void StartCall(uint groupId)
+        public void StartCall(ushort groupId)
         {
             Console.WriteLine("sending StartGroupCall");
             _controllingFunctionClient.StartGroupCall(_userId, groupId);

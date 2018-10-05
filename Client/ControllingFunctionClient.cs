@@ -62,17 +62,17 @@ namespace Ropu.Client
             _socket.SendTo(sendBuffer, 0, 11, SocketFlags.None, _remoteEndPoint);
         }
 
-        public void StartGroupCall(uint userId, uint groupId)
+        public void StartGroupCall(uint userId, ushort groupId)
         {
             var sendBuffer = SendBuffer();
             //packet type (byte)
             sendBuffer[0] = (byte)ControlPacketType.StartGroupCall;
             // User ID (uint32)
             sendBuffer.WriteUint(userId, 1);
-            // Group ID (uint32)
-            sendBuffer.WriteUint(groupId, 5);
+            // Group ID (uint16)
+            sendBuffer.WriteUshort(groupId, 5);
 
-            _socket.SendTo(sendBuffer, 0, 11, SocketFlags.None, _remoteEndPoint);
+            _socket.SendTo(sendBuffer, 0, 7, SocketFlags.None, _remoteEndPoint);
         }
 
         public void StartListening()
@@ -109,14 +109,14 @@ namespace Ropu.Client
                     break;
                 case ControlPacketType.CallStarted:
                     // User Id (uint32), skip
-                    // Group ID (uint32)
-                    uint groupId = data.Slice(5).ParseUint();
+                    // Group ID (uint16)
+                    uint groupId = data.Slice(5).ParseUshort();
                     // Call ID (uint16) unique identifier for the call, to be included in the media stream
-                    ushort callId = data.Slice(9).ParseUshort();
+                    ushort callId = data.Slice(7).ParseUshort();
                     // Media Endpoint (4 bytes IP Address, 2 bytes port)
-                    var mediaEndpoint = data.Slice(11).ParseIPEndPoint();
+                    var mediaEndpoint = data.Slice(9).ParseIPEndPoint();
                     // Floor Control Endpoint (4 bytes IP Address, 2 bytes port)
-                    var floorControlEndpoint = data.Slice(17).ParseIPEndPoint();
+                    var floorControlEndpoint = data.Slice(15).ParseIPEndPoint();
                     _controllingFunctionHandler?.CallStarted(groupId, callId, mediaEndpoint, floorControlEndpoint);
                     break;
                 

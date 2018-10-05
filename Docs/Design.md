@@ -33,63 +33,63 @@ Floor denied will be sent only to the requester.
 
 ### Controlling Function Protocol
 #### Registration
-Packet Type 0 (byte)
-User ID (uint32)
-RTP Port (uint16)
-Control Plane Port (uint16)
-Floor Control Port (uint16)
+* Packet Type 0 (byte)
+* User ID (uint32)
+* RTP Port (uint16)
+* Control Plane Port (uint16)
+* Floor Control Port (uint16)
 
 #### Registration Response
-Packet Type 1 (byte)
-User ID (uint32)
-Codec (byte) (defined via an enum, this is the codec/bitrate used by the system, you must support it, this is required so the server doesn’t have to transcode, which is an expensive operation)
-Bitrate (uint16)
+* Packet Type 1 (byte)
+* User ID (uint32)
+* Codec (byte) (defined via an enum, this is the codec/bitrate used by the system, you must support it, this is required so the server doesn’t have to transcode, which is an expensive operation)
+* Bitrate (uint16)
 
 #### Call Ended (units receiving this packet should not stop playing out media they receive, this should only be used to update the UI)
-Packet Type X
-Group ID
-Call ID
+* Packet Type X
+* Group ID (uint16)
+* Call ID (uint16)
 
 #### Presence (indicates we are still active)
-Packet Type 6
-Unit ID (uint32)
-Timeout (uint16) (in seconds after this time the server will remove your registration)
+* Packet Type 6
+* Unit ID (uint32)
+* Timeout (uint16) (in seconds after this time the server will remove your registration)
 
 #### Start Group Call
-Packet Type 7
-User ID (uint32)
-Group ID (uint32)
+* Packet Type 7
+* User ID (uint32)
+* Group ID ((uint16))
 
 #### Call Started (IPv4)
-Packet Type 8
-User Id (uint32)
-Group ID (uint32)
-Call ID (uint16) unique identifier for the call, to be included in the media stream
-Media Endpoint (4 bytes IP Address, 2 bytes port)
-Floor Control Endpoint (4 bytes IP Address, 2 bytes port)
+* Packet Type 8
+* User Id (uint32)
+* Group ID (uint16)
+* Call ID (uint16) unique identifier for the call, to be included in the media stream
+* Media Endpoint (4 bytes IP Address, 2 bytes port)
+* Floor Control Endpoint (4 bytes IP Address, 2 bytes port)
 
 ### Floor Control Protocol
 #### Floor Denied
-Packet Type 2
-User ID (uint32)
+* Packet Type 2
+* User ID (uint32)
 
 #### Floor Granted
-Packet Type 3
-User ID (uint32) 
-Group ID (uint16)
-Call ID (uint16)
+* Packet Type 3
+* User ID (uint32) 
+* Group ID (uint16)
+* Call ID (uint16)
 
 #### Floor Released
-Packet Type X
-Group ID
-Call ID
+* Packet Type X
+* Group ID (uint16)
+* Call ID (uint16)
 
 ### Media Plane Protocol
 Clients should play out everything they receive on the Media Plane, regardless of the call state. This way if the control messages and media packets arrive unsynchronized the client won't miss audio.
 Likewise when starting a call, the client should start streaming the media to the server as soon as they have received the Start Call Response before receiving floor granted. The call initiator is implicitly granted the floor.
 
 #### Packet
-Length (uint16)
-Call ID (uint16)
-Key ID (uint16)
-Payload
+* Length (uint16)
+* Call ID (uint16)
+* Key ID (uint16)
+* Payload (Length bytes)
