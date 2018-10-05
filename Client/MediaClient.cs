@@ -13,17 +13,17 @@ namespace Ropu.Client
         readonly byte[] _sendBuffer = new byte[MaxUDPSize];
         readonly IPEndPoint _remoteEndPoint;
 
-        MediaClient(int localPort, IPEndPoint remoteEndPoint)
+        public MediaClient(int localPort, IPEndPoint remoteEndPoint)
         {
             _remoteEndPoint = remoteEndPoint;
             _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             _socket.Bind(new IPEndPoint(IPAddress.Any, localPort));
         }
 
-        public void SendMediaPakcet(ushort callId, byte[] payload, byte[] buffer)
+        public void SendMediaPacket(ushort callId, byte[] payload)
         {
-            int length = BuildMediaPacket(1234, payload, buffer);
-            _socket.SendTo(buffer, 0, length, SocketFlags.None, _remoteEndPoint);
+            int length = BuildMediaPacket(1234, payload, _sendBuffer);
+            _socket.SendTo(_sendBuffer, 0, length, SocketFlags.None, _remoteEndPoint);
         }
 
         int BuildMediaPacket(ushort callId, byte[] payload, byte[] buffer)

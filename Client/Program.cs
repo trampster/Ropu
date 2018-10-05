@@ -11,7 +11,7 @@ namespace Ropu.Client
         static RopuClient _ropuClient;
         static void Main(string[] args)
         {
-            IPEndPoint controllingFunctionEndpoint = new IPEndPoint(IPAddress.Parse("192.168.1.6"), 5060);
+            IPEndPoint controllingFunctionEndpoint = new IPEndPoint(IPAddress.Parse("172.16.182.32"), 5060);
 
             var controllingFunctionClient = new ControllingFunctionClient(_controlPort, controllingFunctionEndpoint);
 
@@ -42,10 +42,25 @@ namespace Ropu.Client
                     var group = uint.Parse(commandLine.AsSpan(1));
                     _ropuClient.StartCall(group);
                     break;
+                case 'm':
+                    SendMedia();
+                    break;
                 default:
                     Console.WriteLine("I'm not sure what you mean.");
                     break;
 
+            }
+        }
+
+        static void SendMedia()
+        {
+            var ipAddress = IPAddress.Parse("172.16.182.32");
+            var mediaClient = new MediaClient(4242, new IPEndPoint(ipAddress, 5062));
+            var payload = new byte[] {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20};
+            while(true)
+            {
+                mediaClient.SendMediaPacket(13, payload);
+                System.Threading.Thread.Sleep(2000);
             }
         }
 

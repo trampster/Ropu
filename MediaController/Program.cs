@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ropu
@@ -12,7 +13,7 @@ namespace ropu
         {
             var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 
-            socket.Bind(new IPEndPoint(IPAddress.Any, 5060));
+            socket.Bind(new IPEndPoint(IPAddress.Any, 5062));
 
 
             const int MaxUDPSize = 0x10000;
@@ -22,7 +23,7 @@ namespace ropu
 
             EndPoint endpoint = new IPEndPoint(IPAddress.Any, AnyPort);
 
-            _endpoints = new IPEndPoint[2000];
+            _endpoints = new IPEndPoint[10000];
 
             for(int endpointIndex = 0; endpointIndex < _endpoints.Length; endpointIndex++)
             {
@@ -56,19 +57,40 @@ namespace ropu
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            //use the call id to find the group
-            // for(int endpointIndex = 0; endpointIndex < _endpoints.Length; endpointIndex++)
-            // {
-            //     socket.SendTo(buffer, 0, length, SocketFlags.None, _endpoints[endpointIndex]);
-            // }
-
-            Parallel.For(0, _endpoints.Length,
-                   endpointIndex => socket.SendTo(buffer, 0, length, SocketFlags.None, _endpoints[endpointIndex]));
+            BulkSendAsync(buffer, length, socket);
 
             stopwatch.Stop();
             Console.WriteLine($"Forwarded {_endpoints.Length} packets in {stopwatch.ElapsedMilliseconds} ms");
 
             //send to all the group endpoints
+        }
+
+        static void BulkSendAsync(byte[] buffer, int length, Socket socket)
+        {
+            for(int endpointIndex = 0; endpointIndex < _endpoints.Length; endpointIndex++)
+            {
+                var args = new SocketAsyncEventArgs()
+                {
+                    RemoteEndPoint = _endpoints[endpointIndex],
+                };
+                args.SetBuffer(buffer, 0, length);
+
+                socket.SendAsync(args);
+            }
+        }
+
+        static void BulkSendParallelFor(byte[] buffer, int length, Socket socket)
+        {
+            Parallel.For(0, _endpoints.Length, new ParallelOptions(){MaxDegreeOfParallelism = 40}, endpointIndex => 
+                socket.SendTo(buffer, 0, length, SocketFlags.None, _endpoints[endpointIndex]));
+        }
+
+        static void BulkSendSync(byte[] buffer, int length, Socket socket)
+        {
+            for(int endpointIndex = 0; endpointIndex < _endpoints.Length; endpointIndex++)
+            {
+                socket.SendTo(buffer, 0, length, SocketFlags.None, _endpoints[endpointIndex]);
+            }
         }
     }
 }
