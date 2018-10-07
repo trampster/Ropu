@@ -105,7 +105,7 @@ namespace Ropu.Client
                     Codec codec = (Codec)data[5];
                     // Bitrate (uint16)
                     ushort bitrate = data.Slice(6).ParseUshort();
-                    _controllingFunctionHandler?.RegistrationResponseReceived(codec, bitrate);
+                    _controllingFunctionHandler?.HandleRegistrationResponseReceived(codec, bitrate);
                     break;
                 case ControlPacketType.CallStarted:
                     // User Id (uint32), skip
@@ -117,7 +117,11 @@ namespace Ropu.Client
                     var mediaEndpoint = data.Slice(9).ParseIPEndPoint();
                     // Floor Control Endpoint (4 bytes IP Address, 2 bytes port)
                     var floorControlEndpoint = data.Slice(15).ParseIPEndPoint();
-                    _controllingFunctionHandler?.CallStarted(groupId, callId, mediaEndpoint, floorControlEndpoint);
+                    _controllingFunctionHandler?.HandleCallStarted(groupId, callId, mediaEndpoint, floorControlEndpoint);
+                    break;
+                case ControlPacketType.CallStartFailed:
+                    CallFailedReason reason = (CallFailedReason)data[1];
+                    _controllingFunctionHandler?.HandleCallStartFailed(reason);
                     break;
                 
             }

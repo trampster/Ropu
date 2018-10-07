@@ -17,6 +17,7 @@ namespace Ropu.Client
         {
             _remoteEndPoint = remoteEndPoint;
             _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            _socket.Blocking = false;
             _socket.Bind(new IPEndPoint(IPAddress.Any, localPort));
         }
 

@@ -16,6 +16,7 @@ namespace Ropu.Client
         RegistrationResponseReceived,
         CallRequest,
         CallStarted,
+        CallStartFailed
     }
 
     public class RopuState : State<StateId, EventId>

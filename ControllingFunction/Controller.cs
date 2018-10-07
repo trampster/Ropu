@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Ropu.Shared.CallManagement;
+using Ropu.Shared.ControlProtocol;
 using Ropu.Shared.Groups;
 
 namespace Ropu.ControllingFunction
@@ -49,12 +50,14 @@ namespace Ropu.ControllingFunction
             var mediaController = GetMediaController();
             if(mediaController == null)
             {
+                _controlProtocol.SendCallStartFailed(CallFailedReason.InsufficientResources, _registra.GetEndPoint(userId));
                 Console.WriteLine("Can't start call because there is no available MediaController.");
                 return;
             }
             var floorController = GetFloorController();
             if(floorController == null)
             {
+                _controlProtocol.SendCallStartFailed(CallFailedReason.InsufficientResources, _registra.GetEndPoint(userId));
                 Console.WriteLine("Can't start call because there is no available FloorController.");
                 return;
             }

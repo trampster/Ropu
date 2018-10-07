@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Net;
 
 namespace Ropu.ControllingFunction
 {
@@ -16,6 +17,15 @@ namespace Ropu.ControllingFunction
                 return;
             }
             _registrationLookup.Add(registration.UserId, registration);
+        }
+
+        public IPEndPoint GetEndPoint(uint userId)
+        {
+            if(!_registrationLookup.TryGetValue(userId, out Registration registration))
+            {
+                return null;
+            }
+            return registration.ControlEndpoint;
         }
     }
 }

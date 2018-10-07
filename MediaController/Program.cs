@@ -57,7 +57,7 @@ namespace ropu
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            BulkSendAsync(buffer, length, socket);
+            BulkSendSync(buffer, length, socket);
 
             stopwatch.Stop();
             Console.WriteLine($"Forwarded {_endpoints.Length} packets in {stopwatch.ElapsedMilliseconds} ms");

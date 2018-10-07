@@ -105,5 +105,15 @@ namespace Ropu.ControllingFunction
                 _socket.SendTo(_sendBuffer, 0, 21, SocketFlags.None, endPoints[index]);
             }
         }
+
+        public void SendCallStartFailed(CallFailedReason reason, IPEndPoint endPoint)
+        {
+            // Packet Type
+            _sendBuffer[0] = (byte)ControlPacketType.CallStartFailed;
+            //* Reason (byte) 0 = insufficient resources, 255 = other reason
+            _sendBuffer[1] = (byte)CallFailedReason.InsufficientResources;
+
+            _socket.SendTo(_sendBuffer, 0, 2, SocketFlags.None, endPoint);
+        }
     }
 }

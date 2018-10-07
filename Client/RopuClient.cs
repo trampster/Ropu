@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using System.Threading;
 using Ropu.Client.StateModel;
 using Ropu.Shared;
+using Ropu.Shared.ControlProtocol;
 
 namespace Ropu.Client
 {
@@ -42,6 +43,7 @@ namespace Ropu.Client
             {
                 Exit = () => _retryTimer.Cancel()
             };
+            _startingCall.AddTransition(EventId.CallStartFailed, () => _registered);
 
             _stateManager = new StateManager<EventId>(_start);
         }
@@ -98,14 +100,20 @@ namespace Ropu.Client
             _retryTimer.Start();
         }
 
-        public void RegistrationResponseReceived(Codec codec, ushort bitrate)
+        public void HandleRegistrationResponseReceived(Codec codec, ushort bitrate)
         {
             _stateManager.HandleEvent(EventId.RegistrationResponseReceived);
         }
 
-        public void CallStarted(uint groupId, ushort callId, IPEndPoint mediaEndpoint, IPEndPoint floorControlEndpoint)
+        public void HandleCallStarted(uint groupId, ushort callId, IPEndPoint mediaEndpoint, IPEndPoint floorControlEndpoint)
         {
             _stateManager.HandleEvent(EventId.CallRequest);
+        }
+
+        public void HandleCallStartFailed(CallFailedReason reason)
+        {
+            Console.WriteLine($"CallStartFailed with reason {reason}");
+            _stateManager.HandleEvent(EventId.CallStartFailed);
 
         }
     }
