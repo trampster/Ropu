@@ -61,7 +61,7 @@ namespace Ropu.ControllingFunction
                     // User ID (uint32)
                     uint userId = data.Slice(1).ParseUint();
                     // Group ID (uint16)
-                    uint groupId = data.Slice(5).ParseUshort();
+                    ushort groupId = data.Slice(5).ParseUshort();
                     _messageHandler.StartGroupCall(userId, groupId);
                     break;
                 }
@@ -72,7 +72,7 @@ namespace Ropu.ControllingFunction
 
         public void SendRegisterResponse(Registration registration)
         {
-            // Packet Type 1
+            // Packet Type
             _sendBuffer[0] = (byte)ControlPacketType.RegistrationResponse;
             // User ID (uint32)
             _sendBuffer.WriteUint(registration.UserId, 1);
@@ -83,6 +83,27 @@ namespace Ropu.ControllingFunction
 
             Console.WriteLine($"Sending registration response to {registration.ControlEndpoint}");
             _socket.SendTo(_sendBuffer, 0, 10, SocketFlags.None, registration.ControlEndpoint);
+        }
+
+        public void SendCallStarted(uint userId, ushort groupId, ushort callId, IPEndPoint mediaEndpoint, IPEndPoint floorControlEndpoint, List<IPEndPoint> endPoints)
+        {
+            // Packet Type
+            _sendBuffer[0] = (byte)ControlPacketType.CallStarted;
+            // User Id (uint32)
+            _sendBuffer.WriteUint(userId, 1);
+            // Group ID (uint16)
+            _sendBuffer.WriteUshort(groupId, 5);
+            // Call ID (uint16) unique identifier for the call, to be included in the media stream
+            _sendBuffer.WriteUshort(callId, 7);
+            // Media Endpoint (4 bytes IP Address, 2 bytes port)
+            _sendBuffer.WriteEndPoint(mediaEndpoint, 9);
+            // Floor Control Endpoint (4 bytes IP Address, 2 bytes port)
+            _sendBuffer.WriteEndPoint(mediaEndpoint, 15);
+
+            for(int index=0; index < endPoints.Count; index++)
+            {
+                _socket.SendTo(_sendBuffer, 0, 21, SocketFlags.None, endPoints[index]);
+            }
         }
     }
 }

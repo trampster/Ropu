@@ -61,12 +61,16 @@ Floor denied will be sent only to the requester.
 * Group ID ((uint16))
 
 #### Call Started (IPv4)
-* Packet Type 8
+* Packet Type XXX
 * User Id (uint32)
 * Group ID (uint16)
 * Call ID (uint16) unique identifier for the call, to be included in the media stream
 * Media Endpoint (4 bytes IP Address, 2 bytes port)
 * Floor Control Endpoint (4 bytes IP Address, 2 bytes port)
+
+### Call Start Failed
+* Packet Type XXX
+* Reason (byte) 0 = insufficient resources, 255 = other reason
 
 ### Floor Control Protocol
 #### Floor Denied

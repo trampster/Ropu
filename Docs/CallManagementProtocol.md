@@ -3,25 +3,33 @@ This document details the protocol used for communication between the Controllin
 
 ## Design Principles
 * Binary - to reduce packet size and increase parsing performance
-* UDP - for less packet overhead and control over retries
+* UDP - for less packet overhead, control over retries, can no connection overheads.
 
 ## Packets
 
 ### Register Media Controller
 Sent to the Controlling Function to register as a media controller
 * Packet Type 0 (byte)
+* Request ID (uint32)
 * UDP Control Port (ushort)
-* UDP Floor Control Port Endpoint (4 bytes IP, 2 bytes port) - this needs to be the externally facing endpoint that clients can use
+* UDP Media Endpoint (4 bytes IP, 2 bytes port) - this needs to be the externally facing endpoint that clients can use
 
 ### Register Floor Controller
 Sent to the Controlling Function to register as a floor controller
 * Packet Type 1 (byte)
+* Request ID (uint32)
 * UDP Port (ushort)
-* UDP Floor Control Port Endpoint (4 bytes IP, 2 bytes port) - this needs to be the externally facing endpoint that clients can use
+* Floor Control Endpoint (4 bytes IP, 2 bytes port) - this needs to be the externally facing endpoint that clients can use
 
 ### Start Call
 Tells the MediaController or Floor Controller to start managing a call
 * Packet Type 2 (byte)
-* Call ID (ushort)
-* Group ID (ushort)
+* Request ID (uint32)
+* Call ID (uint16)
+* Group ID (uint16)
+
+### Ack
+Acknoledgement to one of the other message types, all messages must be acknoledged
+* Packet Type 3 (byte)
+* Request ID (uint32)
 
