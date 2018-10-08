@@ -39,7 +39,14 @@ namespace Ropu.Shared.CallManagement
             _clientMessageHandler = messageHandler;
         }
 
-        public void ProcessPackets()
+        public async Task Run()
+        {
+            var task = new Task(ProcessPackets, TaskCreationOptions.LongRunning);
+            task.Start();
+            await task;
+        }
+
+        void ProcessPackets()
         {
             _socket.Bind(new IPEndPoint(IPAddress.Any, _port));
             byte[] _buffer = new byte[MaxUdpSize];

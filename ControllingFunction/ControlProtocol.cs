@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 using Ropu.Shared;
 using Ropu.Shared.ControlProtocol;
 
@@ -28,7 +29,14 @@ namespace Ropu.ControllingFunction
             _messageHandler = messageHandler;
         }
 
-        public void ProcessPackets()
+        public async Task Run()
+        {
+            var task = new Task(ProcessPackets, TaskCreationOptions.LongRunning);
+            task.Start();
+            await task;
+        }
+
+        void ProcessPackets()
         {
             _socket.Bind(new IPEndPoint(IPAddress.Any, _port));
             byte[] _buffer = new byte[MaxUdpSize];

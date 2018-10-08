@@ -33,9 +33,9 @@ namespace Ropu.ControllingFunction
             _floorControllers = new List<FloorController>();
         }
 
-        public void Run()
+        public async Task Run()
         {
-            _controlProtocol.ProcessPackets();
+            await _controlProtocol.Run();
         }
 
         public void Registration(uint userId, ushort rtpPort, ushort floorControlPort, IPEndPoint controlEndpoint)
