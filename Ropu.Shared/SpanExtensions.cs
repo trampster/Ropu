@@ -24,7 +24,7 @@ namespace Ropu.Shared
 
         public static IPEndPoint ParseIPEndPoint(this Span<byte> data)
         {
-            var address = new IPAddress(data);
+            var address = new IPAddress(data.Slice(0, 4));
             ushort port = data.Slice(4).ParseUshort();
             return new IPEndPoint(address, port);
         }

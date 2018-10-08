@@ -154,7 +154,7 @@ namespace Ropu.Shared.CallManagement
 
         public void SendAck(uint requestId, IPEndPoint ipEndPoint)
         {
-            _sendBuffer[0] = (byte)CallManagementPacketType.StartCall;
+            _sendBuffer[0] = (byte)CallManagementPacketType.Ack;
             //Request ID (uint32)
             _sendBuffer.WriteUint(requestId, 1);
             _socket.SendTo(_sendBuffer, 0, 5, SocketFlags.None, ipEndPoint);
