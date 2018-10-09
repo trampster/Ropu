@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Ropu.Shared;
 using Ropu.Shared.CallManagement;
 using Ropu.Shared.ControlProtocol;
 using Ropu.Shared.Groups;
@@ -40,13 +41,7 @@ namespace Ropu.ControllingFunction
             var control =  _controlProtocol.Run();
             var callManagement = _callManagementProtocol.Run();
 
-            //this is requried to immediately throw if either task fails            
-            var completedTask = await Task.WhenAny(control, callManagement);
-            await completedTask;//this will throw if the task complete with an error.
-
-            //make sure both are complete before returning
-            if(!control.IsCompleted) await control;
-            if(!callManagement.IsCompleted) await control;
+            await TaskCordinator.WaitAll(control, callManagement);
         }
 
         public void Registration(uint userId, ushort rtpPort, ushort floorControlPort, IPEndPoint controlEndpoint)

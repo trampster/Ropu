@@ -26,14 +26,7 @@ namespace ropu
 
             var registerTask = Register(callManagementProtocol);
 
-            //this is requried to immediately throw if either task fails            
-            var completedTask = await Task.WhenAny(callManagementTask, mediaTask, registerTask);
-            await completedTask;//this will throw if the task complete with an error.
-
-            //make sure both are complete before returning
-            if(!callManagementTask.IsCompleted) await callManagementTask;
-            if(!mediaTask.IsCompleted) await mediaTask;
-            if(!registerTask.IsCompleted) await registerTask;
+            await TaskCordinator.WaitAll(callManagementTask, mediaTask, registerTask);
         }
 
         public static async Task Register(CallManagementProtocol callManagement)
