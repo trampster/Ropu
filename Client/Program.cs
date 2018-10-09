@@ -9,7 +9,7 @@ namespace Ropu.Client
     {
         const ushort _controlPort = 5061;
         static RopuClient _ropuClient;
-        const string ServerIP =  "172.16.182.32";
+        const string ServerIP =  "192.168.1.6";
         const int ServerPort = 5060;
         static void Main(string[] args)
         {

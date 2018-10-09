@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -15,8 +16,8 @@ namespace Ropu.ControllingFunction
 
         readonly CallManagementProtocol _callManagementProtocol;
         readonly Registra _registra;
-        readonly List<MediaController> _mediaControllers;
-        readonly List<FloorController> _floorControllers;
+        readonly ControllerRegistry<MediaController> _mediaControllers;
+        readonly ControllerRegistry<FloorController> _floorControllers;
         readonly IGroupsClient _groupsClient;
         ushort _callId = 0;
 
@@ -29,8 +30,9 @@ namespace Ropu.ControllingFunction
             _registra = registra;
             _groupsClient = groupsClient;
 
-            _mediaControllers = new List<MediaController>();
-            _floorControllers = new List<FloorController>();
+            _mediaControllers = new ControllerRegistry<MediaController>();
+
+            _floorControllers = new ControllerRegistry<FloorController>();
         }
 
         public async Task Run()
@@ -111,25 +113,26 @@ namespace Ropu.ControllingFunction
 
         MediaController GetMediaController()
         {
-            return _mediaControllers.FirstOrDefault(); //TODO: choose one that isn't being used
+            return _mediaControllers.GetAvailableController();
         }
 
         FloorController GetFloorController()
         {
-            return _floorControllers.FirstOrDefault(); //TODO: choose one that isn't being used
+            return _floorControllers.GetAvailableController();
         }
 
         public void HandleRegisterMediaController(IPAddress fromAddress, uint requestId, ushort controlPort, IPEndPoint mediaEndpoint)
         {
+            Console.WriteLine("Media Controller Registered");
             var endpoint = new IPEndPoint(fromAddress, controlPort);
-            _mediaControllers.Add(new MediaController(endpoint, mediaEndpoint));
+            _mediaControllers.Register(endpoint, controller => controller.Update(mediaEndpoint), () => new MediaController(endpoint, mediaEndpoint));
             _callManagementProtocol.SendAck(requestId, endpoint);
         }
 
         public void HandleRegisterFloorController(IPAddress fromAddress, uint requestId, ushort controlPort, IPEndPoint floorControlEndpoint)
         {
             var endpoint = new IPEndPoint(fromAddress, controlPort);
-            _floorControllers.Add(new FloorController(endpoint, floorControlEndpoint));
+            _floorControllers.Register(endpoint, controller => controller.Update(floorControlEndpoint), () => new FloorController(endpoint, floorControlEndpoint));
             _callManagementProtocol.SendAck(requestId, endpoint);
         }
     }
