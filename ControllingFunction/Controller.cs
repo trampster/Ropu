@@ -126,6 +126,7 @@ namespace Ropu.ControllingFunction
 
         public void HandleRegisterFloorController(IPAddress fromAddress, uint requestId, ushort controlPort, IPEndPoint floorControlEndpoint)
         {
+            Console.WriteLine("Floor Controller Registered");
             var endpoint = new IPEndPoint(fromAddress, controlPort);
             _floorControllers.Register(endpoint, controller => controller.Update(floorControlEndpoint), () => new FloorController(endpoint, floorControlEndpoint));
             _callManagementProtocol.SendAck(requestId, endpoint);

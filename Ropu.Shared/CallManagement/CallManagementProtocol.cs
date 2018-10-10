@@ -12,7 +12,7 @@ namespace Ropu.Shared.CallManagement
     public class CallManagementProtocol
     {
         readonly Socket _socket;
-        readonly int _port;
+        readonly ushort _port;
         const int AnyPort = IPEndPoint.MinPort;
         const int MaxUdpSize = 0x10000;
         readonly byte[] _sendBuffer = new byte[MaxUdpSize];
@@ -23,11 +23,13 @@ namespace Ropu.Shared.CallManagement
         ICallManagementServerMessageHandler _serverMessageHandler;
         ICallManagementClientMessageHandler _clientMessageHandler;
 
-        public CallManagementProtocol(int port)
+        public CallManagementProtocol(ushort port)
         {
             _port = port;
             _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
         }
+
+        public ushort ControlPort => _port;
 
         public void SetServerMessageHandler(ICallManagementServerMessageHandler messageHandler)
         {
@@ -48,7 +50,17 @@ namespace Ropu.Shared.CallManagement
 
         void ProcessPackets()
         {
-            _socket.Bind(new IPEndPoint(IPAddress.Any, _port));
+            Console.WriteLine($"Binding call management to port {_port}");
+            try
+            {
+                _socket.Bind(new IPEndPoint(IPAddress.Any, (int)_port));
+            }
+            catch(Exception exception)
+            {
+                Console.WriteLine(exception);
+                throw;
+            }
+
             byte[] _buffer = new byte[MaxUdpSize];
             EndPoint any = Any;
 

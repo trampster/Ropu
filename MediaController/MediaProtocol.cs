@@ -18,11 +18,11 @@ namespace Ropu.MediaController
         readonly byte[] _receiveBuffer = new byte[MaxUDPSize];
 
 
-        public MediaProtocol()
+        public MediaProtocol(ushort port)
         {
+            MediaPort = port;
             _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            _socket.Bind(new IPEndPoint(IPAddress.Any, 5062));
-
+            _socket.Bind(new IPEndPoint(IPAddress.Any, MediaPort));
 
             //setup dummy group endpoints
             _endpoints = new IPEndPoint[10000];
@@ -31,6 +31,11 @@ namespace Ropu.MediaController
                 _endpoints[endpointIndex] = new IPEndPoint(IPAddress.Parse("192.168.1.2"), endpointIndex + 1000);
             }
 
+        }
+
+        public ushort MediaPort
+        {
+            get;
         }
 
         public async Task Run()

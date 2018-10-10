@@ -12,42 +12,18 @@ namespace ropu
 {
     class Program
     {
-        const ushort ControlPort = 5070;
+        const ushort ControlPort = 5091;
         const ushort MediaPort = 5071;
-
 
         static async Task Main(string[] args)
         {
-            var mediaProtocol = new MediaProtocol();
+            var mediaProtocol = new MediaProtocol(MediaPort);
             var callManagementProtocol = new CallManagementProtocol(ControlPort);
+            var serviceDiscovery = new ServiceDiscovery();
 
-            Task callManagementTask = callManagementProtocol.Run();
-            Task mediaTask = mediaProtocol.Run();
+            var mediaControllerRunner = new MediaControl(mediaProtocol, callManagementProtocol, serviceDiscovery);
 
-            var registerTask = Register(callManagementProtocol);
-
-            await TaskCordinator.WaitAll(callManagementTask, mediaTask, registerTask);
-        }
-
-        public static async Task Register(CallManagementProtocol callManagement)
-        {
-            while(true)
-            {
-                var serviceDiscovery = new ServiceDiscovery();
-                var callManagementServerEndpoint = serviceDiscovery.CallManagementServerEndpoint();
-                Console.WriteLine(callManagementServerEndpoint);
-                bool registered = await callManagement.RegisterMediaController(
-                    ControlPort, 
-                    new IPEndPoint(serviceDiscovery.GetMyAddress(), MediaPort), 
-                    callManagementServerEndpoint);
-                if(registered)
-                {
-                    Console.WriteLine("Registered");
-                    await Task.Delay(60000);
-                    continue;
-                }
-                Console.WriteLine("Failed to register");
-            }
+            await mediaControllerRunner.Run();
         }
     }
 }
