@@ -14,6 +14,7 @@ namespace Ropu.ControllingFunction
         {
             ControlEndPoint = controlEndPoint;
             _floorEndPoint = floorEndPoint;
+            SetupExpiryTime();
         }
 
         public IPEndPoint ControlEndPoint

@@ -20,6 +20,8 @@ namespace Ropu.Shared.Groups
             {
                 endpoints.Add(new IPEndPoint(IPAddress.Parse("192.168.1.2"), endpointIndex + 1000));
             }
+            endpoints.Add(new IPEndPoint(IPAddress.Parse("192.168.1.6"), 5061));
+
             _groupLookup.Add(4242, endpoints);
         }
 

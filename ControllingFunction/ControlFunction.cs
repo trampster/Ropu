@@ -11,7 +11,7 @@ using Ropu.Shared.Groups;
 
 namespace Ropu.ControllingFunction
 {
-    public class Controller : IControlMessageHandler, ICallManagementServerMessageHandler
+    public class ControlFunction : IControlMessageHandler, ICallManagementServerMessageHandler
     {
         readonly ControlProtocol _controlProtocol;
 
@@ -22,7 +22,7 @@ namespace Ropu.ControllingFunction
         readonly IGroupsClient _groupsClient;
         ushort _callId = 0;
 
-        public Controller(ControlProtocol controlProtocol, Registra registra, CallManagementProtocol callManagementProtocol, IGroupsClient groupsClient)
+        public ControlFunction(ControlProtocol controlProtocol, Registra registra, CallManagementProtocol callManagementProtocol, IGroupsClient groupsClient)
         {
             _controlProtocol = controlProtocol;
             _controlProtocol.SetMessageHandler(this);
@@ -113,6 +113,7 @@ namespace Ropu.ControllingFunction
 
         FloorController GetFloorController()
         {
+            Console.WriteLine("GetFloorController");
             return _floorControllers.GetAvailableController();
         }
 

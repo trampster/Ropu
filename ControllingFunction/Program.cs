@@ -15,7 +15,7 @@ namespace Ropu.ControllingFunction
             var controlProtocol = new ControlProtocol(5060);
             var callManagementProtocol = new CallManagementProtocol(5069);
             var groupsClient = new HardcodedGroupsClient();
-            var controller = new Controller(controlProtocol, registra, callManagementProtocol, groupsClient);
+            var controller = new ControlFunction(controlProtocol, registra, callManagementProtocol, groupsClient);
             await controller.Run();
         }   
     }

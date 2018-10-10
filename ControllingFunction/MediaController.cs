@@ -14,6 +14,7 @@ namespace Ropu.ControllingFunction
         {
             ControlEndPoint = controlEndPoint;
             _mediaEndpoint = mediaEndPoint;
+            SetupExpiryTime();
         }
 
         void SetupExpiryTime()

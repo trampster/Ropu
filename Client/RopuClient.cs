@@ -21,6 +21,7 @@ namespace Ropu.Client
         RopuState _registered;
         RopuState _unregistered;
         RopuState _startingCall;
+        RopuState _callInProgress;
         StateManager<EventId> _stateManager;
 
         readonly Ropu.Shared.Timer _retryTimer;
@@ -44,6 +45,8 @@ namespace Ropu.Client
                 Exit = () => _retryTimer.Cancel()
             };
             _startingCall.AddTransition(EventId.CallStartFailed, () => _registered);
+            _startingCall.AddTransition(EventId.CallStarted, () => _callInProgress);
+            _callInProgress = new RopuState(StateId.CallInProgress);
 
             _stateManager = new StateManager<EventId>(_start);
         }
@@ -107,7 +110,7 @@ namespace Ropu.Client
 
         public void HandleCallStarted(uint groupId, ushort callId, IPEndPoint mediaEndpoint, IPEndPoint floorControlEndpoint)
         {
-            _stateManager.HandleEvent(EventId.CallRequest);
+            _stateManager.HandleEvent(EventId.CallStarted);
         }
 
         public void HandleCallStartFailed(CallFailedReason reason)
