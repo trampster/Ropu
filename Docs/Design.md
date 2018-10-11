@@ -31,13 +31,14 @@ The floor will be requested by sending media.
 The exact same floor granted message will be sent to all participants including the requester.
 Floor denied will be sent only to the requester.
 
+The client will share a port for the control, media and floor packets. This is so we only need to keep one mapping alive through the NAT rather than three. For this reason the packet type field needs to be unique accross all three protocols.
+
 ### Controlling Function Protocol
 #### Registration
 * Packet Type 0 (byte)
 * User ID (uint32)
-* RTP Port (uint16)
-* Control Plane Port (uint16)
-* Floor Control Port (uint16)
+* IPAddress (4 bytes)
+* RTP Port (uint16) - control, media and floor control packets will be sent to this port
 
 #### Registration Response
 * Packet Type 1 (byte)
@@ -46,22 +47,22 @@ Floor denied will be sent only to the requester.
 * Bitrate (uint16)
 
 #### Call Ended (units receiving this packet should not stop playing out media they receive, this should only be used to update the UI)
-* Packet Type X
+* Packet Type 2
 * Group ID (uint16)
 * Call ID (uint16)
 
 #### Presence (indicates we are still active)
-* Packet Type 6
+* Packet Type 3
 * Unit ID (uint32)
 * Timeout (uint16) (in seconds after this time the server will remove your registration)
 
 #### Start Group Call
-* Packet Type 7
+* Packet Type 4
 * User ID (uint32)
 * Group ID ((uint16))
 
 #### Call Started (IPv4)
-* Packet Type XXX
+* Packet Type 5
 * User Id (uint32)
 * Group ID (uint16)
 * Call ID (uint16) unique identifier for the call, to be included in the media stream
@@ -69,22 +70,22 @@ Floor denied will be sent only to the requester.
 * Floor Control Endpoint (4 bytes IP Address, 2 bytes port)
 
 ### Call Start Failed
-* Packet Type XXX
+* Packet Type 6
 * Reason (byte) 0 = insufficient resources, 255 = other reason
 
 ### Floor Control Protocol
 #### Floor Denied
-* Packet Type 2
+* Packet Type 7
 * User ID (uint32)
 
 #### Floor Granted
-* Packet Type 3
+* Packet Type 8
 * User ID (uint32) 
 * Group ID (uint16)
 * Call ID (uint16)
 
 #### Floor Released
-* Packet Type X
+* Packet Type 9
 * Group ID (uint16)
 * Call ID (uint16)
 
@@ -93,6 +94,7 @@ Clients should play out everything they receive on the Media Plane, regardless o
 Likewise when starting a call, the client should start streaming the media to the server as soon as they have received the Start Call Response before receiving floor granted. The call initiator is implicitly granted the floor.
 
 #### Packet
+* Packet Type 10
 * Length (uint16)
 * Call ID (uint16)
 * Key ID (uint16)
