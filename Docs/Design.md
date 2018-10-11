@@ -38,7 +38,7 @@ The client will share a port for the control, media and floor packets. This is s
 * Packet Type 0 (byte)
 * User ID (uint32)
 * IPAddress (4 bytes)
-* RTP Port (uint16) - control, media and floor control packets will be sent to this port
+* Port (uint16) - control, media and floor control packets will be sent to this port
 
 #### Registration Response
 * Packet Type 1 (byte)
@@ -51,18 +51,13 @@ The client will share a port for the control, media and floor packets. This is s
 * Group ID (uint16)
 * Call ID (uint16)
 
-#### Presence (indicates we are still active)
-* Packet Type 3
-* Unit ID (uint32)
-* Timeout (uint16) (in seconds after this time the server will remove your registration)
-
 #### Start Group Call
-* Packet Type 4
+* Packet Type 3
 * User ID (uint32)
 * Group ID ((uint16))
 
 #### Call Started (IPv4)
-* Packet Type 5
+* Packet Type 4
 * User Id (uint32)
 * Group ID (uint16)
 * Call ID (uint16) unique identifier for the call, to be included in the media stream
@@ -70,22 +65,22 @@ The client will share a port for the control, media and floor packets. This is s
 * Floor Control Endpoint (4 bytes IP Address, 2 bytes port)
 
 ### Call Start Failed
-* Packet Type 6
+* Packet Type 5
 * Reason (byte) 0 = insufficient resources, 255 = other reason
 
 ### Floor Control Protocol
 #### Floor Denied
-* Packet Type 7
+* Packet Type 6
 * User ID (uint32)
 
 #### Floor Granted
-* Packet Type 8
+* Packet Type 7
 * User ID (uint32) 
 * Group ID (uint16)
 * Call ID (uint16)
 
 #### Floor Released
-* Packet Type 9
+* Packet Type 8
 * Group ID (uint16)
 * Call ID (uint16)
 
@@ -94,7 +89,7 @@ Clients should play out everything they receive on the Media Plane, regardless o
 Likewise when starting a call, the client should start streaming the media to the server as soon as they have received the Start Call Response before receiving floor granted. The call initiator is implicitly granted the floor.
 
 #### Packet
-* Packet Type 10
+* Packet Type 9
 * Length (uint16)
 * Call ID (uint16)
 * Key ID (uint16)

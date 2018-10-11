@@ -25,7 +25,7 @@ namespace Ropu.ControllingFunction
             {
                 return null;
             }
-            return registration.ControlEndpoint;
+            return registration.EndPoint;
         }
     }
 }

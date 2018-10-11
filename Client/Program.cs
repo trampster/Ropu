@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading.Tasks;
+using Ropu.Shared;
 
 namespace Ropu.Client
 {
@@ -9,17 +11,27 @@ namespace Ropu.Client
     {
         const ushort _controlPort = 5061;
         static RopuClient _ropuClient;
-        const string ServerIP =  "172.16.182.32";
+        const string ServerIP =  "192.168.1.6";
+        const string MyAddress = "192.168.1.6";
         const int ServerPort = 5060;
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             IPEndPoint controllingFunctionEndpoint = new IPEndPoint(IPAddress.Parse(ServerIP), ServerPort);
 
-            var controllingFunctionClient = new ControllingFunctionClient(_controlPort, controllingFunctionEndpoint);
+            var protocolSwitch = new ProtocolSwitch(_controlPort);
+            var controllingFunctionClient = new ControllingFunctionClient(protocolSwitch, controllingFunctionEndpoint);
 
-            _ropuClient = new RopuClient(controllingFunctionClient);
-            _ropuClient.Start();
+            var ipAddress = IPAddress.Parse(MyAddress);
+            _ropuClient = new RopuClient(protocolSwitch, controllingFunctionClient, ipAddress);
+            var ropuClientTask = _ropuClient.Run();
 
+            var consoleTask = TaskCordinator.RunLong(HandleCommands);
+            
+            await TaskCordinator.WaitAll(ropuClientTask, consoleTask);
+        }
+
+        static void HandleCommands()
+        {
             Console.Write(">");
 
             while(true)

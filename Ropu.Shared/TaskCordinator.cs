@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 
 namespace Ropu.Shared
@@ -20,6 +21,13 @@ namespace Ropu.Shared
             {
                 if(!task.IsCanceled) await task;
             }
+        }
+
+        public static async Task RunLong(Action action)
+        {
+            var task = new Task(action, TaskCreationOptions.LongRunning);
+            task.Start();
+            await task;
         }
     }
 }

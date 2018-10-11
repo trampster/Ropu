@@ -7,28 +7,17 @@ using Ropu.Shared.ControlProtocol;
 
 namespace Ropu.Client
 {
-    public class ControllingFunctionClient
+    public class ControllingFunctionClient : IControlPacketParser
     {
-        readonly Socket _socket;
-        const int MaxUdpSize = 0x10000;
-        [ThreadStatic]
-        static byte[] _sendBuffer;
         readonly IPEndPoint _remoteEndPoint;
-        const int AnyPort = IPEndPoint.MinPort;
-        static readonly IPEndPoint Any = new IPEndPoint(IPAddress.Any, AnyPort);
-        readonly Thread _thread;
-        readonly int _localPort;
+        readonly ProtocolSwitch _protocolSwitch;
         IControllingFunctionPacketHandler _controllingFunctionHandler;
 
-
-        public ControllingFunctionClient(int localPort, IPEndPoint remoteEndPoint)
+        public ControllingFunctionClient(ProtocolSwitch protocolSwitch, IPEndPoint remoteEndPoint)
         {
-            _localPort = localPort;
+            _protocolSwitch = protocolSwitch;
+            _protocolSwitch.SetControlPacketParser(this);
             _remoteEndPoint = remoteEndPoint;
-            _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            _socket.Bind(new IPEndPoint(IPAddress.Any, localPort));
-
-            _thread = new Thread(ProcessPackets);
         }
 
         public void SetControllingFunctionHandler(IControllingFunctionPacketHandler controllingFunctionHandler)
@@ -36,95 +25,65 @@ namespace Ropu.Client
             _controllingFunctionHandler = controllingFunctionHandler;
         }
 
-        static byte[] SendBuffer()
+        public void Register(uint userId, IPEndPoint ipEndPoint)
         {
-            if(_sendBuffer == null)
-            {
-                _sendBuffer = new byte[MaxUdpSize];
-            }
-            return _sendBuffer;
-        }
-
-        public void Register(uint userId, ushort rtpPort, ushort floorControlPort)
-        {
-            var sendBuffer = SendBuffer();
+            var sendBuffer = _protocolSwitch.SendBuffer();
             //packet type (byte)
-            sendBuffer[0] = (byte)ControlPacketType.Registration;
+            sendBuffer[0] = (byte)CombinedPacketType.Registration;
             // User ID (uint32)
             sendBuffer.WriteUint(userId, 1);
-            // RTP Port (uint16)
-            sendBuffer.WriteUshort(rtpPort, 5);
-            // Control Plane Port (uint16)
-            sendBuffer.WriteUshort((ushort)_localPort, 7);
-            // Floor Plane Port (uint16)
-            sendBuffer.WriteUshort(floorControlPort, 9);
+            // EndPoint (6 bytes)
+            sendBuffer.WriteEndPoint(ipEndPoint, 5);
 
-            _socket.SendTo(sendBuffer, 0, 11, SocketFlags.None, _remoteEndPoint);
+            _protocolSwitch.Send(11, _remoteEndPoint);
         }
 
         public void StartGroupCall(uint userId, ushort groupId)
         {
-            var sendBuffer = SendBuffer();
+            var sendBuffer = _protocolSwitch.SendBuffer();
             //packet type (byte)
-            sendBuffer[0] = (byte)ControlPacketType.StartGroupCall;
+            sendBuffer[0] = (byte)CombinedPacketType.StartGroupCall;
             // User ID (uint32)
             sendBuffer.WriteUint(userId, 1);
             // Group ID (uint16)
             sendBuffer.WriteUshort(groupId, 5);
 
-            _socket.SendTo(sendBuffer, 0, 7, SocketFlags.None, _remoteEndPoint);
+            _protocolSwitch.Send(7, _remoteEndPoint);
         }
 
-        public void StartListening()
+        public void ParseRegistrationResponse(Span<byte> data)
         {
-            _thread.Start();
+            // User ID (uint32), skip
+            // Codec (byte) (defined via an enum, this is the codec/bitrate used by the system, you must support it, this is required so the server doesn’t have to transcode, which is an expensive operation)
+            Codec codec = (Codec)data[5];
+            // Bitrate (uint16)
+            ushort bitrate = data.Slice(6).ParseUshort();
+            _controllingFunctionHandler?.HandleRegistrationResponseReceived(codec, bitrate);
         }
 
-        public void ProcessPackets()
+        public void ParseCallEnded(Span<byte> data)
         {
-
-            byte[] _buffer = new byte[MaxUdpSize];
-            EndPoint any = Any;
-
-            while(true)
-            {
-                int ammountRead = _socket.ReceiveFrom(_buffer, ref any);
-
-                var receivedBytes = new Span<byte>(_buffer, 0, ammountRead);
-                HandlePacket(receivedBytes, ((IPEndPoint)any).Address);
-            }
+            throw new NotImplementedException();
         }
 
-        void HandlePacket(Span<byte> data, IPAddress ipaddress)
+        public void ParseCallStarted(Span<byte> data)
         {
-            switch((ControlPacketType)data[0])
-            {
-                case ControlPacketType.RegistrationResponse:
-                    // User ID (uint32), skip
-                    // Codec (byte) (defined via an enum, this is the codec/bitrate used by the system, you must support it, this is required so the server doesn’t have to transcode, which is an expensive operation)
-                    Codec codec = (Codec)data[5];
-                    // Bitrate (uint16)
-                    ushort bitrate = data.Slice(6).ParseUshort();
-                    _controllingFunctionHandler?.HandleRegistrationResponseReceived(codec, bitrate);
-                    break;
-                case ControlPacketType.CallStarted:
-                    // User Id (uint32), skip
-                    // Group ID (uint16)
-                    uint groupId = data.Slice(5).ParseUshort();
-                    // Call ID (uint16) unique identifier for the call, to be included in the media stream
-                    ushort callId = data.Slice(7).ParseUshort();
-                    // Media Endpoint (4 bytes IP Address, 2 bytes port)
-                    var mediaEndpoint = data.Slice(9).ParseIPEndPoint();
-                    // Floor Control Endpoint (4 bytes IP Address, 2 bytes port)
-                    var floorControlEndpoint = data.Slice(15).ParseIPEndPoint();
-                    _controllingFunctionHandler?.HandleCallStarted(groupId, callId, mediaEndpoint, floorControlEndpoint);
-                    break;
-                case ControlPacketType.CallStartFailed:
-                    CallFailedReason reason = (CallFailedReason)data[1];
-                    _controllingFunctionHandler?.HandleCallStartFailed(reason);
-                    break;
-                
-            }
+            // User Id (uint32), skip
+            // Group ID (uint16)
+            uint groupId = data.Slice(5).ParseUshort();
+            // Call ID (uint16) unique identifier for the call, to be included in the media stream
+            ushort callId = data.Slice(7).ParseUshort();
+            // Media Endpoint (4 bytes IP Address, 2 bytes port)
+            var mediaEndpoint = data.Slice(9).ParseIPEndPoint();
+            // Floor Control Endpoint (4 bytes IP Address, 2 bytes port)
+            var floorControlEndpoint = data.Slice(15).ParseIPEndPoint();
+            _controllingFunctionHandler?.HandleCallStarted(groupId, callId, mediaEndpoint, floorControlEndpoint);
+        }
+
+        public void ParseCallStartFailed(Span<byte> data)
+        {
+            CallFailedReason reason = (CallFailedReason)data[1];
+            _controllingFunctionHandler?.HandleCallStartFailed(reason);
         }
     }
 }

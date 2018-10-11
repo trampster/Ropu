@@ -7,12 +7,10 @@ namespace Ropu.ControllingFunction
 {
     public class Registration
     {
-        public Registration(uint userId, ushort rtpPort, ushort floorControlPort, IPEndPoint controlEndpoint)
+        public Registration(uint userId, IPEndPoint endPoint)
         {
             UserId = userId;
-            RtpPort = rtpPort;
-            ControlEndpoint = controlEndpoint;
-            FloorControlPort = floorControlPort;
+            EndPoint = endPoint;
         }
 
         public uint UserId
@@ -20,17 +18,7 @@ namespace Ropu.ControllingFunction
             get;
         }
 
-        public ushort RtpPort
-        {
-            get;
-        }
-
-        public ushort FloorControlPort
-        {
-            get;
-        }
-
-        public IPEndPoint ControlEndpoint
+        public IPEndPoint EndPoint
         {
             get;
         }

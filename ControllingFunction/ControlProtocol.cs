@@ -47,24 +47,22 @@ namespace Ropu.ControllingFunction
                 int ammountRead = _socket.ReceiveFrom(_buffer, ref any);
 
                 var receivedBytes = new Span<byte>(_buffer, 0, ammountRead);
-                HandlePacket(receivedBytes, ((IPEndPoint)any).Address);
+                HandlePacket(receivedBytes);
             }
         }
 
-        void HandlePacket(Span<byte> data, IPAddress ipaddress)
+        void HandlePacket(Span<byte> data)
         {
-            switch((ControlPacketType)data[0])
+            switch((CombinedPacketType)data[0])
             {
-                case ControlPacketType.Registration:
+                case CombinedPacketType.Registration:
                 {
                     uint userId = data.Slice(1).ParseUint();
-                    ushort rtpPort = data.Slice(5).ParseUshort();
-                    ushort controlPlanePort = data.Slice(7).ParseUshort();
-                    ushort floorControlPort = data.Slice(9).ParseUshort();
-                    _messageHandler.Registration(userId, rtpPort, floorControlPort, new IPEndPoint(ipaddress, controlPlanePort));
+                    IPEndPoint endPoint = data.Slice(5).ParseIPEndPoint();
+                    _messageHandler.Registration(userId, endPoint);
                     break;
                 }
-                case ControlPacketType.StartGroupCall:
+                case CombinedPacketType.StartGroupCall:
                 {
                     // User ID (uint32)
                     uint userId = data.Slice(1).ParseUint();
@@ -81,7 +79,7 @@ namespace Ropu.ControllingFunction
         public void SendRegisterResponse(Registration registration)
         {
             // Packet Type
-            _sendBuffer[0] = (byte)ControlPacketType.RegistrationResponse;
+            _sendBuffer[0] = (byte)CombinedPacketType.RegistrationResponse;
             // User ID (uint32)
             _sendBuffer.WriteUint(registration.UserId, 1);
             // Codec (byte) (defined via an enum, this is the codec/bitrate used by the system, you must support it, this is required so the server doesn’t have to transcode, which is an expensive operation)
@@ -89,14 +87,14 @@ namespace Ropu.ControllingFunction
             // Bitrate (uint16)
             _sendBuffer.WriteUshort(8000, 8);
 
-            Console.WriteLine($"Sending registration response to {registration.ControlEndpoint}");
-            _socket.SendTo(_sendBuffer, 0, 10, SocketFlags.None, registration.ControlEndpoint);
+            Console.WriteLine($"Sending registration response to {registration.EndPoint}");
+            _socket.SendTo(_sendBuffer, 0, 10, SocketFlags.None, registration.EndPoint);
         }
 
         public void SendCallStarted(uint userId, ushort groupId, ushort callId, IPEndPoint mediaEndpoint, IPEndPoint floorControlEndpoint, List<IPEndPoint> endPoints)
         {
             // Packet Type
-            _sendBuffer[0] = (byte)ControlPacketType.CallStarted;
+            _sendBuffer[0] = (byte)CombinedPacketType.CallStarted;
             // User Id (uint32)
             _sendBuffer.WriteUint(userId, 1);
             // Group ID (uint16)
@@ -117,7 +115,7 @@ namespace Ropu.ControllingFunction
         public void SendCallStartFailed(CallFailedReason reason, IPEndPoint endPoint)
         {
             // Packet Type
-            _sendBuffer[0] = (byte)ControlPacketType.CallStartFailed;
+            _sendBuffer[0] = (byte)CombinedPacketType.CallStartFailed;
             //* Reason (byte) 0 = insufficient resources, 255 = other reason
             _sendBuffer[1] = (byte)CallFailedReason.InsufficientResources;
 

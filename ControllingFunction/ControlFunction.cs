@@ -44,9 +44,9 @@ namespace Ropu.ControllingFunction
             await TaskCordinator.WaitAll(control, callManagement);
         }
 
-        public void Registration(uint userId, ushort rtpPort, ushort floorControlPort, IPEndPoint controlEndpoint)
+        public void Registration(uint userId, IPEndPoint endPoint)
         {
-            var registration = new Registration(userId, rtpPort, floorControlPort, controlEndpoint);
+            var registration = new Registration(userId, endPoint);
             _registra.Register(registration);
             _controlProtocol.SendRegisterResponse(registration);
         }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using System.Threading.Tasks;
 using Ropu.Client.StateModel;
 using Ropu.Shared;
 using Ropu.Shared.ControlProtocol;
@@ -12,10 +13,10 @@ namespace Ropu.Client
     public class RopuClient : IControllingFunctionPacketHandler
     {
         const uint _userId = 1234;
-        const ushort _rtpPort = 1000;
-        const ushort _floorControlPort = 1002;
+        const ushort _port = 1000;
 
-        ControllingFunctionClient _controllingFunctionClient;
+        readonly ControllingFunctionClient _controllingFunctionClient;
+        readonly ProtocolSwitch _protocolSwitch;
 
         RopuState _start;
         RopuState _registered;
@@ -25,9 +26,11 @@ namespace Ropu.Client
         StateManager<EventId> _stateManager;
 
         readonly Ropu.Shared.Timer _retryTimer;
+        readonly IPAddress _ipAddress;
 
-        public RopuClient(ControllingFunctionClient controllingFunctionClient)
+        public RopuClient(ProtocolSwitch protocolSwitch, ControllingFunctionClient controllingFunctionClient, IPAddress address)
         {
+            _protocolSwitch = protocolSwitch;
             _controllingFunctionClient = controllingFunctionClient;
             _controllingFunctionClient.SetControllingFunctionHandler(this);
             _retryTimer = new Ropu.Shared.Timer();
@@ -49,6 +52,7 @@ namespace Ropu.Client
             _callInProgress = new RopuState(StateId.CallInProgress);
 
             _stateManager = new StateManager<EventId>(_start);
+            _ipAddress = address;
         }
 
         System.Timers.Timer CreateTimer(int interval, Action callback)
@@ -60,10 +64,11 @@ namespace Ropu.Client
             return timer;
         }
 
-        public void Start()
+        public async Task Run()
         {
-            _controllingFunctionClient.StartListening();
+            var protocolSwithTask = _protocolSwitch.Run();
             _stateManager.SetState(_unregistered, _start);
+            await protocolSwithTask;
         }
 
         void RegistrationAttemptTimerExpired()
@@ -79,7 +84,9 @@ namespace Ropu.Client
         void Register()
         {
             Console.WriteLine("Sending Registration");
-            _controllingFunctionClient.Register(_userId, _rtpPort, _floorControlPort);
+            //TODO: will need to use a NAT system to find endpoint (like STUN)
+            var endpoint = new IPEndPoint(_ipAddress, _protocolSwitch.LocalPort);
+            _controllingFunctionClient.Register(_userId,  endpoint);
             _retryTimer.Duration = 2000;
             _retryTimer.Callback = Register;
             _retryTimer.Start();
