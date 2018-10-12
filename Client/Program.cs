@@ -14,12 +14,14 @@ namespace Ropu.Client
         const string ServerIP =  "192.168.1.6";
         const string MyAddress = "192.168.1.6";
         const int ServerPort = 5060;
+        static readonly MediaClient _mediaClient;
         static async Task Main(string[] args)
         {
             IPEndPoint controllingFunctionEndpoint = new IPEndPoint(IPAddress.Parse(ServerIP), ServerPort);
 
             var protocolSwitch = new ProtocolSwitch(_controlPort);
             var controllingFunctionClient = new ControllingFunctionClient(protocolSwitch, controllingFunctionEndpoint);
+            var _mediaClient = new MediaClient(protocolSwitch);
 
             var ipAddress = IPAddress.Parse(MyAddress);
             _ropuClient = new RopuClient(protocolSwitch, controllingFunctionClient, ipAddress);
@@ -69,12 +71,12 @@ namespace Ropu.Client
         static void SendMedia()
         {
             var ipAddress = IPAddress.Parse(ServerIP);
-            var mediaClient = new MediaClient(4242, new IPEndPoint(ipAddress, 5062));
+            var endPoint = new IPEndPoint(ipAddress, 5065);
             var payload = new byte[] {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20};
             while(true)
             {
-                mediaClient.SendMediaPacket(13, payload);
-                System.Threading.Thread.Sleep(2000);
+                _mediaClient.SendMediaPacket(13, payload, endPoint);
+                System.Threading.Thread.Sleep(200);
             }
         }
 

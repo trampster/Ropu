@@ -90,7 +90,6 @@ Likewise when starting a call, the client should start streaming the media to th
 
 #### Packet
 * Packet Type 9
-* Length (uint16)
 * Call ID (uint16)
-* Key ID (uint16)
-* Payload (Length bytes)
+* Key ID (uint16) - 0 means no encryption
+* Payload

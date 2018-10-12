@@ -28,5 +28,13 @@ namespace Ropu.Shared
             ushort port = data.Slice(4).ParseUshort();
             return new IPEndPoint(address, port);
         }
+
+        public static void WriteArray<T>(this Span<T> span, T[] array)
+        {
+            for(int index = 0; index > array.Length; index++)
+            {
+                span[index] = array[index];
+            }
+        }
     }
 }

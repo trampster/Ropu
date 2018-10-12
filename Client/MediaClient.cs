@@ -8,31 +8,28 @@ namespace Ropu.Client
 {
     public class MediaClient
     {
-        readonly Socket _socket;
-        const int MaxUDPSize = 0x10000;
-        readonly byte[] _sendBuffer = new byte[MaxUDPSize];
-        readonly IPEndPoint _remoteEndPoint;
+        readonly ProtocolSwitch _protocolSwitch;
 
-        public MediaClient(int localPort, IPEndPoint remoteEndPoint)
+        public MediaClient(ProtocolSwitch protocolSwitch)
         {
-            _remoteEndPoint = remoteEndPoint;
-            _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            _socket.Blocking = false;
-            _socket.Bind(new IPEndPoint(IPAddress.Any, localPort));
+            _protocolSwitch = protocolSwitch;
         }
 
-        public void SendMediaPacket(ushort callId, byte[] payload)
+        public void SendMediaPacket(ushort callId, byte[] payload, IPEndPoint endPoint)
         {
-            int length = BuildMediaPacket(1234, payload, _sendBuffer);
-            _socket.SendTo(_sendBuffer, 0, length, SocketFlags.None, _remoteEndPoint);
+            var sendBuffer = _protocolSwitch.SendBuffer();
+            int length = BuildMediaPacket(1234, payload, sendBuffer);
+            _protocolSwitch.Send(length, endPoint);
         }
 
         int BuildMediaPacket(ushort callId, byte[] payload, byte[] buffer)
         {
-            buffer[0] = (byte)((callId & 0xFF00) >> 8);
-            buffer[1] = (byte)(callId & 0xFF);
+            buffer[0] = (byte)CombinedPacketType.Media;
+            buffer.WriteUshort(callId, 1);
+            buffer.WriteUshort(0, 3);
+            buffer.AsSpan(5).WriteArray(buffer);
 
-            int bufferIndex = 2;
+            int bufferIndex = 4;
             for(int payloadIndex = 0; payloadIndex < payload.Length; payloadIndex++)
             {
                 buffer[bufferIndex] = payload[payloadIndex];
