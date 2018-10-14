@@ -29,7 +29,41 @@ Tells the MediaController or Floor Controller to start managing a call
 * Group ID (uint16)
 
 ### Ack
-Acknoledgement to one of the other message types, all messages must be acknoledged
+Acknoledgement to one of the other message types, all messages without specified responses must be acknowledged
 * Packet Type 3 (byte)
 * Request ID (uint32)
+
+### Get Groups File Request
+* Packet Type 4 (byte)
+* Request ID (uint32)
+
+### Get Group File Request
+* Packet Type 5 (byte)
+* Request ID (uint32)
+
+### File Manifest Response
+* Packet Type 6 (byte)
+* Request ID (uint32)
+* Number of Parts (uint16)
+* File ID (uint16)
+
+### File Part Request
+* Packet Type 7 (byte)
+* Request ID (uint32)
+* File Id (uint16)
+* Part Number (uint16)
+
+### File Part Response
+* Packet Type 8 (byte)
+* Request ID (uint32) - (File ID and Part Number are not included becuase they can be infered from the Request ID)
+* Payload
+
+### Groups File Payload
+* Group ID (uint16)
+* ^ repeated for each group
+
+### Group File Payload
+* User ID (uint32)
+* EndPoint (6 bytes)
+* ^ repeat for each user
 
