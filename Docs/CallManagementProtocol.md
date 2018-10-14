@@ -40,6 +40,7 @@ Acknoledgement to one of the other message types, all messages without specified
 ### Get Group File Request
 * Packet Type 5 (byte)
 * Request ID (uint32)
+* Group ID (uint16)
 
 ### File Manifest Response
 * Packet Type 6 (byte)
@@ -58,6 +59,23 @@ Acknoledgement to one of the other message types, all messages without specified
 * Request ID (uint32) - (File ID and Part Number are not included becuase they can be infered from the Request ID)
 * Payload
 
+### Registration Update
+Could be a new registration or and update to an existing one
+* Packet Type 9 (byte)
+* Request ID (uint32)
+* Group ID (uint16)
+* User ID (uint32)
+* EndPoint (6 bytes)
+
+### Registration Removed
+Could be a new registration or and update to an existing one
+* Packet Type 10 (byte)
+* Request ID (uint32)
+* Group ID (uint16)
+* User ID (uint32)
+
+## Payloads
+
 ### Groups File Payload
 * Group ID (uint16)
 * ^ repeated for each group
@@ -66,4 +84,6 @@ Acknoledgement to one of the other message types, all messages without specified
 * User ID (uint32)
 * EndPoint (6 bytes)
 * ^ repeat for each user
+
+
 
