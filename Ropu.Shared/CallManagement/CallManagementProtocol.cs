@@ -69,11 +69,11 @@ namespace Ropu.Shared.CallManagement
                 int ammountRead = _socket.ReceiveFrom(_buffer, ref any);
 
                 var receivedBytes = new Span<byte>(_buffer, 0, ammountRead);
-                HandlePacket(receivedBytes, ((IPEndPoint)any).Address);
+                HandlePacket(receivedBytes, (IPEndPoint)any);
             }
         }
 
-        void HandlePacket(Span<byte> data, IPAddress ipaddress)
+        void HandlePacket(Span<byte> data, IPEndPoint endPoint)
         {
             switch((CallManagementPacketType)data[0])
             {
@@ -82,7 +82,7 @@ namespace Ropu.Shared.CallManagement
                     uint requestId = data.Slice(1).ParseUint();
                     ushort controlPort = data.Slice(5).ParseUshort();
                     var mediaEndpoint = data.Slice(7).ParseIPEndPoint();
-                    _serverMessageHandler?.HandleRegisterMediaController(ipaddress, requestId, controlPort, mediaEndpoint);
+                    _serverMessageHandler?.HandleRegisterMediaController(endPoint.Address, requestId, controlPort, mediaEndpoint);
                     break;
                 }
                 case CallManagementPacketType.RegisterFloorController:
@@ -90,7 +90,7 @@ namespace Ropu.Shared.CallManagement
                     uint requestId = data.Slice(1).ParseUint();
                     ushort controlPort = data.Slice(5).ParseUshort();
                     var floorControlEndpoint = data.Slice(7).ParseIPEndPoint();
-                    _serverMessageHandler?.HandleRegisterFloorController(ipaddress, requestId, controlPort, floorControlEndpoint);
+                    _serverMessageHandler?.HandleRegisterFloorController(endPoint.Address, requestId, controlPort, floorControlEndpoint);
                     break;
                 }
                 case CallManagementPacketType.StartCall:
@@ -105,6 +105,12 @@ namespace Ropu.Shared.CallManagement
                 {
                     uint requestId = data.Slice(1).ParseUint();
                     HandleAck(requestId);
+                    break;
+                }
+                case CallManagementPacketType.GetGroupsFileRequest:
+                {
+                    uint requestId = data.Slice(1).ParseUint();
+                    _serverMessageHandler?.HandleGetGroupsFileRequest(endPoint, requestId);
                     break;
                 }
             }

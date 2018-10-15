@@ -132,5 +132,11 @@ namespace Ropu.ControllingFunction
             _floorControllers.Register(endpoint, controller => controller.Update(floorControlEndpoint), () => new FloorController(endpoint, floorControlEndpoint));
             _callManagementProtocol.SendAck(requestId, endpoint);
         }
+
+        public void HandleGetGroupsFileRequest(IPEndPoint from, uint requestId)
+        {
+            //TODO: implement
+            throw new NotImplementedException(); 
+        }
     }
 }
