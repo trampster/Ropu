@@ -145,11 +145,20 @@ namespace Ropu.Shared.CallManagement
                 }
                 case CallManagementPacketType.RegistrationUpdate:
                 {
-                    throw new NotImplementedException();
+                    uint requestId = data.Slice(1).ParseUint();
+                    ushort groupId = data.Slice(5).ParseUshort();
+                    uint userId = data.Slice(7).ParseUint();
+                    IPEndPoint regEndPoint = data.Slice(11).ParseIPEndPoint();
+                    _clientMessageHandler?.HandleRegistrationUpdate(requestId, groupId, userId, regEndPoint);
+                    break;
                 }
                 case CallManagementPacketType.RegistrationRemoved:
                 {
-                    throw new NotImplementedException();
+                    uint requestId = data.Slice(1).ParseUint();
+                    ushort groupId = data.Slice(5).ParseUshort();
+                    uint userId = data.Slice(7).ParseUint();
+                    _clientMessageHandler?.HandleRegistrationRemoved(requestId, groupId, userId);
+                    break;
                 }
                 default:
                     throw new NotSupportedException($"PacketType {(CallManagementPacketType)data[0]} was not recognized");
