@@ -135,8 +135,17 @@ namespace Ropu.ControllingFunction
 
         public void HandleGetGroupsFileRequest(IPEndPoint from, uint requestId)
         {
-            //TODO: implement
             throw new NotImplementedException(); 
+        }
+
+        public void HandleGetGroupFileRequest(IPEndPoint from, uint requestId, ushort groupId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void HandleFilePartRequest(IPEndPoint from, uint requestId, ushort fileId, ushort partNumber)
+        {
+            throw new NotImplementedException();
         }
     }
 }

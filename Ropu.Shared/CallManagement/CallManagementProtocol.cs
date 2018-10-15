@@ -98,7 +98,7 @@ namespace Ropu.Shared.CallManagement
                     uint requestId = data.Slice(1).ParseUint();
                     ushort callId = data.Slice(5).ParseUshort();
                     ushort groupId = data.Slice(7).ParseUshort();
-                    _clientMessageHandler?.CallStart(requestId, callId, groupId);
+                    _clientMessageHandler?.HandleCallStart(requestId, callId, groupId);
                     break;
                 }
                 case CallManagementPacketType.Ack:
@@ -113,6 +113,46 @@ namespace Ropu.Shared.CallManagement
                     _serverMessageHandler?.HandleGetGroupsFileRequest(endPoint, requestId);
                     break;
                 }
+                case CallManagementPacketType.GroupGroupFileRequest:
+                {
+                    uint requestId = data.Slice(1).ParseUint();
+                    ushort groupId = data.Slice(5).ParseUshort();
+                    _serverMessageHandler?.HandleGetGroupFileRequest(endPoint, requestId, groupId);
+                    break;
+                }
+                case CallManagementPacketType.FileManifestResponse:
+                {
+                    uint requestId = data.Slice(1).ParseUint();
+                    ushort numberOfParts = data.Slice(5).ParseUshort();
+                    ushort fileId = data.Slice(7).ParseUshort();
+                    _clientMessageHandler?.HandleFileManifestResponse(requestId, numberOfParts, fileId);
+                    break;
+                }
+                case CallManagementPacketType.FilePartRequest:
+                {
+                    uint requestId = data.Slice(1).ParseUint();
+                    ushort fileId = data.Slice(5).ParseUshort();
+                    ushort partNumber = data.Slice(7).ParseUshort();
+                    _serverMessageHandler?.HandleFilePartRequest(endPoint, requestId, fileId, partNumber);
+                    break;
+                }
+                case CallManagementPacketType.FilePartResponse:
+                {
+                    uint requestId = data.Slice(1).ParseUint();
+                    var payload = data.Slice(5);
+                    _clientMessageHandler?.HandleFilePartResponse(requestId, payload);
+                    break;
+                }
+                case CallManagementPacketType.RegistrationUpdate:
+                {
+                    throw new NotImplementedException();
+                }
+                case CallManagementPacketType.RegistrationRemoved:
+                {
+                    throw new NotImplementedException();
+                }
+                default:
+                    throw new NotSupportedException($"PacketType {(CallManagementPacketType)data[0]} was not recognized");
             }
         }
 
