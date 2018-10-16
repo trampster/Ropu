@@ -1,12 +1,20 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+using Ropu.Shared.Groups;
+using System.Linq;
 
 namespace Ropu.ControllingFunction
 {
     public class Registra
     {
         readonly Dictionary<uint, Registration> _registrationLookup = new Dictionary<uint, Registration>();
+        readonly IGroupsClient _groupsClient;
+
+        public Registra(IGroupsClient groupsClient)
+        {
+            _groupsClient = groupsClient;
+        }
 
         public void Register(Registration registration)
         {
@@ -27,5 +35,15 @@ namespace Ropu.ControllingFunction
             }
             return registration.EndPoint;
         }
+
+        public List<uint> RegisteredGroupMembers(ushort groupId)
+        {
+            var query = 
+                from unitId in _groupsClient.Get(groupId).GroupMembers
+                where _registrationLookup.ContainsKey(unitId)
+                select unitId;
+            return query.ToList();
+        }
+
     }
 }

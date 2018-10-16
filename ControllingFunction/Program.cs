@@ -11,10 +11,10 @@ namespace Ropu.ControllingFunction
     {
         static async Task Main(string[] args)
         {
-            var registra = new Registra();
+            var groupsClient = new HardcodedGroupsClient();
+            var registra = new Registra(groupsClient);
             var controlProtocol = new ControlProtocol(5060);
             var callManagementProtocol = new CallManagementProtocol(5069);
-            var groupsClient = new HardcodedGroupsClient();
             var controller = new ControlFunction(controlProtocol, registra, callManagementProtocol, groupsClient);
             await controller.Run();
         }   

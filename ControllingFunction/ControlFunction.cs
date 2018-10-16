@@ -88,7 +88,7 @@ namespace Ropu.ControllingFunction
             //send invite to all group members,
             //we only send one of these, if the miss the CallStarted, then they can request the call 
             //details when the receive floor control or media packets.
-            var endPoints = _groupsClient.GetGroupMemberEndpoints(groupId);
+            var endPoints = _registra.RegisteredGroupMembers(groupId);
             _controlProtocol.SendCallStarted(caller, groupId, callId, mediaController, floorController, endPoints);
         }
 
@@ -135,6 +135,15 @@ namespace Ropu.ControllingFunction
 
         public void HandleGetGroupsFileRequest(IPEndPoint from, uint requestId)
         {
+            const int bytesPerGroup = 2;
+            byte[] fileContents = new byte[_groupsClient.GroupCount*bytesPerGroup];
+            int index = 0;
+            foreach(var group in _groupsClient.Groups)
+            {
+                fileContents.WriteUshort(group.Id, index);
+                index += 2;
+            }
+            //TODO add to file manager, reply with File Manifest Response
             throw new NotImplementedException(); 
         }
 

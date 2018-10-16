@@ -1,18 +1,19 @@
 using System.Collections.Generic;
-using System.Net;
 
 namespace Ropu.Shared.Groups
 {
-    public interface IGroupsClient
+    public interface IGroup
     {
-        IEnumerable<IGroup> Groups
+        ushort Id
+        {
+            get;
+        }
+        IEnumerable<uint> GroupMembers
         {
             get;
         }
 
-        IGroup Get(ushort groupId);
-
-        int GroupCount
+        int MemberCount
         {
             get;
         }

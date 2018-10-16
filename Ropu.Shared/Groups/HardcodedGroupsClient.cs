@@ -5,33 +5,44 @@ namespace Ropu.Shared.Groups
 {
     public class HardcodedGroupsClient : IGroupsClient
     {
-        public Dictionary<ushort, List<IPEndPoint>> _groupLookup;
+        public Dictionary<ushort, IGroup> _groupLookup;
 
         public HardcodedGroupsClient()
         {
-            _groupLookup = new Dictionary<ushort, List<IPEndPoint>>();
-            AddTestGroup();
+            _groupLookup = new Dictionary<ushort, IGroup>();
+            AddTestGroup(4242, 1000, 3000);
         }
 
-        void AddTestGroup()
+        public IEnumerable<IGroup> Groups
         {
-            var endpoints = new List<IPEndPoint>();
-            for(int endpointIndex = 0; endpointIndex < 1000; endpointIndex++)
+            get
             {
-                endpoints.Add(new IPEndPoint(IPAddress.Parse("192.168.1.2"), endpointIndex + 1000));
+                return _groupLookup.Values;
             }
-            endpoints.Add(new IPEndPoint(IPAddress.Parse("192.168.1.6"), 5061));
-
-            _groupLookup.Add(4242, endpoints);
         }
 
-        public List<IPEndPoint> GetGroupMemberEndpoints(ushort groupId)
+        public int GroupCount => _groupLookup.Count;
+
+        public IGroup Get(ushort groupId)
         {
-            if(!_groupLookup.TryGetValue(groupId, out List<IPEndPoint> endpoints))
+            if(_groupLookup.TryGetValue(groupId, out IGroup group))
             {
-                return null;
+                return group;
             }
-            return endpoints;
+            return null;
         }
+
+        void AddTestGroup(ushort groupId, uint startUnitId, uint endUnitId)
+        {
+            var group = new Group(groupId);
+
+            for(uint unitId = startUnitId; unitId < endUnitId; unitId++)
+            {
+                group.Add(unitId);
+            }
+            _groupLookup.Add(groupId, group);
+        }
+
+        
     }
 }
