@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Ropu.ControllingFunction.FileServer;
 using Ropu.Shared;
 using Ropu.Shared.CallManagement;
 using Ropu.Shared.ControlProtocol;
@@ -14,16 +15,22 @@ namespace Ropu.ControllingFunction
     public class ControlFunction : IControlMessageHandler, ICallManagementServerMessageHandler
     {
         readonly ControlProtocol _controlProtocol;
-
         readonly CallManagementProtocol _callManagementProtocol;
         readonly Registra _registra;
         readonly ControllerRegistry<MediaController> _mediaControllers;
         readonly ControllerRegistry<FloorController> _floorControllers;
         readonly IGroupsClient _groupsClient;
+        readonly FileManager _fileManager;
         ushort _callId = 0;
 
-        public ControlFunction(ControlProtocol controlProtocol, Registra registra, CallManagementProtocol callManagementProtocol, IGroupsClient groupsClient)
+        public ControlFunction(
+            ControlProtocol controlProtocol, 
+            Registra registra, 
+            CallManagementProtocol callManagementProtocol, 
+            IGroupsClient groupsClient, 
+            FileManager fileManager)
         {
+            _fileManager = fileManager;
             _controlProtocol = controlProtocol;
             _controlProtocol.SetMessageHandler(this);
             _callManagementProtocol = callManagementProtocol;
@@ -88,7 +95,7 @@ namespace Ropu.ControllingFunction
             //send invite to all group members,
             //we only send one of these, if the miss the CallStarted, then they can request the call 
             //details when the receive floor control or media packets.
-            var endPoints = _registra.RegisteredGroupMembers(groupId);
+            var endPoints = _registra.RegisteredGroupEndPoints(groupId);
             _controlProtocol.SendCallStarted(caller, groupId, callId, mediaController, floorController, endPoints);
         }
 
@@ -135,15 +142,27 @@ namespace Ropu.ControllingFunction
 
         public void HandleGetGroupsFileRequest(IPEndPoint from, uint requestId)
         {
-            const int bytesPerGroup = 2;
-            byte[] fileContents = new byte[_groupsClient.GroupCount*bytesPerGroup];
+            var file = new File(); //TODO: recycle files as well
+            var part = _fileManager.GetAvailablePart();
+            file.AddPart(part);
+            byte[] buffer = part.Buffer;
             int index = 0;
             foreach(var group in _groupsClient.Groups)
             {
-                fileContents.WriteUshort(group.Id, index);
+                if(!(index + 2 < buffer.Length))
+                {
+                    //need a new part his one is full
+                    part.SetLength(index);
+                    part = _fileManager.GetAvailablePart();
+                    file.AddPart(part);
+                    buffer = part.Buffer;
+                }
+                buffer.WriteUshort(group.Id, index);
                 index += 2;
             }
-            //TODO add to file manager, reply with File Manifest Response
+            part.SetLength(index);
+            ushort fileId = _fileManager.AddFile(file);
+            //TODO: reply with File Manifest Response
             throw new NotImplementedException(); 
         }
 

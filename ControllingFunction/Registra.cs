@@ -45,5 +45,14 @@ namespace Ropu.ControllingFunction
             return query.ToList();
         }
 
+        public List<IPEndPoint> RegisteredGroupEndPoints(ushort groupId)
+        {
+            var query = 
+                from unitId in _groupsClient.Get(groupId).GroupMembers
+                where _registrationLookup.ContainsKey(unitId)
+                select _registrationLookup[unitId].EndPoint;
+            return query.ToList();
+        }
+
     }
 }
