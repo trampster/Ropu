@@ -31,15 +31,18 @@ namespace Ropu.ControllingFunction.FileServer
             return new File();
         }
 
-        public void MakeAvailable(File file)
+        public void MakeAvailable(ushort fileId)
         {
-            foreach(var part in file.Parts)
+            if(_files.TryGetValue(fileId, out File file))
             {
-                part.Reset();
-                _availableParts.Enqueue(part);
+                foreach(var part in file.Parts)
+                {
+                    part.Reset();
+                    _availableParts.Enqueue(part);
+                }
+                file.Reset();
+                _availableFiles.Enqueue(file);
             }
-            file.Reset();
-            _availableFiles.Enqueue(file);
         }
 
         public ushort AddFile(File file)

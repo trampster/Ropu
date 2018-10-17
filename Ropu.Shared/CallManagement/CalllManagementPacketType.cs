@@ -11,7 +11,9 @@ namespace Ropu.Shared.CallManagement
         FileManifestResponse = 6,
         FilePartRequest = 7,
         FilePartResponse = 8,
-        RegistrationUpdate = 9,
-        RegistrationRemoved = 10
+        FilePartUnrecognized = 9,
+        CompleteFileTransfer = 10,
+        RegistrationUpdate = 11,
+        RegistrationRemoved = 12
     }
 }

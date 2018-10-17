@@ -162,8 +162,8 @@ namespace Ropu.ControllingFunction
             }
             part.SetLength(index);
             ushort fileId = _fileManager.AddFile(file);
-            //TODO: reply with File Manifest Response
-            throw new NotImplementedException(); 
+            
+            _callManagementProtocol.SendFileManifestResponse(requestId, (ushort)file.NumberOfParts, fileId, from);
         }
 
         public void HandleGetGroupFileRequest(IPEndPoint from, uint requestId, ushort groupId)
@@ -174,6 +174,12 @@ namespace Ropu.ControllingFunction
         public void HandleFilePartRequest(IPEndPoint from, uint requestId, ushort fileId, ushort partNumber)
         {
             throw new NotImplementedException();
+        }
+
+        public void HandleCompleteFileTransfer(IPEndPoint from, uint requestId, ushort fileId)
+        {
+            _fileManager.MakeAvailable(fileId);
+            _callManagementProtocol.SendAck(requestId, from);
         }
     }
 }

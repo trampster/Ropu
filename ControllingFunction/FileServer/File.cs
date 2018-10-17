@@ -18,5 +18,7 @@ namespace Ropu.ControllingFunction.FileServer
         }
 
         public IEnumerable<FilePart> Parts => _parts;
+
+        public int NumberOfParts => _parts.Count;
     }
 }

@@ -1,15 +1,14 @@
-using System;
 using System.Net;
 
 namespace Ropu.Shared.CallManagement
 {
-    public interface ICallManagementClientMessageHandler
+    public interface ICallManagementServerMessageHandler
     {
-        void HandleCallStart(uint requestId, ushort callId, ushort groupId);
-        void HandleFileManifestResponse(uint requestId, ushort numberOfParts, ushort fileId);
-        void HandleFilePartResponse(uint requestId, Span<byte> payload);
-        void HandleRegistrationUpdate(uint requestId, ushort groupId, uint userId, IPEndPoint endPoint);
-        void HandleRegistrationRemoved(uint requestId, ushort groupId, uint userId);
-        void HandleFilePartUnrecognized(uint requestId, FilePartFailureReason reason);
+        void HandleRegisterMediaController(IPAddress from, uint requestId, ushort controlPort, IPEndPoint mediaEndpoint);
+        void HandleRegisterFloorController(IPAddress from, uint requestId, ushort controlPort, IPEndPoint floorControlEndpoint);
+        void HandleGetGroupsFileRequest(IPEndPoint from, uint requestId);
+        void HandleGetGroupFileRequest(IPEndPoint from, uint requestId, ushort groupId);
+        void HandleFilePartRequest(IPEndPoint from, uint requestId, ushort fileId, ushort partNumber);
+        void HandleCompleteFileTransfer(IPEndPoint from, uint requestId, ushort fileId);
     }
 }

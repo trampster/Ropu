@@ -153,7 +153,9 @@ namespace Ropu.Shared.CallManagement
                 case CallManagementPacketType.CompleteFileTransfer:
                 {
                     uint requestId = data.Slice(1).ParseUint();
-                    throw new NotImplementedException();
+                    ushort fileId = data.Slice(5).ParseUshort();
+                    _serverMessageHandler?.HandleCompleteFileTransfer(endPoint, requestId, fileId);
+                    break;
                 }
                 case CallManagementPacketType.RegistrationUpdate:
                 {
@@ -234,9 +236,21 @@ namespace Ropu.Shared.CallManagement
         public void SendAck(uint requestId, IPEndPoint ipEndPoint)
         {
             _sendBuffer[0] = (byte)CallManagementPacketType.Ack;
-            //Request ID (uint32)
+            // Request ID (uint32)
             _sendBuffer.WriteUint(requestId, 1);
             _socket.SendTo(_sendBuffer, 0, 5, SocketFlags.None, ipEndPoint);
+        }
+
+        public void SendFileManifestResponse(uint requestId, ushort numberOfParts, ushort fileId, IPEndPoint ipEndPoint)
+        {
+            _sendBuffer[0] = (byte)CallManagementPacketType.FileManifestResponse;
+            // Request ID (uint32)
+            _sendBuffer.WriteUint(requestId, 1);
+            // Number of Parts (uint16)
+            _sendBuffer.WriteUshort(numberOfParts, 5);
+            // File ID (uint16)
+            _sendBuffer.WriteUshort(fileId, 7);
+            _socket.SendTo(_sendBuffer, 0, 9, SocketFlags.None, ipEndPoint);
         }
 
         readonly Dictionary<uint, ManualResetEvent> _waitingRequests = new Dictionary<uint, ManualResetEvent>();
