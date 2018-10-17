@@ -11,5 +11,12 @@ namespace Ropu.ControllingFunction.FileServer
         {
             _parts.Add(part);
         }
+
+        public void Reset()
+        {
+            _parts.Clear();
+        }
+
+        public IEnumerable<FilePart> Parts => _parts;
     }
 }

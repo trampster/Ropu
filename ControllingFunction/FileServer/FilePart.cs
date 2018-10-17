@@ -6,7 +6,7 @@ namespace Ropu.ControllingFunction.FileServer
     public class FilePart
     {
         int _length;
-        byte[] _buffer;
+        readonly byte[] _buffer;
 
 
         public FilePart(byte[] buffer)
@@ -17,6 +17,11 @@ namespace Ropu.ControllingFunction.FileServer
         public void SetLength(int length)
         {
             _length = length;
+        }
+
+        public void Reset()
+        {
+            _length = _buffer.Length;
         }
 
         public byte[] Buffer => _buffer;

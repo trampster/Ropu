@@ -7,16 +7,39 @@ namespace Ropu.ControllingFunction.FileServer
         const int _mtu = 1500;
         ushort _nextFileId = 0;
 
-        readonly Queue<FilePart> _available = new Queue<FilePart>();
+        readonly Queue<FilePart> _availableParts = new Queue<FilePart>();
+        readonly Queue<File> _availableFiles = new Queue<File>();
         readonly Dictionary<ushort, File> _files = new Dictionary<ushort, File>();
 
         public FilePart GetAvailablePart()
         {
-            if(_available.Count > 0)
+            if(_availableParts.Count > 0)
             {
-                return _available.Dequeue();
+                return _availableParts.Dequeue();
             }
             return new FilePart(new byte[_mtu]);
+        }
+
+        public File GetAvailableFile()
+        {
+            if(_availableFiles.Count > 0)
+            {
+                var file =  _availableFiles.Dequeue();
+                file.Reset();
+                return file;
+            }
+            return new File();
+        }
+
+        public void MakeAvailable(File file)
+        {
+            foreach(var part in file.Parts)
+            {
+                part.Reset();
+                _availableParts.Enqueue(part);
+            }
+            file.Reset();
+            _availableFiles.Enqueue(file);
         }
 
         public ushort AddFile(File file)

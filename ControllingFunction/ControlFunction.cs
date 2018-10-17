@@ -142,7 +142,7 @@ namespace Ropu.ControllingFunction
 
         public void HandleGetGroupsFileRequest(IPEndPoint from, uint requestId)
         {
-            var file = new File(); //TODO: recycle files as well
+            var file = _fileManager.GetAvailableFile();
             var part = _fileManager.GetAvailablePart();
             file.AddPart(part);
             byte[] buffer = part.Buffer;
