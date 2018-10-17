@@ -3,7 +3,7 @@ This document details the protocol used for communication between the Controllin
 
 ## Design Principles
 * Binary - to reduce packet size and increase parsing performance
-* UDP - for less packet overhead, control over retries, can no connection overheads.
+* UDP - for less packet overhead, control over retries, and no connection overheads.
 
 ## Packets
 
@@ -51,7 +51,7 @@ Acknoledgement to one of the other message types, all messages without specified
 ### File Part Request
 * Packet Type 7 (byte)
 * Request ID (uint32)
-* File Id (uint16)
+* File ID (uint16)
 * Part Number (uint16)
 
 ### File Part Response
@@ -59,9 +59,21 @@ Acknoledgement to one of the other message types, all messages without specified
 * Request ID (uint32) - (File ID and Part Number are not included becuase they can be infered from the Request ID)
 * Payload
 
+### File Part Unrecognized
+Note: file transfers timeout after 1 minute of inactivity after which you will get unknown file.
+* Packet Type 9 (byte)
+* Request ID (uint32)
+* Reason (byte) - 0 = unknown file, 1 = unknown part.
+
+### Complete File Transfer
+This should be acked
+* Packet Type 10 (byte)
+* Request ID (uint32)
+* File ID (uint16)
+
 ### Registration Update
 Could be a new registration or and update to an existing one
-* Packet Type 9 (byte)
+* Packet Type 11 (byte)
 * Request ID (uint32)
 * Group ID (uint16)
 * User ID (uint32)
@@ -69,7 +81,7 @@ Could be a new registration or and update to an existing one
 
 ### Registration Removed
 Could be a new registration or and update to an existing one
-* Packet Type 10 (byte)
+* Packet Type 12 (byte)
 * Request ID (uint32)
 * Group ID (uint16)
 * User ID (uint32)

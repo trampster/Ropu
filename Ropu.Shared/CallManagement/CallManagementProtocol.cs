@@ -143,6 +143,18 @@ namespace Ropu.Shared.CallManagement
                     _clientMessageHandler?.HandleFilePartResponse(requestId, payload);
                     break;
                 }
+                case CallManagementPacketType.FilePartUnrecognized:
+                {
+                    uint requestId = data.Slice(1).ParseUint();
+                    FilePartFailureReason reason = (FilePartFailureReason)data[5];
+                    _clientMessageHandler?.HandleFilePartUnrecognized(requestId, reason);
+                    break;
+                }
+                case CallManagementPacketType.CompleteFileTransfer:
+                {
+                    uint requestId = data.Slice(1).ParseUint();
+                    throw new NotImplementedException();
+                }
                 case CallManagementPacketType.RegistrationUpdate:
                 {
                     uint requestId = data.Slice(1).ParseUint();
