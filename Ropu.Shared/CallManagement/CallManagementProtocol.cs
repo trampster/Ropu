@@ -187,6 +187,49 @@ namespace Ropu.Shared.CallManagement
             }
         }
 
+        public void SendFilePartUnrecognized(uint requestId, FilePartFailureReason reason, IPEndPoint ipEndPoint)
+        {
+            // Packet Type 
+            _sendBuffer[0] = (byte)CallManagementPacketType.FilePartUnrecognized;
+            // Request ID (uint32)
+            _sendBuffer.WriteUint(requestId, 1);
+            // Reason Port (byte)
+            _sendBuffer[5] = (byte)reason;
+
+            _socket.SendTo(_sendBuffer, 0, 6, SocketFlags.None, ipEndPoint);
+        }
+
+        SocketAsyncEventArgs _sendArgs = new SocketAsyncEventArgs();
+
+        void SendAsync(SocketAsyncEventArgs args)
+        {
+            if(_socket.SendAsync(_sendArgs))
+            {
+                //didn't complete we need to create a new one so we don't interfare
+                var newSendArgs = new SocketAsyncEventArgs();
+                newSendArgs.BufferList = new List<ArraySegment<byte>>();
+                _sendArgs = newSendArgs;
+            }
+        }
+
+        public void SendFilePartResponse(uint requestId, ArraySegment<byte> payload, IPEndPoint ipEndPoint)
+        {
+            // Packet Type 
+            _sendBuffer[0] = (byte)CallManagementPacketType.FilePartUnrecognized;
+            // Request ID (uint32)
+            _sendBuffer.WriteUint(requestId, 1);
+
+            var headerSegment = new ArraySegment<byte>(_sendBuffer, 0, 5);
+
+            _sendArgs.RemoteEndPoint = ipEndPoint;
+            var bufferList = _sendArgs.BufferList;
+            bufferList.Clear();
+            bufferList.Add(headerSegment);
+            bufferList.Add(payload);
+
+            SendAsync(_sendArgs);
+        }
+
         public async Task<bool> RegisterMediaController(ushort port, IPEndPoint mediaEndpoint, IPEndPoint targetEndpoint)
         {
             uint requestId = _requestId++;

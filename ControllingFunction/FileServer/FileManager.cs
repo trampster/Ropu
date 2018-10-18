@@ -52,5 +52,14 @@ namespace Ropu.ControllingFunction.FileServer
             _nextFileId++;
             return fileId;
         }
+
+        public File GetFile(ushort fileId)
+        {
+            if(_files.TryGetValue(fileId, out File file))
+            {
+                return file;
+            }
+            return null;
+        }
     }
 }

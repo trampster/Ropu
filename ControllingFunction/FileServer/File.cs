@@ -20,5 +20,14 @@ namespace Ropu.ControllingFunction.FileServer
         public IEnumerable<FilePart> Parts => _parts;
 
         public int NumberOfParts => _parts.Count;
+
+        internal FilePart GetPart(ushort partNumber)
+        {
+            if(partNumber < _parts.Count)
+            {
+                return _parts[partNumber];
+            }
+            return null;
+        }
     }
 }

@@ -152,7 +152,7 @@ namespace Ropu.ControllingFunction
                 if(!(index + 2 < buffer.Length))
                 {
                     //need a new part his one is full
-                    part.SetLength(index);
+                    part.Length = index;
                     part = _fileManager.GetAvailablePart();
                     file.AddPart(part);
                     buffer = part.Buffer;
@@ -160,7 +160,7 @@ namespace Ropu.ControllingFunction
                 buffer.WriteUshort(group.Id, index);
                 index += 2;
             }
-            part.SetLength(index);
+            part.Length = index;
             ushort fileId = _fileManager.AddFile(file);
             
             _callManagementProtocol.SendFileManifestResponse(requestId, (ushort)file.NumberOfParts, fileId, from);
@@ -173,7 +173,19 @@ namespace Ropu.ControllingFunction
 
         public void HandleFilePartRequest(IPEndPoint from, uint requestId, ushort fileId, ushort partNumber)
         {
-            throw new NotImplementedException();
+            var file = _fileManager.GetFile(fileId);
+            if(file == null)
+            {
+                _callManagementProtocol.SendFilePartUnrecognized(requestId, FilePartFailureReason.UnknownFile, from);
+                return;
+            }
+            var part = file.GetPart(partNumber);
+            if(part == null)
+            {
+                _callManagementProtocol.SendFilePartUnrecognized(requestId, FilePartFailureReason.UnknownPart, from);
+                return;
+            }
+            _callManagementProtocol.SendFilePartResponse(requestId, part.AsArraySegment(), from);
         }
 
         public void HandleCompleteFileTransfer(IPEndPoint from, uint requestId, ushort fileId)
