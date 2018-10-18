@@ -35,18 +35,12 @@ namespace Ropu.ControllingFunction
             }
             return registration.EndPoint;
         }
-
-        public List<uint> RegisteredGroupMembers(ushort groupId)
-        {
-            var query = 
-                from unitId in _groupsClient.Get(groupId).GroupMembers
-                where _registrationLookup.ContainsKey(unitId)
-                select unitId;
-            return query.ToList();
-        }
-
+        
         public List<IPEndPoint> RegisteredGroupEndPoints(ushort groupId)
         {
+            //TODO: we need maintain lists of group members which we update at registration time
+            //doing a dictionary lookup for every single member will be to slow, ideally we would be
+            //just returning an existing list so no allocation or looping is required
             var query = 
                 from unitId in _groupsClient.Get(groupId).GroupMembers
                 where _registrationLookup.ContainsKey(unitId)
