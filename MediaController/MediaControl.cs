@@ -24,10 +24,31 @@ namespace Ropu.MediaController
             Task callManagementTask = _callManagementProtocol.Run();
             Task mediaTask = _mediaProtocol.Run();
 
+            //sync groups
+            await SyncGroups();
+
             Task registerTask = Register();
 
 
             await TaskCordinator.WaitAll(callManagementTask, mediaTask, registerTask);
+        }
+
+        async Task SyncGroups()
+        {
+            bool gotResponse = false;
+            while(!gotResponse)
+            {
+                var callManagementServerEndpoint = _serviceDiscovery.CallManagementServerEndpoint();
+                ushort numberOfParts;
+                ushort fileId;
+                Action<ushort, ushort> fileManifestHandler = (parts, id) =>
+                {
+                    numberOfParts = parts;
+                    fileId = id;
+                }
+                gotResponse = await _callManagementProtocol.SendGetGroupsFileRequest(callManagementServerEndpoint, fileManifestHandler);
+
+            }
         }
 
         async Task Register()

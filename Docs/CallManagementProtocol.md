@@ -31,7 +31,7 @@ Tells the MediaController or Floor Controller to start managing a call
 ### Ack
 Acknoledgement to one of the other message types, all messages without specified responses must be acknowledged
 * Packet Type 3 (byte)
-* Request ID (uint32)
+* Request ID (uint16)
 
 ### Get Groups File Request
 * Packet Type 4 (byte)
@@ -39,42 +39,42 @@ Acknoledgement to one of the other message types, all messages without specified
 
 ### Get Group File Request
 * Packet Type 5 (byte)
-* Request ID (uint32)
+* Request ID (uint16)
 * Group ID (uint16)
 
 ### File Manifest Response
 * Packet Type 6 (byte)
-* Request ID (uint32)
+* Request ID (uint16)
 * Number of Parts (uint16)
 * File ID (uint16)
 
 ### File Part Request
 * Packet Type 7 (byte)
-* Request ID (uint32)
+* Request ID (uint16)
 * File ID (uint16)
 * Part Number (uint16)
 
 ### File Part Response
 * Packet Type 8 (byte)
-* Request ID (uint32) - (File ID and Part Number are not included becuase they can be infered from the Request ID)
+* Request ID (uint16) - (File ID and Part Number are not included becuase they can be infered from the Request ID)
 * Payload
 
 ### File Part Unrecognized
 Note: file transfers timeout after 1 minute of inactivity after which you will get unknown file.
 * Packet Type 9 (byte)
-* Request ID (uint32)
+* Request ID (uint16)
 * Reason (byte) - 0 = unknown file, 1 = unknown part.
 
 ### Complete File Transfer
 This should be acked
 * Packet Type 10 (byte)
-* Request ID (uint32)
+* Request ID (uint16)
 * File ID (uint16)
 
 ### Registration Update
 Could be a new registration or and update to an existing one
 * Packet Type 11 (byte)
-* Request ID (uint32)
+* Request ID (uint16)
 * Group ID (uint16)
 * User ID (uint32)
 * EndPoint (6 bytes)
@@ -82,7 +82,7 @@ Could be a new registration or and update to an existing one
 ### Registration Removed
 Could be a new registration or and update to an existing one
 * Packet Type 12 (byte)
-* Request ID (uint32)
+* Request ID (uint16)
 * Group ID (uint16)
 * User ID (uint32)
 

@@ -7,7 +7,7 @@ namespace Ropu.Shared.CallManagement
         StartCall = 2,
         Ack = 3,
         GetGroupsFileRequest = 4,
-        GroupGroupFileRequest = 5,
+        GetGroupFileRequest = 5,
         FileManifestResponse = 6,
         FilePartRequest = 7,
         FilePartResponse = 8,
