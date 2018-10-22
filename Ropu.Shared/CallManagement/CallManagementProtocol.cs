@@ -125,9 +125,10 @@ namespace Ropu.Shared.CallManagement
                     ushort requestId = data.Slice(1).ParseUshort();
                     ushort numberOfParts = data.Slice(3).ParseUshort();
                     ushort fileId = data.Slice(5).ParseUshort();
-                    if(_requests.TryGetValue(requestId, out var handler))
+                    var handler = GetRequestHandler<Action<ushort, ushort>>(requestId);
+                    if(handler != null)
                     {
-                        ((Action<ushort, ushort>)handler)(numberOfParts, fileId);
+                        handler(numberOfParts, fileId);
                     }
                     break;
                 }
@@ -184,10 +185,21 @@ namespace Ropu.Shared.CallManagement
 
         void HandleAck(ushort requestId)
         {
-            if(_requests.TryGetValue(requestId, out var handler))
+            var handler = GetRequestHandler<Action>(requestId);
+            if(handler == null)
             {
-                ((Action)handler)();
+                return;
             }
+            handler();
+        }
+
+        H GetRequestHandler<H>(ushort requestId)
+        {
+            if(_requests[requestId] == null)
+            {
+                return default(H);
+            }
+            return (H)_requests[requestId];
         }
 
         public void SendFilePartUnrecognized(ushort requestId, FilePartFailureReason reason, IPEndPoint ipEndPoint)
@@ -235,12 +247,9 @@ namespace Ropu.Shared.CallManagement
 
 
         /// <summary>
-        /// 
+        /// Index is requestId, value is handler
         /// </summary>
-        /// <typeparam name="ushort">requestId</typeparam>
-        /// <typeparam name="object">handler</typeparam>
-        /// <returns></returns>
-        readonly Dictionary<ushort, object> _requests = new Dictionary<ushort, object>();
+        readonly object[] _requests = new object[ushort.MaxValue];
 
         public async Task<bool> SendGetGroupsFileRequest(IPEndPoint targetEndpoint, Action<ushort,ushort> handler)
         {
@@ -250,7 +259,7 @@ namespace Ropu.Shared.CallManagement
             // Request ID (uint16)
             _sendBuffer.WriteUshort(requestId, 1);
 
-            var manualResetEvent = new ManualResetEvent(false);
+            var manualResetEvent = new ManualResetEvent(false); //TODO: get from pool
 
             Action<ushort,ushort> handler1 = (numberOfParts, fileId) =>
             {
@@ -258,12 +267,19 @@ namespace Ropu.Shared.CallManagement
                 manualResetEvent.Set();
             };
 
-            _requests.Add(requestId, handler1);
+            return await AwaitRequest(requestId, handler1, targetEndpoint, manualResetEvent, 3);
+        }
 
-            _socket.SendTo(_sendBuffer, 0, 3, SocketFlags.None, targetEndpoint);
+        async Task<bool> AwaitRequest<H>(
+            ushort requestId, H handler, IPEndPoint endPoint, 
+            ManualResetEvent manualResetEvent, int length)
+        {
+             _requests[requestId] = handler;
+
+            _socket.SendTo(_sendBuffer, 0, length, SocketFlags.None, endPoint);
             bool acknowledged = await AwaitResetEvent(manualResetEvent);
 
-            _requests.Remove(requestId);
+            _requests[requestId] = null;
             return acknowledged;
         }
 
@@ -341,13 +357,7 @@ namespace Ropu.Shared.CallManagement
                 manualResetEvent.Set();
             };
 
-            _requests.Add(requestId, handler);
-
-            _socket.SendTo(_sendBuffer, 0, 5, SocketFlags.None, endpoint);
-            bool acknowledged = await AwaitResetEvent(manualResetEvent);
-
-            _requests.Remove(requestId);
-            return acknowledged;
+            return await AwaitRequest(requestId, _sendBuffer, endpoint, manualResetEvent, 5);
         }
 
         async Task<bool> AwaitResetEvent(ManualResetEvent resetEvent)
