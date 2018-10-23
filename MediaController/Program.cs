@@ -20,8 +20,13 @@ namespace ropu
             var mediaProtocol = new MediaProtocol(MediaPort);
             var callManagementProtocol = new CallManagementProtocol(ControlPort);
             var serviceDiscovery = new ServiceDiscovery();
+            var fileClient = new FileClient(callManagementProtocol);
 
-            var mediaControllerRunner = new MediaControl(mediaProtocol, callManagementProtocol, serviceDiscovery);
+            var mediaControllerRunner = new MediaControl(
+                mediaProtocol, 
+                callManagementProtocol, 
+                serviceDiscovery,
+                fileClient);
 
             await mediaControllerRunner.Run();
         }

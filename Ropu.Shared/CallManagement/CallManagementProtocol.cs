@@ -20,6 +20,7 @@ namespace Ropu.Shared.CallManagement
 
 
         static readonly IPEndPoint Any = new IPEndPoint(IPAddress.Any, AnyPort);
+
         ICallManagementServerMessageHandler _serverMessageHandler;
         ICallManagementClientMessageHandler _clientMessageHandler;
 
@@ -268,6 +269,29 @@ namespace Ropu.Shared.CallManagement
             };
 
             return await AwaitRequest(requestId, handler1, targetEndpoint, manualResetEvent, 3);
+        }
+
+        public async Task<bool> SendGetFilePartRequest(ushort fileId, ushort partNumber, Action<byte[]> handler, IPEndPoint targetEndpoint)
+        {
+            ushort requestId = _requestId++;
+            // Packet Type 7 (byte)
+            _sendBuffer[0] = (byte)CallManagementPacketType.FilePartRequest;
+            // Request ID (uint16)
+            _sendBuffer.WriteUshort(requestId, 1);
+            // File ID (uint16)
+            _sendBuffer.WriteUshort(fileId, 3);
+            // Part Number (uint16)
+            _sendBuffer.WriteUshort(partNumber, 5);
+
+            var manualResetEvent = new ManualResetEvent(false); //TODO: get from pool
+
+            Action<byte[]> handler1 = packet =>
+            {
+                handler(packet);
+                manualResetEvent.Set();
+            };
+
+            return await AwaitRequest(requestId, handler1, targetEndpoint, manualResetEvent, 7);
         }
 
         async Task<bool> AwaitRequest<H>(

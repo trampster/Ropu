@@ -11,12 +11,18 @@ namespace Ropu.MediaController
         readonly MediaProtocol _mediaProtocol;
         readonly CallManagementProtocol _callManagementProtocol;
         readonly ServiceDiscovery _serviceDiscovery;
+        readonly FileClient _fileClient;
 
-        public MediaControl(MediaProtocol mediaProtocol, CallManagementProtocol callManagementProtocol, ServiceDiscovery serviceDiscovery)
+        public MediaControl(
+            MediaProtocol mediaProtocol, 
+            CallManagementProtocol callManagementProtocol, 
+            ServiceDiscovery serviceDiscovery,
+            FileClient fileClient)
         {
             _mediaProtocol = mediaProtocol;
             _callManagementProtocol = callManagementProtocol;
             _serviceDiscovery = serviceDiscovery;
+            _fileClient = fileClient;
         }
 
         public async Task Run()
@@ -35,20 +41,22 @@ namespace Ropu.MediaController
 
         async Task SyncGroups()
         {
+            ushort numberOfParts = 0;
+            ushort fileId = 0;
+
             bool gotResponse = false;
             while(!gotResponse)
             {
                 var callManagementServerEndpoint = _serviceDiscovery.CallManagementServerEndpoint();
-                ushort numberOfParts;
-                ushort fileId;
+                
                 Action<ushort, ushort> fileManifestHandler = (parts, id) =>
                 {
                     numberOfParts = parts;
                     fileId = id;
-                }
+                };
                 gotResponse = await _callManagementProtocol.SendGetGroupsFileRequest(callManagementServerEndpoint, fileManifestHandler);
-
             }
+            var groups = await _fileClient.RetrieveGroupsFile(fileId, numberOfParts, _serviceDiscovery.CallManagementServerEndpoint());
         }
 
         async Task Register()

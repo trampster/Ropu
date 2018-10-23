@@ -124,7 +124,7 @@ namespace Ropu.ControllingFunction
             return _floorControllers.GetAvailableController();
         }
 
-        public void HandleRegisterMediaController(IPAddress fromAddress, uint requestId, ushort controlPort, IPEndPoint mediaEndpoint)
+        public void HandleRegisterMediaController(IPAddress fromAddress, ushort requestId, ushort controlPort, IPEndPoint mediaEndpoint)
         {
             Console.WriteLine("Media Controller Registered");
             var endpoint = new IPEndPoint(fromAddress, controlPort);
@@ -132,7 +132,7 @@ namespace Ropu.ControllingFunction
             _callManagementProtocol.SendAck(requestId, endpoint);
         }
 
-        public void HandleRegisterFloorController(IPAddress fromAddress, uint requestId, ushort controlPort, IPEndPoint floorControlEndpoint)
+        public void HandleRegisterFloorController(IPAddress fromAddress, ushort requestId, ushort controlPort, IPEndPoint floorControlEndpoint)
         {
             Console.WriteLine("Floor Controller Registered");
             var endpoint = new IPEndPoint(fromAddress, controlPort);
@@ -140,7 +140,7 @@ namespace Ropu.ControllingFunction
             _callManagementProtocol.SendAck(requestId, endpoint);
         }
 
-        public void HandleGetGroupsFileRequest(IPEndPoint from, uint requestId)
+        public void HandleGetGroupsFileRequest(IPEndPoint from, ushort requestId)
         {
             var file = _fileManager.GetAvailableFile();
             var part = _fileManager.GetAvailablePart();
@@ -166,12 +166,12 @@ namespace Ropu.ControllingFunction
             _callManagementProtocol.SendFileManifestResponse(requestId, (ushort)file.NumberOfParts, fileId, from);
         }
 
-        public void HandleGetGroupFileRequest(IPEndPoint from, uint requestId, ushort groupId)
+        public void HandleGetGroupFileRequest(IPEndPoint from, ushort requestId, ushort groupId)
         {
             throw new NotImplementedException();
         }
 
-        public void HandleFilePartRequest(IPEndPoint from, uint requestId, ushort fileId, ushort partNumber)
+        public void HandleFilePartRequest(IPEndPoint from, ushort requestId, ushort fileId, ushort partNumber)
         {
             var file = _fileManager.GetFile(fileId);
             if(file == null)
@@ -188,7 +188,7 @@ namespace Ropu.ControllingFunction
             _callManagementProtocol.SendFilePartResponse(requestId, part.AsArraySegment(), from);
         }
 
-        public void HandleCompleteFileTransfer(IPEndPoint from, uint requestId, ushort fileId)
+        public void HandleCompleteFileTransfer(IPEndPoint from, ushort requestId, ushort fileId)
         {
             _fileManager.MakeAvailable(fileId);
             _callManagementProtocol.SendAck(requestId, from);
