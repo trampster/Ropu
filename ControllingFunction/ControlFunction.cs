@@ -142,6 +142,7 @@ namespace Ropu.ControllingFunction
 
         public void HandleGetGroupsFileRequest(IPEndPoint from, ushort requestId)
         {
+            Console.WriteLine("Received Get Groups File Request");
             var file = _fileManager.GetAvailableFile();
             var part = _fileManager.GetAvailablePart();
             file.AddPart(part);
@@ -163,6 +164,7 @@ namespace Ropu.ControllingFunction
             part.Length = index;
             ushort fileId = _fileManager.AddFile(file);
             
+            Console.WriteLine($"Sending File Management Response to  {from}");
             _callManagementProtocol.SendFileManifestResponse(requestId, (ushort)file.NumberOfParts, fileId, from);
         }
 
@@ -185,6 +187,7 @@ namespace Ropu.ControllingFunction
                 _callManagementProtocol.SendFilePartUnrecognized(requestId, FilePartFailureReason.UnknownPart, from);
                 return;
             }
+            Console.WriteLine($"SendFilePartResponse {part.Length}");
             _callManagementProtocol.SendFilePartResponse(requestId, part.AsArraySegment(), from);
         }
 

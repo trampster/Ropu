@@ -14,14 +14,14 @@ namespace Ropu.Client
         const string ServerIP =  "192.168.1.6";
         const string MyAddress = "192.168.1.6";
         const int ServerPort = 5060;
-        static readonly MediaClient _mediaClient;
+        static MediaClient _mediaClient;
         static async Task Main(string[] args)
         {
             IPEndPoint controllingFunctionEndpoint = new IPEndPoint(IPAddress.Parse(ServerIP), ServerPort);
 
             var protocolSwitch = new ProtocolSwitch(_controlPort);
             var controllingFunctionClient = new ControllingFunctionClient(protocolSwitch, controllingFunctionEndpoint);
-            var _mediaClient = new MediaClient(protocolSwitch);
+            _mediaClient = new MediaClient(protocolSwitch);
 
             var ipAddress = IPAddress.Parse(MyAddress);
             _ropuClient = new RopuClient(protocolSwitch, controllingFunctionClient, ipAddress);

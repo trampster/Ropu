@@ -82,7 +82,8 @@ namespace Ropu.ControllingFunction
             _sendBuffer[0] = (byte)CombinedPacketType.RegistrationResponse;
             // User ID (uint32)
             _sendBuffer.WriteUint(registration.UserId, 1);
-            // Codec (byte) (defined via an enum, this is the codec/bitrate used by the system, you must support it, this is required so the server doesn’t have to transcode, which is an expensive operation)
+            // Codec (byte) (defined via an enum, this is the codec/bitrate used by the system, you must support it, 
+            // this is required so the server doesn’t have to transcode, which is an expensive operation)
             _sendBuffer[7] = (byte)Codecs.Opus;
             // Bitrate (uint16)
             _sendBuffer.WriteUshort(8000, 8);

@@ -41,6 +41,7 @@ namespace Ropu.MediaController
 
         async Task SyncGroups()
         {
+            Console.WriteLine("Syncing Groups");
             ushort numberOfParts = 0;
             ushort fileId = 0;
 
@@ -55,7 +56,9 @@ namespace Ropu.MediaController
                     fileId = id;
                 };
                 gotResponse = await _callManagementProtocol.SendGetGroupsFileRequest(callManagementServerEndpoint, fileManifestHandler);
+
             }
+            Console.WriteLine("RetrieveGroupsFile");
             var groups = await _fileClient.RetrieveGroupsFile(fileId, numberOfParts, _serviceDiscovery.CallManagementServerEndpoint());
         }
 

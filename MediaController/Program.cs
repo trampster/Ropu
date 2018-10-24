@@ -17,6 +17,8 @@ namespace ropu
 
         static async Task Main(string[] args)
         {
+            Console.WriteLine("Ropu Media Controller");
+            Console.WriteLine("Copyright (c) Daniel Hughes");
             var mediaProtocol = new MediaProtocol(MediaPort);
             var callManagementProtocol = new CallManagementProtocol(ControlPort);
             var serviceDiscovery = new ServiceDiscovery();

@@ -123,12 +123,14 @@ namespace Ropu.Shared.CallManagement
                 }
                 case CallManagementPacketType.FileManifestResponse:
                 {
+                    Console.WriteLine("Received File Manifest Response");
                     ushort requestId = data.Slice(1).ParseUshort();
                     ushort numberOfParts = data.Slice(3).ParseUshort();
                     ushort fileId = data.Slice(5).ParseUshort();
                     var handler = GetRequestHandler<Action<ushort, ushort>>(requestId);
                     if(handler != null)
                     {
+                        Console.WriteLine("Calling handler");
                         handler(numberOfParts, fileId);
                     }
                     break;
@@ -138,6 +140,7 @@ namespace Ropu.Shared.CallManagement
                     ushort requestId = data.Slice(1).ParseUshort();
                     ushort fileId = data.Slice(3).ParseUshort();
                     ushort partNumber = data.Slice(5).ParseUshort();
+                    Console.WriteLine("Receiving file part request");
                     _serverMessageHandler?.HandleFilePartRequest(endPoint, requestId, fileId, partNumber);
                     break;
                 }
@@ -145,6 +148,7 @@ namespace Ropu.Shared.CallManagement
                 {
                     ushort requestId = data.Slice(1).ParseUshort();
                     var payload = data.Slice(3);
+                    Console.WriteLine("Receiving file part response");
                     _clientMessageHandler?.HandleFilePartResponse(requestId, payload);
                     break;
                 }
@@ -215,34 +219,41 @@ namespace Ropu.Shared.CallManagement
             _socket.SendTo(_sendBuffer, 0, 4, SocketFlags.None, ipEndPoint);
         }
 
-        SocketAsyncEventArgs _sendArgs = new SocketAsyncEventArgs();
+        SocketAsyncEventArgs _sendArgs = new SocketAsyncEventArgs()
+        {
+            BufferList = new List<ArraySegment<byte>>()
+        };
 
         void SendAsync(SocketAsyncEventArgs args)
         {
-            if(_socket.SendAsync(_sendArgs))
+            if(_socket.SendToAsync(args))
             {
+                Console.WriteLine($"Didn't complete");
+
                 //didn't complete we need to create a new one so we don't interfare
                 var newSendArgs = new SocketAsyncEventArgs();
                 newSendArgs.BufferList = new List<ArraySegment<byte>>();
                 _sendArgs = newSendArgs;
             }
+            Console.WriteLine($"Bytes Transfered {args.BytesTransferred}");
+            Console.WriteLine($"SocketError {args.SocketError}");
         }
 
         public void SendFilePartResponse(ushort requestId, ArraySegment<byte> payload, IPEndPoint ipEndPoint)
         {
             // Packet Type 
-            _sendBuffer[0] = (byte)CallManagementPacketType.FilePartUnrecognized;
+            _sendBuffer[0] = (byte)CallManagementPacketType.FilePartResponse;
             // Request ID (uint16)
             _sendBuffer.WriteUshort(requestId, 1);
 
             var headerSegment = new ArraySegment<byte>(_sendBuffer, 0, 3);
-
             _sendArgs.RemoteEndPoint = ipEndPoint;
             var bufferList = _sendArgs.BufferList;
-            bufferList.Clear();
+            // bufferList = new List<ArraySegment<byte>>();
             bufferList.Add(headerSegment);
             bufferList.Add(payload);
-
+            _sendArgs.BufferList = bufferList;
+            Console.WriteLine($"SendFilePartResponse: SendAsync to {_sendArgs.RemoteEndPoint}");
             SendAsync(_sendArgs);
         }
 
