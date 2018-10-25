@@ -13,10 +13,12 @@ namespace Ropu.Shared.CallManagement
     public class CallManagementProtocol
     {
         readonly Socket _socket;
+        SocketAsyncEventArgs _sendArgs;
+
         readonly ushort _port;
         const int AnyPort = IPEndPoint.MinPort;
         const int MaxUdpSize = 0x10000;
-        readonly byte[] _sendBuffer = new byte[MaxUdpSize];
+        readonly MemoryPool<byte[]> _sendBufferPool = new MemoryPool<byte[]>(() => new byte[MaxUdpSize]);
         ushort _requestId = 0;
 
 
@@ -29,6 +31,7 @@ namespace Ropu.Shared.CallManagement
         {
             _port = port;
             _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            _sendArgs = CreateSocketAsyncEventArgs();
         }
 
         public ushort ControlPort => _port;
@@ -209,44 +212,56 @@ namespace Ropu.Shared.CallManagement
 
         public void SendFilePartUnrecognized(ushort requestId, FilePartFailureReason reason, IPEndPoint ipEndPoint)
         {
+            var buffer = _sendBufferPool.Get();
             // Packet Type 
-            _sendBuffer[0] = (byte)CallManagementPacketType.FilePartUnrecognized;
+            buffer[0] = (byte)CallManagementPacketType.FilePartUnrecognized;
             // Request ID (ushort)
-            _sendBuffer.WriteUshort(requestId, 1);
+            buffer.WriteUshort(requestId, 1);
             // Reason Port (byte)
-            _sendBuffer[3] = (byte)reason;
+            buffer[3] = (byte)reason;
 
-            _socket.SendTo(_sendBuffer, 0, 4, SocketFlags.None, ipEndPoint);
+            _socket.SendTo(buffer, 0, 4, SocketFlags.None, ipEndPoint);
+            _sendBufferPool.Add(buffer);
         }
 
-        SocketAsyncEventArgs _sendArgs = new SocketAsyncEventArgs()
+        SocketAsyncEventArgs CreateSocketAsyncEventArgs()
         {
-            BufferList = new List<ArraySegment<byte>>()
-        };
+            var args = new SocketAsyncEventArgs()
+            {
+                BufferList = new List<ArraySegment<byte>>(),
+            };
+            args.Completed += (sender, asyncArgs) => SendAsyncCompleted(asyncArgs);
+            return args;
+        }
+
+        void SendAsyncCompleted(SocketAsyncEventArgs args)
+        {
+            object token = args.UserToken;
+            if(token is Action)
+            {
+                ((Action)token)();
+            }
+        }
 
         void SendAsync(SocketAsyncEventArgs args)
         {
             if(_socket.SendToAsync(args))
             {
-                Console.WriteLine($"Didn't complete");
-
                 //didn't complete we need to create a new one so we don't interfare
-                var newSendArgs = new SocketAsyncEventArgs();
-                newSendArgs.BufferList = new List<ArraySegment<byte>>();
-                _sendArgs = newSendArgs;
+                //TODO: switch to using a pool
+                _sendArgs = CreateSocketAsyncEventArgs();
             }
-            Console.WriteLine($"Bytes Transfered {args.BytesTransferred}");
-            Console.WriteLine($"SocketError {args.SocketError}");
         }
 
         public void SendFilePartResponse(ushort requestId, ArraySegment<byte> payload, IPEndPoint ipEndPoint)
         {
+            var sendBuffer = _sendBufferPool.Get();
             // Packet Type 
-            _sendBuffer[0] = (byte)CallManagementPacketType.FilePartResponse;
+            sendBuffer[0] = (byte)CallManagementPacketType.FilePartResponse;
             // Request ID (uint16)
-            _sendBuffer.WriteUshort(requestId, 1);
+            sendBuffer.WriteUshort(requestId, 1);
 
-            var headerSegment = new ArraySegment<byte>(_sendBuffer, 0, 3);
+            var headerSegment = new ArraySegment<byte>(sendBuffer, 0, 3);
             _sendArgs.RemoteEndPoint = ipEndPoint;
             var bufferList = _sendArgs.BufferList;
             bufferList.Clear();
@@ -255,6 +270,8 @@ namespace Ropu.Shared.CallManagement
             bufferList.Add(payload);
             _sendArgs.BufferList = bufferList;
             Console.WriteLine($"SendFilePartResponse: SendAsync to {_sendArgs.RemoteEndPoint}");
+
+            _sendArgs.UserToken = (Action)(() => _sendBufferPool.Add(sendBuffer));
             SendAsync(_sendArgs);
         }
 
@@ -266,11 +283,13 @@ namespace Ropu.Shared.CallManagement
 
         public async Task<bool> SendGetGroupsFileRequest(IPEndPoint targetEndpoint, Action<ushort,ushort> handler)
         {
+            var sendBuffer = _sendBufferPool.Get();
+
             ushort requestId = _requestId++;
             // Packet Type 5 (byte)
-            _sendBuffer[0] = (byte)CallManagementPacketType.GetGroupsFileRequest;
+            sendBuffer[0] = (byte)CallManagementPacketType.GetGroupsFileRequest;
             // Request ID (uint16)
-            _sendBuffer.WriteUshort(requestId, 1);
+            sendBuffer.WriteUshort(requestId, 1);
 
             var manualResetEvent = new ManualResetEvent(false); //TODO: get from pool
 
@@ -280,20 +299,26 @@ namespace Ropu.Shared.CallManagement
                 manualResetEvent.Set();
             };
 
-            return await AwaitRequest(requestId, handler1, _sendBuffer, targetEndpoint, manualResetEvent, 3);
+            bool recievedResponse = await AwaitRequest(requestId, handler1, sendBuffer, targetEndpoint, manualResetEvent, 3);
+
+            _sendBufferPool.Add(sendBuffer);
+
+            return recievedResponse;
         }
 
         public async Task<bool> SendGetFilePartRequest(ushort fileId, ushort partNumber, ReadOnlySpanAction<byte, FilePartFailureReason> handler, IPEndPoint targetEndpoint)
         {
+            var sendBuffer = _sendBufferPool.Get();
+
             ushort requestId = _requestId++;
             // Packet Type 7 (byte)
-            _sendBuffer[0] = (byte)CallManagementPacketType.FilePartRequest;
+            sendBuffer[0] = (byte)CallManagementPacketType.FilePartRequest;
             // Request ID (uint16)
-            _sendBuffer.WriteUshort(requestId, 1);
+            sendBuffer.WriteUshort(requestId, 1);
             // File ID (uint16)
-            _sendBuffer.WriteUshort(fileId, 3);
+            sendBuffer.WriteUshort(fileId, 3);
             // Part Number (uint16)
-            _sendBuffer.WriteUshort(partNumber, 5);
+            sendBuffer.WriteUshort(partNumber, 5);
 
             var manualResetEvent = new ManualResetEvent(false); //TODO: get from pool
 
@@ -303,7 +328,11 @@ namespace Ropu.Shared.CallManagement
                 manualResetEvent.Set();
             };
 
-            return await AwaitRequest(requestId, handler1, _sendBuffer, targetEndpoint, manualResetEvent, 7);
+            bool responseReceived = await AwaitRequest(requestId, handler1, sendBuffer, targetEndpoint, manualResetEvent, 7);
+
+            _sendBufferPool.Add(sendBuffer);
+
+            return responseReceived;
         }
 
         async Task<bool> AwaitRequest<H>(
@@ -321,70 +350,96 @@ namespace Ropu.Shared.CallManagement
 
         public async Task<bool> RegisterMediaController(ushort port, IPEndPoint mediaEndpoint, IPEndPoint targetEndpoint)
         {
+            var sendBuffer = _sendBufferPool.Get();
+
             ushort requestId = _requestId++;
             // Packet Type 1
-            _sendBuffer[0] = (byte)CallManagementPacketType.RegisterMediaController;
+            sendBuffer[0] = (byte)CallManagementPacketType.RegisterMediaController;
             // Request ID (ushort)
-            _sendBuffer.WriteUshort(requestId, 1);
+            sendBuffer.WriteUshort(requestId, 1);
             // UDP Port (ushort)
-            _sendBuffer.WriteUshort(port, 3);
+            sendBuffer.WriteUshort(port, 3);
             // Media Endpoint
-            _sendBuffer.WriteEndPoint(mediaEndpoint, 5);
+            sendBuffer.WriteEndPoint(mediaEndpoint, 5);
 
-            return await SendAndWaitForAck(requestId, _sendBuffer, 11, targetEndpoint);
+            bool responseReceived = await SendAndWaitForAck(requestId, sendBuffer, 11, targetEndpoint);
+
+            _sendBufferPool.Add(sendBuffer);
+
+            return responseReceived;
         }
 
         public async Task<bool> RegisterFloorController(ushort port, IPEndPoint floorControlerEndpoint, IPEndPoint targetEndpoint)
         {
+            var sendBuffer = _sendBufferPool.Get();
+
             ushort requestId = _requestId++;
             // Packet Type 1
-            _sendBuffer[0] = (byte)CallManagementPacketType.RegisterFloorController;
+            sendBuffer[0] = (byte)CallManagementPacketType.RegisterFloorController;
             // Request ID (uint16)
-            _sendBuffer.WriteUshort(requestId, 1);
+            sendBuffer.WriteUshort(requestId, 1);
             // UDP Port (ushort)
-            _sendBuffer.WriteUshort(port, 3);
+            sendBuffer.WriteUshort(port, 3);
             // Floor Control Endpoint
-            _sendBuffer.WriteEndPoint(floorControlerEndpoint, 5);
+            sendBuffer.WriteEndPoint(floorControlerEndpoint, 5);
 
-            return await SendAndWaitForAck(requestId, _sendBuffer, 11, targetEndpoint);
+            bool responseReceived = await SendAndWaitForAck(requestId, sendBuffer, 11, targetEndpoint);
+
+            _sendBufferPool.Add(sendBuffer);
+
+            return responseReceived;
         }
 
         public async Task<bool> StartCall(ushort callId, ushort groupId, IPEndPoint targetEndpoint)
         {
+            var sendBuffer = _sendBufferPool.Get();
+
             ushort requestId = _requestId++;
             // Packet Type 1
-            _sendBuffer[0] = (byte)CallManagementPacketType.StartCall;
+            sendBuffer[0] = (byte)CallManagementPacketType.StartCall;
             // Request ID (uint16)
-            _sendBuffer.WriteUshort(requestId, 1);
+            sendBuffer.WriteUshort(requestId, 1);
             // Call ID (uint16)
-            _sendBuffer.WriteUshort(callId, 3);
+            sendBuffer.WriteUshort(callId, 3);
             // Group ID (uint16)
-            _sendBuffer.WriteUshort(groupId, 5);
+            sendBuffer.WriteUshort(groupId, 5);
 
-            return await SendAndWaitForAck(requestId, _sendBuffer, 7, targetEndpoint);
+            bool repsonseReceived = await SendAndWaitForAck(requestId, sendBuffer, 7, targetEndpoint);
+
+            _sendBufferPool.Add(sendBuffer);
+
+            return repsonseReceived;
         }
 
         public void SendAck(ushort requestId, IPEndPoint ipEndPoint)
         {
-            _sendBuffer[0] = (byte)CallManagementPacketType.Ack;
+            var sendBuffer = _sendBufferPool.Get();
+
+            sendBuffer[0] = (byte)CallManagementPacketType.Ack;
             // Request ID (uint16)
-            _sendBuffer.WriteUshort(requestId, 1);
-            _socket.SendTo(_sendBuffer, 0, 3, SocketFlags.None, ipEndPoint);
+            sendBuffer.WriteUshort(requestId, 1);
+            _socket.SendTo(sendBuffer, 0, 3, SocketFlags.None, ipEndPoint);
+
+            _sendBufferPool.Add(sendBuffer);
         }
 
         public void SendFileManifestResponse(ushort requestId, ushort numberOfParts, ushort fileId, IPEndPoint ipEndPoint)
         {
-            _sendBuffer[0] = (byte)CallManagementPacketType.FileManifestResponse;
+            var sendBuffer = _sendBufferPool.Get();
+
+            sendBuffer[0] = (byte)CallManagementPacketType.FileManifestResponse;
             // Request ID (uint16)
-            _sendBuffer.WriteUshort(requestId, 1);
+            sendBuffer.WriteUshort(requestId, 1);
             // Number of Parts (uint16)
-            _sendBuffer.WriteUshort(numberOfParts, 3);
+            sendBuffer.WriteUshort(numberOfParts, 3);
             // File ID (uint16)
-            _sendBuffer.WriteUshort(fileId, 5);
-            _socket.SendTo(_sendBuffer, 0, 7, SocketFlags.None, ipEndPoint);
+            sendBuffer.WriteUshort(fileId, 5);
+            _socket.SendTo(sendBuffer, 0, 7, SocketFlags.None, ipEndPoint);
+
+            _sendBufferPool.Add(sendBuffer);
         }
 
-        async Task<bool> SendAndWaitForAck(ushort requestId, byte[] buffers, int length, IPEndPoint endpoint)
+        async Task<bool> SendAndWaitForAck(ushort requestId, byte[] buffer, int length, IPEndPoint endpoint)
         {
             var manualResetEvent = new ManualResetEvent(false);
 
@@ -393,7 +448,7 @@ namespace Ropu.Shared.CallManagement
                 manualResetEvent.Set();
             };
 
-            return await AwaitRequest(requestId, handler, _sendBuffer, endpoint, manualResetEvent, length);
+            return await AwaitRequest(requestId, handler, buffer, endpoint, manualResetEvent, length);
         }
 
         async Task<bool> AwaitResetEvent(ManualResetEvent resetEvent)

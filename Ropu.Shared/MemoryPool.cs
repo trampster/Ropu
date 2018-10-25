@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 
@@ -9,21 +10,27 @@ namespace Ropu.Shared
         List<T> _availableItems = new List<T>();
         readonly object _lock = new object();
 
+        readonly Func<T> _createNew;
+
+        public MemoryPool(Func<T> createNew)
+        {
+            _createNew = createNew;
+        }
 
         public T Get()
         {
-            T avaialble = null;
+            T available = null;
             lock(_lock)
             {
-                if(_nextAvailable == -1)
+                if(_nextAvailable < 0)
                 {
-                    return null;
+                    return _createNew();
                 }
-                var available = _availableItems[_nextAvailable];
+                available = _availableItems[_nextAvailable];
                 _availableItems[_nextAvailable] = null;
                 _nextAvailable--;
             }
-            return avaialble;
+            return available;
         }
 
         public void Add(T item)
