@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
@@ -17,9 +18,8 @@ namespace Ropu.Shared
             _callManagementProtocol = callManagementProtocol;
         }
 
-        void GroupsHandler(byte[] packet, List<Group> groups)
+        void GroupsHandler(ReadOnlySpan<byte> payload, FilePartFailureReason failureReason, List<Group> groups)
         {
-            var payload = packet.AsSpan(3);
             for(int index =0; index < payload.Length; index+=2)
             {
                 var groupId = payload.Slice(index).ParseUshort();
@@ -33,7 +33,8 @@ namespace Ropu.Shared
             var groups = new List<Group>();
             for(ushort partNumber = 0; partNumber < numberOfParts; partNumber++)
             {
-                Action<byte[]> handler = packet => GroupsHandler(packet, groups);
+                ReadOnlySpanAction<byte, FilePartFailureReason> handler = (payload, failureReason) => GroupsHandler(payload, failureReason, groups);
+
                 while(!await _callManagementProtocol.SendGetFilePartRequest(fileId, partNumber, handler, targetEndPoint)){}
             }
             return groups;

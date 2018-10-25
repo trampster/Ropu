@@ -187,7 +187,6 @@ namespace Ropu.ControllingFunction
                 _callManagementProtocol.SendFilePartUnrecognized(requestId, FilePartFailureReason.UnknownPart, from);
                 return;
             }
-            Console.WriteLine($"SendFilePartResponse {part.Length}");
             _callManagementProtocol.SendFilePartResponse(requestId, part.AsArraySegment(), from);
         }
 

@@ -10,21 +10,21 @@ This document details the protocol used for communication between the Controllin
 ### Register Media Controller
 Sent to the Controlling Function to register as a media controller
 * Packet Type 0 (byte)
-* Request ID (uint32)
-* UDP Control Port (ushort)
+* Request ID (uint16)
+* UDP Control Port (uint16)
 * UDP Media Endpoint (4 bytes IP, 2 bytes port) - this needs to be the externally facing endpoint that clients can use
 
 ### Register Floor Controller
 Sent to the Controlling Function to register as a floor controller
 * Packet Type 1 (byte)
-* Request ID (uint32)
+* Request ID (uint16)
 * UDP Port (ushort)
 * Floor Control Endpoint (4 bytes IP, 2 bytes port) - this needs to be the externally facing endpoint that clients can use
 
 ### Start Call
 Tells the MediaController or Floor Controller to start managing a call
 * Packet Type 2 (byte)
-* Request ID (uint32)
+* Request ID (uint16)
 * Call ID (uint16)
 * Group ID (uint16)
 
@@ -35,7 +35,7 @@ Acknoledgement to one of the other message types, all messages without specified
 
 ### Get Groups File Request
 * Packet Type 4 (byte)
-* Request ID (uint32)
+* Request ID (uint16)
 
 ### Get Group File Request
 * Packet Type 5 (byte)
@@ -63,7 +63,7 @@ Acknoledgement to one of the other message types, all messages without specified
 Note: file transfers timeout after 1 minute of inactivity after which you will get unknown file.
 * Packet Type 9 (byte)
 * Request ID (uint16)
-* Reason (byte) - 0 = unknown file, 1 = unknown part.
+* Reason (byte) - 0 = success, 1 = unknown file, 2 = unknown part. (success will never be sent, but is useful for implementation)
 
 ### Complete File Transfer
 This should be acked
@@ -72,7 +72,7 @@ This should be acked
 * File ID (uint16)
 
 ### Registration Update
-Could be a new registration or and update to an existing one
+Could be a new registration or an update to an existing one
 * Packet Type 11 (byte)
 * Request ID (uint16)
 * Group ID (uint16)
@@ -80,7 +80,7 @@ Could be a new registration or and update to an existing one
 * EndPoint (6 bytes)
 
 ### Registration Removed
-Could be a new registration or and update to an existing one
+
 * Packet Type 12 (byte)
 * Request ID (uint16)
 * Group ID (uint16)

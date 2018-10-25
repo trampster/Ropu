@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -149,6 +150,8 @@ namespace Ropu.Shared.CallManagement
                     ushort requestId = data.Slice(1).ParseUshort();
                     var payload = data.Slice(3);
                     Console.WriteLine("Receiving file part response");
+                    var handler = GetRequestHandler<ReadOnlySpanAction<byte, FilePartFailureReason>>(requestId);
+                    handler(payload, FilePartFailureReason.Success);
                     _clientMessageHandler?.HandleFilePartResponse(requestId, payload);
                     break;
                 }
@@ -249,7 +252,8 @@ namespace Ropu.Shared.CallManagement
             var headerSegment = new ArraySegment<byte>(_sendBuffer, 0, 3);
             _sendArgs.RemoteEndPoint = ipEndPoint;
             var bufferList = _sendArgs.BufferList;
-            // bufferList = new List<ArraySegment<byte>>();
+            bufferList.Clear();
+
             bufferList.Add(headerSegment);
             bufferList.Add(payload);
             _sendArgs.BufferList = bufferList;
@@ -279,10 +283,10 @@ namespace Ropu.Shared.CallManagement
                 manualResetEvent.Set();
             };
 
-            return await AwaitRequest(requestId, handler1, targetEndpoint, manualResetEvent, 3);
+            return await AwaitRequest(requestId, handler1, _sendBuffer, targetEndpoint, manualResetEvent, 3);
         }
 
-        public async Task<bool> SendGetFilePartRequest(ushort fileId, ushort partNumber, Action<byte[]> handler, IPEndPoint targetEndpoint)
+        public async Task<bool> SendGetFilePartRequest(ushort fileId, ushort partNumber, ReadOnlySpanAction<byte, FilePartFailureReason> handler, IPEndPoint targetEndpoint)
         {
             ushort requestId = _requestId++;
             // Packet Type 7 (byte)
@@ -296,22 +300,22 @@ namespace Ropu.Shared.CallManagement
 
             var manualResetEvent = new ManualResetEvent(false); //TODO: get from pool
 
-            Action<byte[]> handler1 = packet =>
+            ReadOnlySpanAction<byte, FilePartFailureReason> handler1 = (packet, failureReason) =>
             {
-                handler(packet);
+                handler(packet, failureReason);
                 manualResetEvent.Set();
             };
 
-            return await AwaitRequest(requestId, handler1, targetEndpoint, manualResetEvent, 7);
+            return await AwaitRequest(requestId, handler1, _sendBuffer, targetEndpoint, manualResetEvent, 7);
         }
 
         async Task<bool> AwaitRequest<H>(
-            ushort requestId, H handler, IPEndPoint endPoint, 
+            ushort requestId, H handler, byte[] buffer, IPEndPoint endPoint, 
             ManualResetEvent manualResetEvent, int length)
         {
              _requests[requestId] = handler;
 
-            _socket.SendTo(_sendBuffer, 0, length, SocketFlags.None, endPoint);
+            _socket.SendTo(buffer, 0, length, SocketFlags.None, endPoint);
             bool acknowledged = await AwaitResetEvent(manualResetEvent);
 
             _requests[requestId] = null;
@@ -392,7 +396,7 @@ namespace Ropu.Shared.CallManagement
                 manualResetEvent.Set();
             };
 
-            return await AwaitRequest(requestId, _sendBuffer, endpoint, manualResetEvent, 5);
+            return await AwaitRequest(requestId, handler, _sendBuffer, endpoint, manualResetEvent, length);
         }
 
         async Task<bool> AwaitResetEvent(ManualResetEvent resetEvent)

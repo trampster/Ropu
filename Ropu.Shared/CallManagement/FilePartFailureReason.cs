@@ -2,7 +2,8 @@ namespace Ropu.Shared.CallManagement
 {
     public enum FilePartFailureReason
     {
-        UnknownFile = 0,
-        UnknownPart = 1
+        Success = 0,
+        UnknownFile = 1,
+        UnknownPart = 2
     }
 }
