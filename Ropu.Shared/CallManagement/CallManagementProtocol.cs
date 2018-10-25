@@ -124,14 +124,12 @@ namespace Ropu.Shared.CallManagement
                 }
                 case CallManagementPacketType.FileManifestResponse:
                 {
-                    Console.WriteLine("Received File Manifest Response");
                     ushort requestId = data.Slice(1).ParseUshort();
                     ushort numberOfParts = data.Slice(3).ParseUshort();
                     ushort fileId = data.Slice(5).ParseUshort();
                     var handler = GetRequestHandler<Action<ushort, ushort>>(requestId);
                     if(handler != null)
                     {
-                        Console.WriteLine("Calling handler");
                         handler(numberOfParts, fileId);
                     }
                     break;
@@ -149,7 +147,6 @@ namespace Ropu.Shared.CallManagement
                 {
                     ushort requestId = data.Slice(1).ParseUshort();
                     var payload = data.Slice(3);
-                    Console.WriteLine("Receiving file part response");
                     var handler = GetRequestHandler<ReadOnlySpanAction<byte, FilePartFailureReason>>(requestId);
                     handler(payload, FilePartFailureReason.Success);
                     _clientMessageHandler?.HandleFilePartResponse(requestId, payload);

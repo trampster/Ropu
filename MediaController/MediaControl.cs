@@ -58,8 +58,8 @@ namespace Ropu.MediaController
                 gotResponse = await _callManagementProtocol.SendGetGroupsFileRequest(callManagementServerEndpoint, fileManifestHandler);
 
             }
-            Console.WriteLine("RetrieveGroupsFile");
             var groups = await _fileClient.RetrieveGroupsFile(fileId, numberOfParts, _serviceDiscovery.CallManagementServerEndpoint());
+            Console.WriteLine($"Retrieved {groups.Count} Groups");
         }
 
         async Task Register()
