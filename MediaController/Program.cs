@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Ropu.MediaController;
 using Ropu.Shared;
 using Ropu.Shared.CallManagement;
+using Ropu.Shared.Registra;
 
 namespace ropu
 {
@@ -23,12 +24,13 @@ namespace ropu
             var callManagementProtocol = new CallManagementProtocol(ControlPort);
             var serviceDiscovery = new ServiceDiscovery();
             var fileClient = new FileClient(callManagementProtocol);
+            var registraClient = new RegistraClient(serviceDiscovery, callManagementProtocol, fileClient);
 
             var mediaControllerRunner = new MediaControl(
                 mediaProtocol, 
                 callManagementProtocol, 
                 serviceDiscovery,
-                fileClient);
+                registraClient);
 
             await mediaControllerRunner.Run();
         }

@@ -3,6 +3,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Ropu.Shared;
 using Ropu.Shared.CallManagement;
+using Ropu.Shared.Registra;
 
 namespace Ropu.MediaController
 {
@@ -11,18 +12,18 @@ namespace Ropu.MediaController
         readonly MediaProtocol _mediaProtocol;
         readonly CallManagementProtocol _callManagementProtocol;
         readonly ServiceDiscovery _serviceDiscovery;
-        readonly FileClient _fileClient;
+        readonly RegistraClient _registraClient;
 
         public MediaControl(
             MediaProtocol mediaProtocol, 
             CallManagementProtocol callManagementProtocol, 
             ServiceDiscovery serviceDiscovery,
-            FileClient fileClient)
+            RegistraClient registraClient)
         {
             _mediaProtocol = mediaProtocol;
             _callManagementProtocol = callManagementProtocol;
             _serviceDiscovery = serviceDiscovery;
-            _fileClient = fileClient;
+            _registraClient = registraClient;
         }
 
         public async Task Run()
@@ -31,35 +32,12 @@ namespace Ropu.MediaController
             Task mediaTask = _mediaProtocol.Run();
 
             //sync groups
-            await SyncGroups();
+            await _registraClient.SyncGroups();
 
             Task registerTask = Register();
 
 
             await TaskCordinator.WaitAll(callManagementTask, mediaTask, registerTask);
-        }
-
-        async Task SyncGroups()
-        {
-            Console.WriteLine("Syncing Groups");
-            ushort numberOfParts = 0;
-            ushort fileId = 0;
-
-            bool gotResponse = false;
-            while(!gotResponse)
-            {
-                var callManagementServerEndpoint = _serviceDiscovery.CallManagementServerEndpoint();
-                
-                Action<ushort, ushort> fileManifestHandler = (parts, id) =>
-                {
-                    numberOfParts = parts;
-                    fileId = id;
-                };
-                gotResponse = await _callManagementProtocol.SendGetGroupsFileRequest(callManagementServerEndpoint, fileManifestHandler);
-
-            }
-            var groups = await _fileClient.RetrieveGroupsFile(fileId, numberOfParts, _serviceDiscovery.CallManagementServerEndpoint());
-            Console.WriteLine($"Retrieved {groups.Count} Groups");
         }
 
         async Task Register()

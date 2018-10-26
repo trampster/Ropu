@@ -18,19 +18,18 @@ namespace Ropu.Shared
             _callManagementProtocol = callManagementProtocol;
         }
 
-        void GroupsHandler(ReadOnlySpan<byte> payload, FilePartFailureReason failureReason, List<Group> groups)
+        void GroupsHandler(ReadOnlySpan<byte> payload, FilePartFailureReason failureReason, List<ushort> groups)
         {
             for(int index =0; index < payload.Length; index+=2)
             {
                 var groupId = payload.Slice(index).ParseUshort();
-                var group = new Group(groupId);
-                groups.Add(group);
+                groups.Add(groupId);
             }
         }
 
-        public async Task<List<Group>> RetrieveGroupsFile(ushort fileId, ushort numberOfParts, IPEndPoint targetEndPoint)
+        public async Task<List<ushort>> RetrieveGroupsFile(ushort fileId, ushort numberOfParts, IPEndPoint targetEndPoint)
         {
-            var groups = new List<Group>();
+            var groups = new List<ushort>();
             for(ushort partNumber = 0; partNumber < numberOfParts; partNumber++)
             {
                 ReadOnlySpanAction<byte, FilePartFailureReason> handler = (payload, failureReason) => GroupsHandler(payload, failureReason, groups);
