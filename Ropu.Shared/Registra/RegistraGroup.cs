@@ -8,8 +8,7 @@ namespace Ropu.Shared.Registra
         public RegistraGroup(ushort groupId)
         {
             GroupId = groupId;
-            RegisteredGroupMember = new List<RegisteredGroupMember>();
-            EndPoints = new List<IPEndPoint>();
+            RegisteredGroupMembers = new List<uint>();
         }
 
         public ushort GroupId
@@ -17,20 +16,15 @@ namespace Ropu.Shared.Registra
             get;
         }
 
-        public void Add(uint userId, IPEndPoint endpoint)
+        public void Add(uint userId)
         {
-            RegisteredGroupMember.Add(new RegisteredGroupMember(userId, endpoint));
-            EndPoints.Add(endpoint);
+            RegisteredGroupMembers.Add(userId);
         }
 
-        public List<RegisteredGroupMember> RegisteredGroupMember
+        public List<uint> RegisteredGroupMembers
         {
             get;
-        }
-
-        public List<IPEndPoint> EndPoints
-        {
-            get;
+            set;
         }
     }
 }

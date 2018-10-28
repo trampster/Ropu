@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Net;
 
@@ -25,6 +26,7 @@ namespace Ropu.Shared.Groups
 
         public IGroup Get(ushort groupId)
         {
+            Console.WriteLine($"Getting Group {groupId}");
             if(_groupLookup.TryGetValue(groupId, out IGroup group))
             {
                 return group;

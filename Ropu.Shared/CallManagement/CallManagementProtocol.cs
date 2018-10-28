@@ -267,9 +267,11 @@ namespace Ropu.Shared.CallManagement
             bufferList.Clear();
 
             bufferList.Add(headerSegment);
-            bufferList.Add(payload);
+            if(payload.Count != 0)
+            {
+                bufferList.Add(payload);
+            }
             _sendArgs.BufferList = bufferList;
-            Console.WriteLine($"SendFilePartResponse: SendAsync to {_sendArgs.RemoteEndPoint}");
 
             _sendArgs.UserToken = (Action)(() => _sendBufferPool.Add(sendBuffer));
             SendAsync(_sendArgs);
@@ -300,6 +302,33 @@ namespace Ropu.Shared.CallManagement
             };
 
             bool recievedResponse = await AwaitRequest(requestId, handler1, sendBuffer, targetEndpoint, manualResetEvent, 3);
+
+            _sendBufferPool.Add(sendBuffer);
+
+            return recievedResponse;
+        }
+
+        public async Task<bool> SendGetGroupFileRequest(IPEndPoint targetEndpoint, ushort groupId, Action<ushort, ushort> handler)
+        {
+            var sendBuffer = _sendBufferPool.Get();
+
+            ushort requestId = _requestId++;
+            // Packet Type 5 (byte)
+            sendBuffer[0] = (byte)CallManagementPacketType.GetGroupFileRequest;
+            // Request ID (uint16)
+            sendBuffer.WriteUshort(requestId, 1);
+            // Group ID (uint16)
+            sendBuffer.WriteUshort(groupId, 3);
+
+            var manualResetEvent = new ManualResetEvent(false); //TODO: get from pool
+
+            Action<ushort,ushort> handler1 = (numberOfParts, fileId) =>
+            {
+                handler(numberOfParts, fileId);
+                manualResetEvent.Set();
+            };
+
+            bool recievedResponse = await AwaitRequest(requestId, handler1, sendBuffer, targetEndpoint, manualResetEvent, 5);
 
             _sendBufferPool.Add(sendBuffer);
 

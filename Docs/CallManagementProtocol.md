@@ -94,7 +94,6 @@ Could be a new registration or an update to an existing one
 
 ### Group File Payload
 * User ID (uint32)
-* EndPoint (6 bytes)
 * ^ repeat for each user
 
 

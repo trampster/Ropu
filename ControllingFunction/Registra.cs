@@ -42,9 +42,21 @@ namespace Ropu.ControllingFunction
             //doing a dictionary lookup for every single member will be to slow, ideally we would be
             //just returning an existing list so no allocation or looping is required
             var query = 
-                from unitId in _groupsClient.Get(groupId).GroupMembers
-                where _registrationLookup.ContainsKey(unitId)
-                select _registrationLookup[unitId].EndPoint;
+                from userId in _groupsClient.Get(groupId).GroupMembers
+                where _registrationLookup.ContainsKey(userId)
+                select _registrationLookup[userId].EndPoint;
+            return query.ToList();
+        }
+
+        public List<uint> GetUsers(ushort groupId)
+        {
+            //TODO: we need maintain lists of group members which we update at registration time
+            //doing a dictionary lookup for every single member will be to slow, ideally we would be
+            //just returning an existing list so no allocation or looping is required
+            var query = 
+                from userId in _groupsClient.Get(groupId).GroupMembers
+                where _registrationLookup.ContainsKey(userId)
+                select userId;
             return query.ToList();
         }
 

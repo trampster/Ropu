@@ -164,13 +164,34 @@ namespace Ropu.ControllingFunction
             part.Length = index;
             ushort fileId = _fileManager.AddFile(file);
             
-            Console.WriteLine($"Sending File Management Response to  {from}");
             _callManagementProtocol.SendFileManifestResponse(requestId, (ushort)file.NumberOfParts, fileId, from);
         }
 
         public void HandleGetGroupFileRequest(IPEndPoint from, ushort requestId, ushort groupId)
         {
-            throw new NotImplementedException();
+            var userIds = _registra.GetUsers(groupId);
+            var file = _fileManager.GetAvailableFile();
+            var part = _fileManager.GetAvailablePart();
+            file.AddPart(part);
+            byte[] buffer = part.Buffer;
+            int index = 0;
+            foreach(var userId in userIds)
+            {
+                if(!(index + 4 < buffer.Length))
+                {
+                    //need a new part his one is full
+                    part.Length = index;
+                    part = _fileManager.GetAvailablePart();
+                    file.AddPart(part);
+                    buffer = part.Buffer;
+                }
+                buffer.WriteUint(userId, index);
+                index += 4;
+            }
+            part.Length = index;
+            ushort fileId = _fileManager.AddFile(file);
+            
+            _callManagementProtocol.SendFileManifestResponse(requestId, (ushort)file.NumberOfParts, fileId, from);
         }
 
         public void HandleFilePartRequest(IPEndPoint from, ushort requestId, ushort fileId, ushort partNumber)

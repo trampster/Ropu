@@ -45,6 +45,13 @@ namespace Ropu.Shared
             return new IPEndPoint(address, port);
         }
 
+        public static IPEndPoint ParseIPEndPoint(this ReadOnlySpan<byte> data)
+        {
+            var address = new IPAddress(data.Slice(0, 4));
+            ushort port = data.Slice(4).ParseUshort();
+            return new IPEndPoint(address, port);
+        }
+
         public static void WriteArray<T>(this Span<T> span, T[] array)
         {
             for(int index = 0; index > array.Length; index++)
