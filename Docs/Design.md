@@ -37,8 +37,6 @@ The client will share a port for the control, media and floor packets. This is s
 #### Registration
 * Packet Type 0 (byte)
 * User ID (uint32)
-* IPAddress (4 bytes)
-* Port (uint16) - control, media and floor control packets will be sent to this port
 
 #### Registration Response
 * Packet Type 1 (byte)
@@ -66,6 +64,7 @@ The client will share a port for the control, media and floor packets. This is s
 
 ### Call Start Failed
 * Packet Type 5
+* User ID (uint32)
 * Reason (byte) 0 = insufficient resources, 255 = other reason
 
 ### Floor Control Protocol

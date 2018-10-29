@@ -82,7 +82,11 @@ namespace Ropu.Client
 
         public void ParseCallStartFailed(Span<byte> data)
         {
-            CallFailedReason reason = (CallFailedReason)data[1];
+            //User Id (uint) don't parse this is it should only arrive if it's for us, it will just waste cpu cycles
+
+            //reason (byte)
+            CallFailedReason reason = (CallFailedReason)data[5];
+
             _controllingFunctionHandler?.HandleCallStartFailed(reason);
         }
     }

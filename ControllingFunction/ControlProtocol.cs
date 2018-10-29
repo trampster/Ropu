@@ -47,18 +47,17 @@ namespace Ropu.ControllingFunction
                 int ammountRead = _socket.ReceiveFrom(_buffer, ref any);
 
                 var receivedBytes = new Span<byte>(_buffer, 0, ammountRead);
-                HandlePacket(receivedBytes);
+                HandlePacket(receivedBytes, (IPEndPoint)any);
             }
         }
 
-        void HandlePacket(Span<byte> data)
+        void HandlePacket(Span<byte> data, IPEndPoint endPoint)
         {
             switch((CombinedPacketType)data[0])
             {
                 case CombinedPacketType.Registration:
                 {
                     uint userId = data.Slice(1).ParseUint();
-                    IPEndPoint endPoint = data.Slice(5).ParseIPEndPoint();
                     _messageHandler.Registration(userId, endPoint);
                     break;
                 }
@@ -68,7 +67,7 @@ namespace Ropu.ControllingFunction
                     uint userId = data.Slice(1).ParseUint();
                     // Group ID (uint16)
                     ushort groupId = data.Slice(5).ParseUshort();
-                    _messageHandler.StartGroupCall(userId, groupId);
+                    _messageHandler.StartGroupCall(userId, groupId, endPoint);
                     break;
                 }
             }
@@ -76,7 +75,7 @@ namespace Ropu.ControllingFunction
 
         readonly byte[] _sendBuffer = new byte[MaxUdpSize];
 
-        public void SendRegisterResponse(Registration registration)
+        public void SendRegisterResponse(Registration registration, IPEndPoint endPoint)
         {
             // Packet Type
             _sendBuffer[0] = (byte)CombinedPacketType.RegistrationResponse;
@@ -88,11 +87,11 @@ namespace Ropu.ControllingFunction
             // Bitrate (uint16)
             _sendBuffer.WriteUshort(8000, 8);
 
-            Console.WriteLine($"Sending registration response to {registration.EndPoint}");
-            _socket.SendTo(_sendBuffer, 0, 10, SocketFlags.None, registration.EndPoint);
+            Console.WriteLine($"Sending registration response to {endPoint}");
+            _socket.SendTo(_sendBuffer, 0, 10, SocketFlags.None, endPoint);
         }
 
-        public void SendCallStarted(uint userId, ushort groupId, ushort callId, IPEndPoint mediaEndpoint, IPEndPoint floorControlEndpoint, List<IPEndPoint> endPoints)
+        public void SendCallStarted(uint userId, ushort groupId, ushort callId, IPEndPoint mediaEndpoint, IPEndPoint floorControlEndpoint, IEnumerable<IPEndPoint> endPoints)
         {
             // Packet Type
             _sendBuffer[0] = (byte)CombinedPacketType.CallStarted;
@@ -107,20 +106,22 @@ namespace Ropu.ControllingFunction
             // Floor Control Endpoint (4 bytes IP Address, 2 bytes port)
             _sendBuffer.WriteEndPoint(mediaEndpoint, 15);
 
-            for(int index=0; index < endPoints.Count; index++)
+            foreach(var endpoint in endPoints)
             {
-                _socket.SendTo(_sendBuffer, 0, 21, SocketFlags.None, endPoints[index]);
+                _socket.SendTo(_sendBuffer, 0, 21, SocketFlags.None, endpoint);
             }
         }
 
-        public void SendCallStartFailed(CallFailedReason reason, IPEndPoint endPoint)
+        public void SendCallStartFailed(CallFailedReason reason, uint userId, IPEndPoint endPoint)
         {
             // Packet Type
             _sendBuffer[0] = (byte)CombinedPacketType.CallStartFailed;
+            // User ID (uint32) 
+            _sendBuffer.WriteUint(userId, 1);
             //* Reason (byte) 0 = insufficient resources, 255 = other reason
-            _sendBuffer[1] = (byte)CallFailedReason.InsufficientResources;
+            _sendBuffer[5] = (byte)CallFailedReason.InsufficientResources;
 
-            _socket.SendTo(_sendBuffer, 0, 2, SocketFlags.None, endPoint);
+            _socket.SendTo(_sendBuffer, 0, 6, SocketFlags.None, endPoint);
         }
     }
 }

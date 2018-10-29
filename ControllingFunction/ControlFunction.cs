@@ -53,24 +53,24 @@ namespace Ropu.ControllingFunction
 
         public void Registration(uint userId, IPEndPoint endPoint)
         {
-            var registration = new Registration(userId, endPoint);
+            var registration = new Registration(userId);
             _registra.Register(registration);
-            _controlProtocol.SendRegisterResponse(registration);
+            _controlProtocol.SendRegisterResponse(registration, endPoint);
         }
 
-        public async void StartGroupCall(uint userId, ushort groupId)
+        public async void StartGroupCall(uint userId, ushort groupId, IPEndPoint endPoint)
         {
             var mediaController = GetMediaController();
             if(mediaController == null)
             {
-                _controlProtocol.SendCallStartFailed(CallFailedReason.InsufficientResources, _registra.GetEndPoint(userId));
+                _controlProtocol.SendCallStartFailed(CallFailedReason.InsufficientResources, userId, endPoint);
                 Console.WriteLine("Can't start call because there is no available MediaController.");
                 return;
             }
             var floorController = GetFloorController();
             if(floorController == null)
             {
-                _controlProtocol.SendCallStartFailed(CallFailedReason.InsufficientResources, _registra.GetEndPoint(userId));
+                _controlProtocol.SendCallStartFailed(CallFailedReason.InsufficientResources, userId, endPoint);
                 Console.WriteLine("Can't start call because there is no available FloorController.");
                 return;
             }
@@ -95,7 +95,7 @@ namespace Ropu.ControllingFunction
             //send invite to all group members,
             //we only send one of these, if the miss the CallStarted, then they can request the call 
             //details when the receive floor control or media packets.
-            var endPoints = _registra.RegisteredGroupEndPoints(groupId);
+            var endPoints = _mediaControllers.GetEndPoints();
             _controlProtocol.SendCallStarted(caller, groupId, callId, mediaController, floorController, endPoints);
         }
 

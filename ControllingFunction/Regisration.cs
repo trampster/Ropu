@@ -7,18 +7,12 @@ namespace Ropu.ControllingFunction
 {
     public class Registration
     {
-        public Registration(uint userId, IPEndPoint endPoint)
+        public Registration(uint userId)
         {
             UserId = userId;
-            EndPoint = endPoint;
         }
 
         public uint UserId
-        {
-            get;
-        }
-
-        public IPEndPoint EndPoint
         {
             get;
         }

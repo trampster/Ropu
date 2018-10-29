@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 
 namespace Ropu.ControllingFunction
@@ -31,6 +32,11 @@ namespace Ropu.ControllingFunction
                 }
             }
             return null;
+        }
+
+        public IEnumerable<IPEndPoint> GetEndPoints()
+        {
+            return _controllers.Keys;
         }
 
     }
