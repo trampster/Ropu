@@ -5,16 +5,16 @@ using Ropu.Shared;
 using Ropu.Shared.CallManagement;
 using Ropu.Shared.Registra;
 
-namespace Ropu.ControllingNode
+namespace Ropu.ServingNode
 {
-    public class MediaControl
+    public class ServingNodeRunner
     {
         readonly MediaProtocol _mediaProtocol;
         readonly CallManagementProtocol _callManagementProtocol;
         readonly ServiceDiscovery _serviceDiscovery;
         readonly RegistraClient _registraClient;
 
-        public MediaControl(
+        public ServingNodeRunner(
             MediaProtocol mediaProtocol, 
             CallManagementProtocol callManagementProtocol, 
             ServiceDiscovery serviceDiscovery,

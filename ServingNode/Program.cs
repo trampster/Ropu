@@ -4,12 +4,12 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using Ropu.MediaController;
+using Ropu.ServingNode;
 using Ropu.Shared;
 using Ropu.Shared.CallManagement;
 using Ropu.Shared.Registra;
 
-namespace Ropu.ControllingNode
+namespace Ropu.ServingNode
 {
     class Program
     {
@@ -18,7 +18,7 @@ namespace Ropu.ControllingNode
 
         static async Task Main(string[] args)
         {
-            Console.WriteLine("Ropu Media Controller");
+            Console.WriteLine("Ropu Serving Node");
             Console.WriteLine("Copyright (c) Daniel Hughes");
             var mediaProtocol = new MediaProtocol(MediaPort);
             var callManagementProtocol = new CallManagementProtocol(ControlPort);
@@ -26,13 +26,13 @@ namespace Ropu.ControllingNode
             var fileClient = new FileClient(callManagementProtocol);
             var registraClient = new RegistraClient(serviceDiscovery, callManagementProtocol, fileClient);
 
-            var mediaControllerRunner = new MediaControl(
+            var servingNodeRunner = new ServingNodeRunner(
                 mediaProtocol, 
                 callManagementProtocol, 
                 serviceDiscovery,
                 registraClient);
 
-            await mediaControllerRunner.Run();
+            await servingNodeRunner.Run();
         }
     }
 }

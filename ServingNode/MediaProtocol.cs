@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Ropu.Shared;
 
-namespace Ropu.ControllingNode
+namespace Ropu.ServingNode
 {
     public class MediaProtocol
     {
