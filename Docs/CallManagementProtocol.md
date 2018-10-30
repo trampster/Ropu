@@ -1,5 +1,5 @@
 # Call Management Protocol
-This document details the protocol used for communication between the ControllingFunction and MediaController/FloorController for managing calls
+This document details the protocol used for communication between the ControllingFunction and the other parts of the system
 
 ## Design Principles
 * Binary - to reduce packet size and increase parsing performance
@@ -42,11 +42,20 @@ Could be a new registration or an update to an existing one
 * EndPoint (6 bytes)
 
 ### Registration Removed
-
 * Packet Type 12 (byte)
 * Request ID (uint16)
 * Group ID (uint16)
 * User ID (uint32)
+
+### Request Serving Node
+Used by a client to request to be allocated a serving node
+* Packet Type 13 (byte)
+
+### Serving Node Response
+* Packet Type 14 (byte)
+* Request ID (uint16)
+* Serving Node Endpoint (6 bytes)
+
 
 
 
