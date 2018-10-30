@@ -3,7 +3,6 @@ using System.Net;
 using System.Threading.Tasks;
 using Ropu.Shared;
 using Ropu.Shared.CallManagement;
-using Ropu.Shared.Registra;
 
 namespace Ropu.ServingNode
 {
@@ -12,27 +11,21 @@ namespace Ropu.ServingNode
         readonly MediaProtocol _mediaProtocol;
         readonly CallManagementProtocol _callManagementProtocol;
         readonly ServiceDiscovery _serviceDiscovery;
-        readonly RegistraClient _registraClient;
 
         public ServingNodeRunner(
             MediaProtocol mediaProtocol, 
             CallManagementProtocol callManagementProtocol, 
-            ServiceDiscovery serviceDiscovery,
-            RegistraClient registraClient)
+            ServiceDiscovery serviceDiscovery)
         {
             _mediaProtocol = mediaProtocol;
             _callManagementProtocol = callManagementProtocol;
             _serviceDiscovery = serviceDiscovery;
-            _registraClient = registraClient;
         }
 
         public async Task Run()
         {
             Task callManagementTask = _callManagementProtocol.Run();
             Task mediaTask = _mediaProtocol.Run();
-
-            //sync groups
-            await _registraClient.SyncGroups();
 
             Task registerTask = Register();
 

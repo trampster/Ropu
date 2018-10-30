@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Ropu.ServingNode;
 using Ropu.Shared;
 using Ropu.Shared.CallManagement;
-using Ropu.Shared.Registra;
 
 namespace Ropu.ServingNode
 {
@@ -23,14 +22,11 @@ namespace Ropu.ServingNode
             var mediaProtocol = new MediaProtocol(MediaPort);
             var callManagementProtocol = new CallManagementProtocol(ControlPort);
             var serviceDiscovery = new ServiceDiscovery();
-            var fileClient = new FileClient(callManagementProtocol);
-            var registraClient = new RegistraClient(serviceDiscovery, callManagementProtocol, fileClient);
 
             var servingNodeRunner = new ServingNodeRunner(
                 mediaProtocol, 
                 callManagementProtocol, 
-                serviceDiscovery,
-                registraClient);
+                serviceDiscovery);
 
             await servingNodeRunner.Run();
         }

@@ -10,6 +10,5 @@ namespace Ropu.Shared.CallManagement
         void HandleFilePartResponse(uint requestId, Span<byte> payload);
         void HandleRegistrationUpdate(uint requestId, ushort groupId, uint userId, IPEndPoint endPoint);
         void HandleRegistrationRemoved(uint requestId, ushort groupId, uint userId);
-        void HandleFilePartUnrecognized(uint requestId, FilePartFailureReason reason);
     }
 }

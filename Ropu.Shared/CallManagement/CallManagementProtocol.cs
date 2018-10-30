@@ -112,63 +112,6 @@ namespace Ropu.Shared.CallManagement
                     HandleAck(requestId);
                     break;
                 }
-                case CallManagementPacketType.GetGroupsFileRequest:
-                {
-                    ushort requestId = data.Slice(1).ParseUshort();
-                    _serverMessageHandler?.HandleGetGroupsFileRequest(endPoint, requestId);
-                    break;
-                }
-                case CallManagementPacketType.GetGroupFileRequest:
-                {
-                    ushort requestId = data.Slice(1).ParseUshort();
-                    ushort groupId = data.Slice(3).ParseUshort();
-                    _serverMessageHandler?.HandleGetGroupFileRequest(endPoint, requestId, groupId);
-                    break;
-                }
-                case CallManagementPacketType.FileManifestResponse:
-                {
-                    ushort requestId = data.Slice(1).ParseUshort();
-                    ushort numberOfParts = data.Slice(3).ParseUshort();
-                    ushort fileId = data.Slice(5).ParseUshort();
-                    var handler = GetRequestHandler<Action<ushort, ushort>>(requestId);
-                    if(handler != null)
-                    {
-                        handler(numberOfParts, fileId);
-                    }
-                    break;
-                }
-                case CallManagementPacketType.FilePartRequest:
-                {
-                    ushort requestId = data.Slice(1).ParseUshort();
-                    ushort fileId = data.Slice(3).ParseUshort();
-                    ushort partNumber = data.Slice(5).ParseUshort();
-                    Console.WriteLine("Receiving file part request");
-                    _serverMessageHandler?.HandleFilePartRequest(endPoint, requestId, fileId, partNumber);
-                    break;
-                }
-                case CallManagementPacketType.FilePartResponse:
-                {
-                    ushort requestId = data.Slice(1).ParseUshort();
-                    var payload = data.Slice(3);
-                    var handler = GetRequestHandler<ReadOnlySpanAction<byte, FilePartFailureReason>>(requestId);
-                    handler(payload, FilePartFailureReason.Success);
-                    _clientMessageHandler?.HandleFilePartResponse(requestId, payload);
-                    break;
-                }
-                case CallManagementPacketType.FilePartUnrecognized:
-                {
-                    ushort requestId = data.Slice(1).ParseUshort();
-                    FilePartFailureReason reason = (FilePartFailureReason)data[3];
-                    _clientMessageHandler?.HandleFilePartUnrecognized(requestId, reason);
-                    break;
-                }
-                case CallManagementPacketType.CompleteFileTransfer:
-                {
-                    ushort requestId = data.Slice(1).ParseUshort();
-                    ushort fileId = data.Slice(3).ParseUshort();
-                    _serverMessageHandler?.HandleCompleteFileTransfer(endPoint, requestId, fileId);
-                    break;
-                }
                 case CallManagementPacketType.RegistrationUpdate:
                 {
                     ushort requestId = data.Slice(1).ParseUshort();
@@ -210,20 +153,6 @@ namespace Ropu.Shared.CallManagement
             return (H)_requests[requestId];
         }
 
-        public void SendFilePartUnrecognized(ushort requestId, FilePartFailureReason reason, IPEndPoint ipEndPoint)
-        {
-            var buffer = _sendBufferPool.Get();
-            // Packet Type 
-            buffer[0] = (byte)CallManagementPacketType.FilePartUnrecognized;
-            // Request ID (ushort)
-            buffer.WriteUshort(requestId, 1);
-            // Reason Port (byte)
-            buffer[3] = (byte)reason;
-
-            _socket.SendTo(buffer, 0, 4, SocketFlags.None, ipEndPoint);
-            _sendBufferPool.Add(buffer);
-        }
-
         SocketAsyncEventArgs CreateSocketAsyncEventArgs()
         {
             var args = new SocketAsyncEventArgs()
@@ -253,116 +182,11 @@ namespace Ropu.Shared.CallManagement
             }
         }
 
-        public void SendFilePartResponse(ushort requestId, ArraySegment<byte> payload, IPEndPoint ipEndPoint)
-        {
-            var sendBuffer = _sendBufferPool.Get();
-            // Packet Type 
-            sendBuffer[0] = (byte)CallManagementPacketType.FilePartResponse;
-            // Request ID (uint16)
-            sendBuffer.WriteUshort(requestId, 1);
-
-            var headerSegment = new ArraySegment<byte>(sendBuffer, 0, 3);
-            _sendArgs.RemoteEndPoint = ipEndPoint;
-            var bufferList = _sendArgs.BufferList;
-            bufferList.Clear();
-
-            bufferList.Add(headerSegment);
-            if(payload.Count != 0)
-            {
-                bufferList.Add(payload);
-            }
-            _sendArgs.BufferList = bufferList;
-
-            _sendArgs.UserToken = (Action)(() => _sendBufferPool.Add(sendBuffer));
-            SendAsync(_sendArgs);
-        }
-
 
         /// <summary>
         /// Index is requestId, value is handler
         /// </summary>
         readonly object[] _requests = new object[ushort.MaxValue];
-
-        public async Task<bool> SendGetGroupsFileRequest(IPEndPoint targetEndpoint, Action<ushort,ushort> handler)
-        {
-            var sendBuffer = _sendBufferPool.Get();
-
-            ushort requestId = _requestId++;
-            // Packet Type 5 (byte)
-            sendBuffer[0] = (byte)CallManagementPacketType.GetGroupsFileRequest;
-            // Request ID (uint16)
-            sendBuffer.WriteUshort(requestId, 1);
-
-            var manualResetEvent = new ManualResetEvent(false); //TODO: get from pool
-
-            Action<ushort,ushort> handler1 = (numberOfParts, fileId) =>
-            {
-                handler(numberOfParts, fileId);
-                manualResetEvent.Set();
-            };
-
-            bool recievedResponse = await AwaitRequest(requestId, handler1, sendBuffer, targetEndpoint, manualResetEvent, 3);
-
-            _sendBufferPool.Add(sendBuffer);
-
-            return recievedResponse;
-        }
-
-        public async Task<bool> SendGetGroupFileRequest(IPEndPoint targetEndpoint, ushort groupId, Action<ushort, ushort> handler)
-        {
-            var sendBuffer = _sendBufferPool.Get();
-
-            ushort requestId = _requestId++;
-            // Packet Type 5 (byte)
-            sendBuffer[0] = (byte)CallManagementPacketType.GetGroupFileRequest;
-            // Request ID (uint16)
-            sendBuffer.WriteUshort(requestId, 1);
-            // Group ID (uint16)
-            sendBuffer.WriteUshort(groupId, 3);
-
-            var manualResetEvent = new ManualResetEvent(false); //TODO: get from pool
-
-            Action<ushort,ushort> handler1 = (numberOfParts, fileId) =>
-            {
-                handler(numberOfParts, fileId);
-                manualResetEvent.Set();
-            };
-
-            bool recievedResponse = await AwaitRequest(requestId, handler1, sendBuffer, targetEndpoint, manualResetEvent, 5);
-
-            _sendBufferPool.Add(sendBuffer);
-
-            return recievedResponse;
-        }
-
-        public async Task<bool> SendGetFilePartRequest(ushort fileId, ushort partNumber, ReadOnlySpanAction<byte, FilePartFailureReason> handler, IPEndPoint targetEndpoint)
-        {
-            var sendBuffer = _sendBufferPool.Get();
-
-            ushort requestId = _requestId++;
-            // Packet Type 7 (byte)
-            sendBuffer[0] = (byte)CallManagementPacketType.FilePartRequest;
-            // Request ID (uint16)
-            sendBuffer.WriteUshort(requestId, 1);
-            // File ID (uint16)
-            sendBuffer.WriteUshort(fileId, 3);
-            // Part Number (uint16)
-            sendBuffer.WriteUshort(partNumber, 5);
-
-            var manualResetEvent = new ManualResetEvent(false); //TODO: get from pool
-
-            ReadOnlySpanAction<byte, FilePartFailureReason> handler1 = (packet, failureReason) =>
-            {
-                handler(packet, failureReason);
-                manualResetEvent.Set();
-            };
-
-            bool responseReceived = await AwaitRequest(requestId, handler1, sendBuffer, targetEndpoint, manualResetEvent, 7);
-
-            _sendBufferPool.Add(sendBuffer);
-
-            return responseReceived;
-        }
 
         async Task<bool> AwaitRequest<H>(
             ushort requestId, H handler, byte[] buffer, IPEndPoint endPoint, 
@@ -448,22 +272,6 @@ namespace Ropu.Shared.CallManagement
             // Request ID (uint16)
             sendBuffer.WriteUshort(requestId, 1);
             _socket.SendTo(sendBuffer, 0, 3, SocketFlags.None, ipEndPoint);
-
-            _sendBufferPool.Add(sendBuffer);
-        }
-
-        public void SendFileManifestResponse(ushort requestId, ushort numberOfParts, ushort fileId, IPEndPoint ipEndPoint)
-        {
-            var sendBuffer = _sendBufferPool.Get();
-
-            sendBuffer[0] = (byte)CallManagementPacketType.FileManifestResponse;
-            // Request ID (uint16)
-            sendBuffer.WriteUshort(requestId, 1);
-            // Number of Parts (uint16)
-            sendBuffer.WriteUshort(numberOfParts, 3);
-            // File ID (uint16)
-            sendBuffer.WriteUshort(fileId, 5);
-            _socket.SendTo(sendBuffer, 0, 7, SocketFlags.None, ipEndPoint);
 
             _sendBufferPool.Add(sendBuffer);
         }
