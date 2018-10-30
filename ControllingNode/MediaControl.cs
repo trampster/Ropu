@@ -5,7 +5,7 @@ using Ropu.Shared;
 using Ropu.Shared.CallManagement;
 using Ropu.Shared.Registra;
 
-namespace Ropu.MediaController
+namespace Ropu.ControllingNode
 {
     public class MediaControl
     {

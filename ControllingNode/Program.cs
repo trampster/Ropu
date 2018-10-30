@@ -9,7 +9,7 @@ using Ropu.Shared;
 using Ropu.Shared.CallManagement;
 using Ropu.Shared.Registra;
 
-namespace ropu
+namespace Ropu.ControllingNode
 {
     class Program
     {
