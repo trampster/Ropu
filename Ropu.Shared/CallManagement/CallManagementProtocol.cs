@@ -129,6 +129,14 @@ namespace Ropu.Shared.CallManagement
                     _clientMessageHandler?.HandleRegistrationRemoved(requestId, groupId, userId);
                     break;
                 }
+                case CallManagementPacketType.RequestServingNode:
+                {
+                    throw new NotImplementedException();
+                }
+                case CallManagementPacketType.ServingNodeResponse:
+                {
+                    throw new NotImplementedException();
+                }
                 default:
                     throw new NotSupportedException($"PacketType {(CallManagementPacketType)data[0]} was not recognized");
             }

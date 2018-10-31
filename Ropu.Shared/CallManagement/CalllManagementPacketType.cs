@@ -6,7 +6,9 @@ namespace Ropu.Shared.CallManagement
         RegisterFloorController = 1,
         StartCall = 2,
         Ack = 3,
-        RegistrationUpdate = 11,
-        RegistrationRemoved = 12
+        RegistrationUpdate = 4,
+        RegistrationRemoved = 5,
+        RequestServingNode = 6,
+        ServingNodeResponse = 7
     }
 }

@@ -35,24 +35,25 @@ Acknoledgement to one of the other message types, all messages without specified
 
 ### Registration Update
 Could be a new registration or an update to an existing one
-* Packet Type 11 (byte)
+* Packet Type 4 (byte)
 * Request ID (uint16)
 * Group ID (uint16)
 * User ID (uint32)
 * EndPoint (6 bytes)
 
 ### Registration Removed
-* Packet Type 12 (byte)
+* Packet Type 5 (byte)
 * Request ID (uint16)
 * Group ID (uint16)
 * User ID (uint32)
 
 ### Request Serving Node
 Used by a client to request to be allocated a serving node
-* Packet Type 13 (byte)
+* Packet Type 6 (byte)
+* Request ID (uint16)
 
 ### Serving Node Response
-* Packet Type 14 (byte)
+* Packet Type 7 (byte)
 * Request ID (uint16)
 * Serving Node Endpoint (6 bytes)
 
