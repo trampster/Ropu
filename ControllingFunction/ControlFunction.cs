@@ -139,5 +139,12 @@ namespace Ropu.ControllingFunction
             _floorControllers.Register(endpoint, controller => controller.Update(floorControlEndpoint), () => new FloorController(endpoint, floorControlEndpoint));
             _callManagementProtocol.SendAck(requestId, endpoint);
         }
+
+        public void HandleRequestServingNode(ushort requestId, IPEndPoint endPoint)
+        {
+            var servingNode = _mediaControllers.GetAvailableController();
+            var servingNodeEndPoint = servingNode.MediaEndPoint;
+            _callManagementProtocol.SendServingNodeResponse(servingNodeEndPoint, endPoint);
+        }
     }
 }

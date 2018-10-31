@@ -6,5 +6,6 @@ namespace Ropu.Shared.CallManagement
     {
         void HandleRegisterMediaController(IPAddress from, ushort requestId, ushort controlPort, IPEndPoint mediaEndpoint);
         void HandleRegisterFloorController(IPAddress from, ushort requestId, ushort controlPort, IPEndPoint floorControlEndpoint);
+        void HandleRequestServingNode(ushort requestId, IPEndPoint endPoint);
     }
 }

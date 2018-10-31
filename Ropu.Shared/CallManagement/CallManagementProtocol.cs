@@ -131,11 +131,16 @@ namespace Ropu.Shared.CallManagement
                 }
                 case CallManagementPacketType.RequestServingNode:
                 {
-                    throw new NotImplementedException();
+                    ushort requestId = data.Slice(1).ParseUshort();
+                    _serverMessageHandler?.HandleRequestServingNode(requestId, endPoint);
+                    break;
                 }
                 case CallManagementPacketType.ServingNodeResponse:
                 {
-                    throw new NotImplementedException();
+                    ushort requestId = data.Slice(1).ParseUshort();
+                    IPEndPoint servingNodeEndPoint = data.Slice(3).ParseIPEndPoint();
+                    GetRequestHandler<Action<IPEndPoint>>(requestId)?.Invoke(servingNodeEndPoint);
+                    break;
                 }
                 default:
                     throw new NotSupportedException($"PacketType {(CallManagementPacketType)data[0]} was not recognized");
@@ -207,6 +212,49 @@ namespace Ropu.Shared.CallManagement
 
             _requests[requestId] = null;
             return acknowledged;
+        }
+
+        public async Task<IPEndPoint> RequestServingNode(IPEndPoint targetEndPoint)
+        {
+            var sendBuffer = _sendBufferPool.Get();
+
+            ushort requestId = _requestId++;
+
+            // Packet Type 6 (byte)
+            sendBuffer[0] = (byte)CallManagementPacketType.RequestServingNode;
+            // Request ID (uint16)
+            sendBuffer.WriteUshort(requestId, 1);
+
+            IPEndPoint servingNodeEndPoint = null;
+            var manualResetEvent = new ManualResetEvent(false);
+
+            Action<IPEndPoint> handler = endPoint =>
+            {
+                servingNodeEndPoint = endPoint;
+                manualResetEvent.Set();
+            };
+
+            await AwaitRequest(requestId, handler, sendBuffer, targetEndPoint, manualResetEvent, 3);
+
+            return servingNodeEndPoint;
+        }
+
+        public void SendServingNodeResponse(IPEndPoint servingNodeEndPoint, IPEndPoint targetEndPoint)
+        {
+            var sendBuffer = _sendBufferPool.Get();
+
+            ushort requestId = _requestId++;
+
+            // Packet Type 6 (byte)
+            sendBuffer[0] = (byte)CallManagementPacketType.RequestServingNode;
+            // Request ID (uint16)
+            sendBuffer.WriteUshort(requestId, 1);
+            // Serving Node Endpoint (6 bytes)
+            sendBuffer.WriteEndPoint(servingNodeEndPoint, 3);
+
+            _socket.SendTo(sendBuffer, 0, 9, SocketFlags.None, targetEndPoint);
+
+            _sendBufferPool.Add(sendBuffer);
         }
 
         public async Task<bool> RegisterMediaController(ushort port, IPEndPoint mediaEndpoint, IPEndPoint targetEndpoint)
