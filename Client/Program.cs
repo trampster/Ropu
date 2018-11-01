@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Ropu.Shared;
+using Ropu.Shared.CallManagement;
 
 namespace Ropu.Client
 {
@@ -22,9 +23,10 @@ namespace Ropu.Client
             var protocolSwitch = new ProtocolSwitch(_controlPort);
             var controllingFunctionClient = new ControllingFunctionClient(protocolSwitch, controllingFunctionEndpoint);
             _mediaClient = new MediaClient(protocolSwitch);
+            var callManagementProtocol = new CallManagementProtocol(5079);
 
             var ipAddress = IPAddress.Parse(MyAddress);
-            _ropuClient = new RopuClient(protocolSwitch, controllingFunctionClient, ipAddress);
+            _ropuClient = new RopuClient(protocolSwitch, controllingFunctionClient, ipAddress, callManagementProtocol, controllingFunctionEndpoint);
             var ropuClientTask = _ropuClient.Run();
 
             var consoleTask = TaskCordinator.RunLong(HandleCommands);

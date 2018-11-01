@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Ropu.Client.StateModel;
 using Ropu.Shared;
+using Ropu.Shared.CallManagement;
 using Ropu.Shared.ControlProtocol;
 
 namespace Ropu.Client
@@ -24,12 +25,21 @@ namespace Ropu.Client
         RopuState _startingCall;
         RopuState _callInProgress;
         StateManager<EventId> _stateManager;
+        CallManagementProtocol _callManagementProtocol;
 
         readonly Ropu.Shared.Timer _retryTimer;
         readonly IPAddress _ipAddress;
+        readonly IPEndPoint _loadBalancerEndPoint;
 
-        public RopuClient(ProtocolSwitch protocolSwitch, ControllingFunctionClient controllingFunctionClient, IPAddress address)
+        public RopuClient(
+            ProtocolSwitch protocolSwitch, 
+            ControllingFunctionClient controllingFunctionClient, 
+            IPAddress address,
+            CallManagementProtocol callManagementProtocol,
+            IPEndPoint loadBalancerEndPoint)
         {
+            _loadBalancerEndPoint = loadBalancerEndPoint;
+            _callManagementProtocol = callManagementProtocol;
             _protocolSwitch = protocolSwitch;
             _controllingFunctionClient = controllingFunctionClient;
             _controllingFunctionClient.SetControllingFunctionHandler(this);
@@ -83,8 +93,16 @@ namespace Ropu.Client
 
         void Register()
         {
-            Console.WriteLine("Sending Registration");
-            //TODO: will need to use a NAT system to find endpoint (like STUN)
+            Console.WriteLine("Requesting Serving Node");
+            IPEndPoint servingNodeEndPoint = null;
+            while(servingNodeEndPoint == null)
+            {
+                servingNodeEndPoint = _callManagementProtocol.RequestServingNode(_loadBalancerEndPoint).Result;
+                Task.Delay(500).Wait();
+            }
+            //TODO: set servignNodeEndPoint on ProtocolSwitch
+
+
             var endpoint = new IPEndPoint(_ipAddress, _protocolSwitch.LocalPort);
             _controllingFunctionClient.Register(_userId,  endpoint);
             _retryTimer.Duration = 2000;
