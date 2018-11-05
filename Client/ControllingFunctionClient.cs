@@ -9,15 +9,13 @@ namespace Ropu.Client
 {
     public class ControllingFunctionClient : IControlPacketParser
     {
-        readonly IPEndPoint _remoteEndPoint;
         readonly ProtocolSwitch _protocolSwitch;
         IControllingFunctionPacketHandler _controllingFunctionHandler;
 
-        public ControllingFunctionClient(ProtocolSwitch protocolSwitch, IPEndPoint remoteEndPoint)
+        public ControllingFunctionClient(ProtocolSwitch protocolSwitch)
         {
             _protocolSwitch = protocolSwitch;
             _protocolSwitch.SetControlPacketParser(this);
-            _remoteEndPoint = remoteEndPoint;
         }
 
         public void SetControllingFunctionHandler(IControllingFunctionPacketHandler controllingFunctionHandler)
@@ -25,20 +23,18 @@ namespace Ropu.Client
             _controllingFunctionHandler = controllingFunctionHandler;
         }
 
-        public void Register(uint userId, IPEndPoint ipEndPoint)
+        public void Register(uint userId, IPEndPoint remoteEndPoint)
         {
             var sendBuffer = _protocolSwitch.SendBuffer();
             //packet type (byte)
             sendBuffer[0] = (byte)CombinedPacketType.Registration;
             // User ID (uint32)
             sendBuffer.WriteUint(userId, 1);
-            // EndPoint (6 bytes)
-            sendBuffer.WriteEndPoint(ipEndPoint, 5);
 
-            _protocolSwitch.Send(11, _remoteEndPoint);
+            _protocolSwitch.Send(5, remoteEndPoint);
         }
 
-        public void StartGroupCall(uint userId, ushort groupId)
+        public void StartGroupCall(uint userId, ushort groupId, IPEndPoint remoteEndPoint)
         {
             var sendBuffer = _protocolSwitch.SendBuffer();
             //packet type (byte)
@@ -48,7 +44,7 @@ namespace Ropu.Client
             // Group ID (uint16)
             sendBuffer.WriteUshort(groupId, 5);
 
-            _protocolSwitch.Send(7, _remoteEndPoint);
+            _protocolSwitch.Send(7, remoteEndPoint);
         }
 
         public void ParseRegistrationResponse(Span<byte> data)

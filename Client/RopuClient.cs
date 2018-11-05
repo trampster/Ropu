@@ -19,6 +19,8 @@ namespace Ropu.Client
         readonly ControllingFunctionClient _controllingFunctionClient;
         readonly ProtocolSwitch _protocolSwitch;
 
+        IPEndPoint _servingNodeEndpoint;
+
         RopuState _start;
         RopuState _registered;
         RopuState _unregistered;
@@ -93,18 +95,19 @@ namespace Ropu.Client
 
         void Register()
         {
-            Console.WriteLine("Requesting Serving Node");
             IPEndPoint servingNodeEndPoint = null;
             while(servingNodeEndPoint == null)
             {
+                Console.WriteLine("Requesting Serving Node");
                 servingNodeEndPoint = _callManagementProtocol.RequestServingNode(_loadBalancerEndPoint).Result;
-                Task.Delay(500).Wait();
+                if(servingNodeEndPoint == null)
+                {
+                    Task.Delay(500).Wait();
+                }
             }
-            //TODO: set servignNodeEndPoint on ProtocolSwitch
+            _servingNodeEndpoint = servingNodeEndPoint;
 
-
-            var endpoint = new IPEndPoint(_ipAddress, _protocolSwitch.LocalPort);
-            _controllingFunctionClient.Register(_userId,  endpoint);
+            _controllingFunctionClient.Register(_userId, _servingNodeEndpoint);
             _retryTimer.Duration = 2000;
             _retryTimer.Callback = Register;
             _retryTimer.Start();
@@ -113,7 +116,7 @@ namespace Ropu.Client
         public void StartCall(ushort groupId)
         {
             Console.WriteLine("sending StartGroupCall");
-            _controllingFunctionClient.StartGroupCall(_userId, groupId);
+            _controllingFunctionClient.StartGroupCall(_userId, groupId, _servingNodeEndpoint);
             StartRetryTimer(1000, () => StartCall(groupId));
             if(_stateManager.CurrentState != _startingCall)
             {

@@ -18,15 +18,16 @@ namespace Ropu.Client
         static MediaClient _mediaClient;
         static async Task Main(string[] args)
         {
-            IPEndPoint controllingFunctionEndpoint = new IPEndPoint(IPAddress.Parse(ServerIP), ServerPort);
 
             var protocolSwitch = new ProtocolSwitch(_controlPort);
-            var controllingFunctionClient = new ControllingFunctionClient(protocolSwitch, controllingFunctionEndpoint);
+            var controllingFunctionClient = new ControllingFunctionClient(protocolSwitch);
             _mediaClient = new MediaClient(protocolSwitch);
             var callManagementProtocol = new CallManagementProtocol(5079);
 
             var ipAddress = IPAddress.Parse(MyAddress);
-            _ropuClient = new RopuClient(protocolSwitch, controllingFunctionClient, ipAddress, callManagementProtocol, controllingFunctionEndpoint);
+
+            IPEndPoint loadBallancerEndpoint = new IPEndPoint(IPAddress.Parse(ServerIP), ServerPort);
+            _ropuClient = new RopuClient(protocolSwitch, controllingFunctionClient, ipAddress, callManagementProtocol, loadBallancerEndpoint);
             var ropuClientTask = _ropuClient.Run();
 
             var consoleTask = TaskCordinator.RunLong(HandleCommands);
