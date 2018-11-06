@@ -246,7 +246,7 @@ namespace Ropu.Shared.CallManagement
             ushort requestId = _requestId++;
 
             // Packet Type 6 (byte)
-            sendBuffer[0] = (byte)CallManagementPacketType.RequestServingNode;
+            sendBuffer[0] = (byte)CallManagementPacketType.ServingNodeResponse;
             // Request ID (uint16)
             sendBuffer.WriteUshort(requestId, 1);
             // Serving Node Endpoint (6 bytes)

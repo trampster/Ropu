@@ -143,6 +143,12 @@ namespace Ropu.ControllingFunction
         public void HandleRequestServingNode(ushort requestId, IPEndPoint endPoint)
         {
             var servingNode = _mediaControllers.GetAvailableController();
+            if(servingNode == null)
+            {
+                Console.WriteLine("No available serving node"); 
+                //TODO: probably should make a packet to indicate this, for now will just let it timeout
+                return;
+            }
             var servingNodeEndPoint = servingNode.MediaEndPoint;
             _callManagementProtocol.SendServingNodeResponse(servingNodeEndPoint, endPoint);
         }

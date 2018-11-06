@@ -78,9 +78,10 @@ namespace Ropu.Client
 
         public async Task Run()
         {
-            var protocolSwithTask = _protocolSwitch.Run();
+            var protocolSwitchTask = _protocolSwitch.Run();
+            var loadBalancerTask = _callManagementProtocol.Run();
             _stateManager.SetState(_unregistered, _start);
-            await protocolSwithTask;
+            await TaskCordinator.WaitAll(protocolSwitchTask, loadBalancerTask);
         }
 
         void RegistrationAttemptTimerExpired()

@@ -12,9 +12,9 @@ namespace Ropu.Client
     {
         const ushort _controlPort = 5061;
         static RopuClient _ropuClient;
-        const string ServerIP =  "192.168.1.6";
+        const string LoadBalancerIP =  "192.168.1.6";
         const string MyAddress = "192.168.1.6";
-        const int ServerPort = 5060;
+        const int LoadBalancerPort = 5069;
         static MediaClient _mediaClient;
         static async Task Main(string[] args)
         {
@@ -26,7 +26,7 @@ namespace Ropu.Client
 
             var ipAddress = IPAddress.Parse(MyAddress);
 
-            IPEndPoint loadBallancerEndpoint = new IPEndPoint(IPAddress.Parse(ServerIP), ServerPort);
+            IPEndPoint loadBallancerEndpoint = new IPEndPoint(IPAddress.Parse(LoadBalancerIP), LoadBalancerPort);
             _ropuClient = new RopuClient(protocolSwitch, controllingFunctionClient, ipAddress, callManagementProtocol, loadBallancerEndpoint);
             var ropuClientTask = _ropuClient.Run();
 
@@ -73,7 +73,7 @@ namespace Ropu.Client
 
         static void SendMedia()
         {
-            var ipAddress = IPAddress.Parse(ServerIP);
+            var ipAddress = IPAddress.Parse(LoadBalancerIP);
             var endPoint = new IPEndPoint(ipAddress, 5065);
             var payload = new byte[] {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20};
             while(true)
