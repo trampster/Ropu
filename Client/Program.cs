@@ -26,8 +26,8 @@ namespace Ropu.Client
 
             var ipAddress = IPAddress.Parse(MyAddress);
 
-            IPEndPoint loadBallancerEndpoint = new IPEndPoint(IPAddress.Parse(LoadBalancerIP), LoadBalancerPort);
-            _ropuClient = new RopuClient(protocolSwitch, controllingFunctionClient, ipAddress, callManagementProtocol, loadBallancerEndpoint);
+            IPEndPoint loadBalancerEndpoint = new IPEndPoint(IPAddress.Parse(LoadBalancerIP), LoadBalancerPort);
+            _ropuClient = new RopuClient(protocolSwitch, controllingFunctionClient, ipAddress, callManagementProtocol, loadBalancerEndpoint);
             var ropuClientTask = _ropuClient.Run();
 
             var consoleTask = TaskCordinator.RunLong(HandleCommands);

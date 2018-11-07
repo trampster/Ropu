@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace Ropu.ControllingFunction
+namespace Ropu.LoadBalancer
 {
     public interface IControlMessageHandler
     {

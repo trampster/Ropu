@@ -4,7 +4,7 @@ using System.Net;
 using Ropu.Shared.Groups;
 using System.Linq;
 
-namespace Ropu.ControllingFunction
+namespace Ropu.LoadBalancer
 {
     public class Registra
     {

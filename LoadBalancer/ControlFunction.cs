@@ -4,13 +4,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using Ropu.ControllingFunction.FileServer;
+using Ropu.LoadBalancer.FileServer;
 using Ropu.Shared;
 using Ropu.Shared.CallManagement;
 using Ropu.Shared.ControlProtocol;
 using Ropu.Shared.Groups;
 
-namespace Ropu.ControllingFunction
+namespace Ropu.LoadBalancer
 {
     public class ControlFunction : IControlMessageHandler, ICallManagementServerMessageHandler
     {

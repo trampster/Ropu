@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Ropu.ControllingFunction.FileServer
+namespace Ropu.LoadBalancer.FileServer
 {
     public class FileManager
     {

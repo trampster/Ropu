@@ -1,25 +1,20 @@
 using System;
 using System.Net;
 
-namespace Ropu.ControllingFunction
+namespace Ropu.LoadBalancer
 {
-    public class MediaController : IRegisteredController
+    public class FloorController : IRegisteredController
     {
-        IPEndPoint _mediaEndpoint;
+
+        IPEndPoint _floorEndPoint;
         DateTime _expirtyTime;
 
         readonly object _lock = new object();
-
-        public MediaController(IPEndPoint controlEndPoint, IPEndPoint mediaEndPoint)
+        public FloorController(IPEndPoint controlEndPoint, IPEndPoint floorEndPoint)
         {
             ControlEndPoint = controlEndPoint;
-            _mediaEndpoint = mediaEndPoint;
+            _floorEndPoint = floorEndPoint;
             SetupExpiryTime();
-        }
-
-        void SetupExpiryTime()
-        {
-            _expirtyTime = DateTime.UtcNow.AddSeconds(120);
         }
 
         public IPEndPoint ControlEndPoint
@@ -27,19 +22,24 @@ namespace Ropu.ControllingFunction
             get;
         }
 
-        public IPEndPoint MediaEndPoint
+        public IPEndPoint FloorEndPoint
         {
             get
             {
-                return _mediaEndpoint;
+                return _floorEndPoint;
             }
         }
 
-        public void Update(IPEndPoint mediaEndPoint)
+        void SetupExpiryTime()
+        {
+            _expirtyTime = DateTime.UtcNow.AddSeconds(120);
+        }
+
+        public void Update(IPEndPoint floorEndPoint)
         {
             lock(_lock)
             {
-                _mediaEndpoint = mediaEndPoint;
+                _floorEndPoint = floorEndPoint;
                 SetupExpiryTime();
             }
         }

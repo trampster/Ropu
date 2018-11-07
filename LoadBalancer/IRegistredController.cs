@@ -1,4 +1,4 @@
-namespace Ropu.ControllingFunction
+namespace Ropu.LoadBalancer
 {
     public interface IRegisteredController
     {

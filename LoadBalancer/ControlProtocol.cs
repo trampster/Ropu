@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Ropu.Shared;
 using Ropu.Shared.ControlProtocol;
 
-namespace Ropu.ControllingFunction
+namespace Ropu.LoadBalancer
 {
     public class ControlProtocol
     {

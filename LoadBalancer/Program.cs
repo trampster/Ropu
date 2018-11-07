@@ -2,11 +2,11 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
-using Ropu.ControllingFunction.FileServer;
+using Ropu.LoadBalancer.FileServer;
 using Ropu.Shared.CallManagement;
 using Ropu.Shared.Groups;
 
-namespace Ropu.ControllingFunction
+namespace Ropu.LoadBalancer
 {
     class Program
     {

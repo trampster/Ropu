@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 
-namespace Ropu.ControllingFunction
+namespace Ropu.LoadBalancer
 {
     public class ControllerRegistry<T> where T : class, IRegisteredController
     {

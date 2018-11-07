@@ -3,7 +3,7 @@ using System.Net;
 using System.Net.Sockets;
 using Ropu.Shared.ControlProtocol;
 
-namespace Ropu.ControllingFunction
+namespace Ropu.LoadBalancer
 {
     public class Registration
     {

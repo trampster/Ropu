@@ -8,12 +8,12 @@ namespace Ropu.Shared
     {
         public IPEndPoint CallManagementServerEndpoint()
         {
-            return new IPEndPoint(IPAddress.Parse("172.16.182.32"), 5069);
+            return new IPEndPoint(IPAddress.Parse("192.168.1.6"), 5069);
         }
 
         public IPAddress GetMyAddress()
         {
-            return IPAddress.Parse("172.16.182.32");
+            return IPAddress.Parse("192.168.1.6");
         }
     }
 }
