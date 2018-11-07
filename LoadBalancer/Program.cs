@@ -12,10 +12,13 @@ namespace Ropu.LoadBalancer
     {
         static async Task Main(string[] args)
         {
+            Console.WriteLine("Ropu Load Balancer");
+            Console.WriteLine("Copyright (c) Daniel Hughes");
+
             var fileManager = new FileManager();
             var groupsClient = new HardcodedGroupsClient();
             var callManagementProtocol = new CallManagementProtocol(5069);
-            var controller = new ControlFunction(callManagementProtocol, groupsClient, fileManager);
+            var controller = new LoadBalancerRunner(callManagementProtocol, groupsClient, fileManager);
             await controller.Run();
         }   
     }

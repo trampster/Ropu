@@ -12,16 +12,15 @@ using Ropu.Shared.Groups;
 
 namespace Ropu.LoadBalancer
 {
-    public class ControlFunction : ICallManagementServerMessageHandler
+    public class LoadBalancerRunner : ICallManagementServerMessageHandler
     {
         readonly CallManagementProtocol _callManagementProtocol;
-        readonly ControllerRegistry<MediaController> _mediaControllers;
+        readonly ControllerRegistry<RegisteredServingNode> _servingNodes;
         readonly ControllerRegistry<FloorController> _floorControllers;
         readonly IGroupsClient _groupsClient;
         readonly FileManager _fileManager;
-        ushort _callId = 0;
 
-        public ControlFunction(
+        public LoadBalancerRunner(
             CallManagementProtocol callManagementProtocol, 
             IGroupsClient groupsClient, 
             FileManager fileManager)
@@ -31,7 +30,7 @@ namespace Ropu.LoadBalancer
             _callManagementProtocol.SetServerMessageHandler(this);
             _groupsClient = groupsClient;
 
-            _mediaControllers = new ControllerRegistry<MediaController>();
+            _servingNodes = new ControllerRegistry<RegisteredServingNode>();
 
             _floorControllers = new ControllerRegistry<FloorController>();
         }
@@ -43,9 +42,9 @@ namespace Ropu.LoadBalancer
             await TaskCordinator.WaitAll(callManagement);
         }
 
-        MediaController GetMediaController()
+        RegisteredServingNode GetServingNode()
         {
-            return _mediaControllers.GetAvailableController();
+            return _servingNodes.GetAvailableController();
         }
 
         FloorController GetFloorController()
@@ -57,7 +56,7 @@ namespace Ropu.LoadBalancer
         {
             Console.WriteLine("Media Controller Registered");
             var endpoint = new IPEndPoint(fromAddress, controlPort);
-            _mediaControllers.Register(endpoint, controller => controller.Update(mediaEndpoint), () => new MediaController(endpoint, mediaEndpoint));
+            _servingNodes.Register(endpoint, controller => controller.Update(mediaEndpoint), () => new RegisteredServingNode(endpoint, mediaEndpoint));
             _callManagementProtocol.SendAck(requestId, endpoint);
         }
 
@@ -71,14 +70,14 @@ namespace Ropu.LoadBalancer
 
         public void HandleRequestServingNode(ushort requestId, IPEndPoint endPoint)
         {
-            var servingNode = _mediaControllers.GetAvailableController();
+            var servingNode = _servingNodes.GetAvailableController();
             if(servingNode == null)
             {
                 Console.WriteLine("No available serving node"); 
                 //TODO: probably should make a packet to indicate this, for now will just let it timeout
                 return;
             }
-            var servingNodeEndPoint = servingNode.MediaEndPoint;
+            var servingNodeEndPoint = servingNode.ServingEndPoint;
             Console.WriteLine($"Sending Serving Node Response to {endPoint}"); 
 
             _callManagementProtocol.SendServingNodeResponse(servingNodeEndPoint, endPoint);

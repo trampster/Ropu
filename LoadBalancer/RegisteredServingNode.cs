@@ -3,17 +3,17 @@ using System.Net;
 
 namespace Ropu.LoadBalancer
 {
-    public class MediaController : IRegisteredController
+    public class RegisteredServingNode : IRegisteredController
     {
-        IPEndPoint _mediaEndpoint;
+        IPEndPoint _servingEndPoint;
         DateTime _expirtyTime;
 
         readonly object _lock = new object();
 
-        public MediaController(IPEndPoint controlEndPoint, IPEndPoint mediaEndPoint)
+        public RegisteredServingNode(IPEndPoint controlEndPoint, IPEndPoint mediaEndPoint)
         {
             ControlEndPoint = controlEndPoint;
-            _mediaEndpoint = mediaEndPoint;
+            _servingEndPoint = mediaEndPoint;
             SetupExpiryTime();
         }
 
@@ -27,11 +27,11 @@ namespace Ropu.LoadBalancer
             get;
         }
 
-        public IPEndPoint MediaEndPoint
+        public IPEndPoint ServingEndPoint
         {
             get
             {
-                return _mediaEndpoint;
+                return _servingEndPoint;
             }
         }
 
@@ -39,7 +39,7 @@ namespace Ropu.LoadBalancer
         {
             lock(_lock)
             {
-                _mediaEndpoint = mediaEndPoint;
+                _servingEndPoint = mediaEndPoint;
                 SetupExpiryTime();
             }
         }
