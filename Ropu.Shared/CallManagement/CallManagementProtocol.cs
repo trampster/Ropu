@@ -131,6 +131,7 @@ namespace Ropu.Shared.CallManagement
                 }
                 case CallManagementPacketType.RequestServingNode:
                 {
+                    Console.WriteLine("Serving Node Requested");
                     ushort requestId = data.Slice(1).ParseUshort();
                     _serverMessageHandler?.HandleRequestServingNode(requestId, endPoint);
                     break;

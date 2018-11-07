@@ -1,4 +1,4 @@
-namespace Ropu.LoadBalancer
+namespace Ropu.ServingNode
 {
     public enum Codecs
     {

@@ -6,20 +6,24 @@ using Ropu.Shared.CallManagement;
 
 namespace Ropu.ServingNode
 {
-    public class ServingNodeRunner
+    public class ServingNodeRunner : IMessageHandler
     {
         readonly MediaProtocol _mediaProtocol;
         readonly CallManagementProtocol _callManagementProtocol;
         readonly ServiceDiscovery _serviceDiscovery;
+        readonly Registra _registra;
 
         public ServingNodeRunner(
             MediaProtocol mediaProtocol, 
             CallManagementProtocol callManagementProtocol, 
-            ServiceDiscovery serviceDiscovery)
+            ServiceDiscovery serviceDiscovery,
+            Registra registra)
         {
             _mediaProtocol = mediaProtocol;
+            _mediaProtocol.SetMessageHandler(this);
             _callManagementProtocol = callManagementProtocol;
             _serviceDiscovery = serviceDiscovery;
+            _registra = registra;
         }
 
         public async Task Run()
@@ -31,6 +35,18 @@ namespace Ropu.ServingNode
 
 
             await TaskCordinator.WaitAll(callManagementTask, mediaTask, registerTask);
+        }
+
+        public void Registration(uint userId, IPEndPoint endPoint)
+        {
+            var registration = new Registration(userId, endPoint);
+            _registra.Register(registration);
+            _mediaProtocol.SendRegisterResponse(registration, endPoint);
+        }
+
+        public void StartGroupCall(uint userId, ushort groupId, IPEndPoint endPoint)
+        {
+
         }
 
         async Task Register()

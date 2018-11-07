@@ -14,10 +14,8 @@ namespace Ropu.LoadBalancer
         {
             var fileManager = new FileManager();
             var groupsClient = new HardcodedGroupsClient();
-            var registra = new Registra(groupsClient);
-            var controlProtocol = new ControlProtocol(5060);
             var callManagementProtocol = new CallManagementProtocol(5069);
-            var controller = new ControlFunction(controlProtocol, registra, callManagementProtocol, groupsClient, fileManager);
+            var controller = new ControlFunction(callManagementProtocol, groupsClient, fileManager);
             await controller.Run();
         }   
     }

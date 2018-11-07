@@ -96,17 +96,18 @@ namespace Ropu.Client
 
         void Register()
         {
-            IPEndPoint servingNodeEndPoint = null;
-            while(servingNodeEndPoint == null)
+            while(_servingNodeEndpoint == null)
             {
-                Console.WriteLine("Requesting Serving Node");
-                servingNodeEndPoint = _callManagementProtocol.RequestServingNode(_loadBalancerEndPoint).Result;
-                if(servingNodeEndPoint == null)
+                Console.WriteLine($"Requesting Serving Node from LoadBalancer {_loadBalancerEndPoint}");
+                _servingNodeEndpoint = _callManagementProtocol.RequestServingNode(_loadBalancerEndPoint).Result;
+                if(_servingNodeEndpoint == null)
                 {
+                    Console.WriteLine("Failed to get a serving node");
                     Task.Delay(500).Wait();
                 }
             }
-            _servingNodeEndpoint = servingNodeEndPoint;
+
+            Console.WriteLine($"Got serving node at {_servingNodeEndpoint}");
 
             _controllingFunctionClient.Register(_userId, _servingNodeEndpoint);
             _retryTimer.Duration = 2000;
