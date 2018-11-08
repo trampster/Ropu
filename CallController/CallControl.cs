@@ -1,5 +1,5 @@
 using System.Threading.Tasks;
-using Ropu.Shared.CallManagement;
+using Ropu.Shared.LoadBalancing;
 using Ropu.Shared;
 using System.Net;
 using System;
@@ -12,7 +12,7 @@ namespace Ropu.CallController
 
         readonly ServiceDiscovery _serviceDiscovery;
 
-        public FloorControl(LoadBalancerProtocol loadBalancerProtocol, ServiceDiscovery serviceDiscovery)
+        public CallControl(LoadBalancerProtocol loadBalancerProtocol, ServiceDiscovery serviceDiscovery)
         {
             _loadBalancerProtocol = loadBalancerProtocol;
             _serviceDiscovery = serviceDiscovery;
