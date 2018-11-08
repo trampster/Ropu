@@ -6,38 +6,38 @@ using System.Net;
 using System.Threading.Tasks;
 using Ropu.LoadBalancer.FileServer;
 using Ropu.Shared;
-using Ropu.Shared.CallManagement;
+using Ropu.Shared.LoadBalancing;
 using Ropu.Shared.ControlProtocol;
 using Ropu.Shared.Groups;
 
 namespace Ropu.LoadBalancer
 {
-    public class LoadBalancerRunner : ICallManagementServerMessageHandler
+    public class LoadBalancerRunner : ILoadBalancerServerMessageHandler
     {
-        readonly CallManagementProtocol _callManagementProtocol;
+        readonly LoadBalancerProtocol _loadBalancerProtocol;
         readonly ControllerRegistry<RegisteredServingNode> _servingNodes;
-        readonly ControllerRegistry<FloorController> _floorControllers;
+        readonly ControllerRegistry<RegisteredCallController> _callControllers;
         readonly IGroupsClient _groupsClient;
         readonly FileManager _fileManager;
 
         public LoadBalancerRunner(
-            CallManagementProtocol callManagementProtocol, 
+            LoadBalancerProtocol loadBalancerProtocol, 
             IGroupsClient groupsClient, 
             FileManager fileManager)
         {
             _fileManager = fileManager;
-            _callManagementProtocol = callManagementProtocol;
-            _callManagementProtocol.SetServerMessageHandler(this);
+            _loadBalancerProtocol = loadBalancerProtocol;
+            _loadBalancerProtocol.SetServerMessageHandler(this);
             _groupsClient = groupsClient;
 
             _servingNodes = new ControllerRegistry<RegisteredServingNode>();
 
-            _floorControllers = new ControllerRegistry<FloorController>();
+            _callControllers = new ControllerRegistry<RegisteredCallController>();
         }
 
         public async Task Run()
         {
-            var callManagement = _callManagementProtocol.Run();
+            var callManagement = _loadBalancerProtocol.Run();
 
             await TaskCordinator.WaitAll(callManagement);
         }
@@ -47,25 +47,23 @@ namespace Ropu.LoadBalancer
             return _servingNodes.GetAvailableController();
         }
 
-        FloorController GetFloorController()
+        RegisteredCallController GetCallController()
         {
-            return _floorControllers.GetAvailableController();
+            return _callControllers.GetAvailableController();
         }
 
-        public void HandleRegisterMediaController(IPAddress fromAddress, ushort requestId, ushort controlPort, IPEndPoint mediaEndpoint)
+        public void HandleRegisterServingNode(IPEndPoint from, ushort requestId, IPEndPoint servingNodeEndpoint)
         {
-            Console.WriteLine("Media Controller Registered");
-            var endpoint = new IPEndPoint(fromAddress, controlPort);
-            _servingNodes.Register(endpoint, controller => controller.Update(mediaEndpoint), () => new RegisteredServingNode(endpoint, mediaEndpoint));
-            _callManagementProtocol.SendAck(requestId, endpoint);
+            Console.WriteLine($"Serving Node Registered at end point {servingNodeEndpoint}");
+            _servingNodes.Register(from, controller => controller.Update(servingNodeEndpoint), () => new RegisteredServingNode(from, servingNodeEndpoint));
+            _loadBalancerProtocol.SendAck(requestId, from);
         }
 
-        public void HandleRegisterFloorController(IPAddress fromAddress, ushort requestId, ushort controlPort, IPEndPoint floorControlEndpoint)
+        public void HandleRegisterCallController(IPEndPoint from, ushort requestId, IPEndPoint callControlEndpoint)
         {
-            Console.WriteLine("Floor Controller Registered");
-            var endpoint = new IPEndPoint(fromAddress, controlPort);
-            _floorControllers.Register(endpoint, controller => controller.Update(floorControlEndpoint), () => new FloorController(endpoint, floorControlEndpoint));
-            _callManagementProtocol.SendAck(requestId, endpoint);
+            Console.WriteLine($"Call Controller Registered at end point {callControlEndpoint}");
+            _callControllers.Register(from, controller => controller.Update(callControlEndpoint), () => new RegisteredCallController(from, callControlEndpoint));
+            _loadBalancerProtocol.SendAck(requestId, from);
         }
 
         public void HandleRequestServingNode(ushort requestId, IPEndPoint endPoint)
@@ -80,7 +78,7 @@ namespace Ropu.LoadBalancer
             var servingNodeEndPoint = servingNode.ServingEndPoint;
             Console.WriteLine($"Sending Serving Node Response to {endPoint}"); 
 
-            _callManagementProtocol.SendServingNodeResponse(servingNodeEndPoint, endPoint);
+            _loadBalancerProtocol.SendServingNodeResponse(servingNodeEndPoint, endPoint);
         }
     }
 }

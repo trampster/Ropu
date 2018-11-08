@@ -3,7 +3,7 @@ using Ropu.Shared.CallManagement;
 using Ropu.Shared;
 using System.Threading.Tasks;
 
-namespace Ropu.FloorController
+namespace Ropu.CallController
 {
     class Program
     {
@@ -11,11 +11,12 @@ namespace Ropu.FloorController
 
         static async Task Main(string[] args)
         {
-            Console.WriteLine("Starting Ropu Floor Controller");
+            Console.WriteLine("Starting Ropu Call Controller");
+            Console.WriteLine("Copyright (c) Daniel Hughes 2018");
 
-            var callManagementProtocol = new CallManagementProtocol(ControlPort);
+            var loadBalancerProtocol = new LoadBalancerProtocol(ControlPort);
             var serviceDiscovery = new ServiceDiscovery();
-            var floorControl = new FloorControl(callManagementProtocol, serviceDiscovery);
+            var floorControl = new CallControl(loadBalancerProtocol, serviceDiscovery);
 
             await floorControl.Run();
         }

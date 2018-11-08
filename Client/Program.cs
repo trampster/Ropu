@@ -4,7 +4,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Ropu.Shared;
-using Ropu.Shared.CallManagement;
+using Ropu.Shared.LoadBalancing;
 
 namespace Ropu.Client
 {
@@ -22,7 +22,7 @@ namespace Ropu.Client
             var protocolSwitch = new ProtocolSwitch(_controlPort);
             var controllingFunctionClient = new ControllingFunctionClient(protocolSwitch);
             _mediaClient = new MediaClient(protocolSwitch);
-            var callManagementProtocol = new CallManagementProtocol(5079);
+            var callManagementProtocol = new LoadBalancerProtocol(5079);
 
             var ipAddress = IPAddress.Parse(MyAddress);
 

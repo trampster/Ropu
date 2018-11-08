@@ -1,3 +1,4 @@
+
 using System;
 using System.Buffers;
 using System.Collections.Generic;
@@ -8,9 +9,9 @@ using System.Threading.Tasks;
 using Ropu.Shared;
 using Ropu.Shared.ControlProtocol;
 
-namespace Ropu.Shared.CallManagement
+namespace Ropu.Shared.LoadBalancing
 {
-    public class CallManagementProtocol
+    public class LoadBalancerProtocol
     {
         readonly Socket _socket;
         SocketAsyncEventArgs _sendArgs;
@@ -24,10 +25,10 @@ namespace Ropu.Shared.CallManagement
 
         static readonly IPEndPoint Any = new IPEndPoint(IPAddress.Any, AnyPort);
 
-        ICallManagementServerMessageHandler _serverMessageHandler;
-        ICallManagementClientMessageHandler _clientMessageHandler;
+        ILoadBalancerServerMessageHandler _serverMessageHandler;
+        ILoadBalancerClientMessageHandler _clientMessageHandler;
 
-        public CallManagementProtocol(ushort port)
+        public LoadBalancerProtocol(ushort port)
         {
             _port = port;
             _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
@@ -36,12 +37,12 @@ namespace Ropu.Shared.CallManagement
 
         public ushort ControlPort => _port;
 
-        public void SetServerMessageHandler(ICallManagementServerMessageHandler messageHandler)
+        public void SetServerMessageHandler(ILoadBalancerServerMessageHandler messageHandler)
         {
             _serverMessageHandler = messageHandler;
         }
 
-        public void SetClientMessageHandler(ICallManagementClientMessageHandler messageHandler)
+        public void SetClientMessageHandler(ILoadBalancerClientMessageHandler messageHandler)
         {
             _clientMessageHandler = messageHandler;
         }
@@ -80,25 +81,23 @@ namespace Ropu.Shared.CallManagement
 
         void HandlePacket(Span<byte> data, IPEndPoint endPoint)
         {
-            switch((CallManagementPacketType)data[0])
+            switch((LoadBalancerPacketType)data[0])
             {
-                case CallManagementPacketType.RegisterMediaController:
+                case LoadBalancerPacketType.RegisterServingNode:
                 {
                     ushort requestId = data.Slice(1).ParseUshort();
-                    ushort controlPort = data.Slice(3).ParseUshort();
-                    var mediaEndpoint = data.Slice(5).ParseIPEndPoint();
-                    _serverMessageHandler?.HandleRegisterMediaController(endPoint.Address, requestId, controlPort, mediaEndpoint);
+                    var mediaEndpoint = data.Slice(3).ParseIPEndPoint();
+                    _serverMessageHandler?.HandleRegisterServingNode(endPoint, requestId, mediaEndpoint);
                     break;
                 }
-                case CallManagementPacketType.RegisterFloorController:
+                case LoadBalancerPacketType.RegisterCallController:
                 {
                     ushort requestId = data.Slice(1).ParseUshort();
-                    ushort controlPort = data.Slice(3).ParseUshort();
-                    var floorControlEndpoint = data.Slice(5).ParseIPEndPoint();
-                    _serverMessageHandler?.HandleRegisterFloorController(endPoint.Address, requestId, controlPort, floorControlEndpoint);
+                    var floorControlEndpoint = data.Slice(3).ParseIPEndPoint();
+                    _serverMessageHandler?.HandleRegisterCallController(endPoint, requestId,  floorControlEndpoint);
                     break;
                 }
-                case CallManagementPacketType.StartCall:
+                case LoadBalancerPacketType.StartCall:
                 {
                     ushort requestId = data.Slice(1).ParseUshort();
                     ushort callId = data.Slice(3).ParseUshort();
@@ -106,13 +105,13 @@ namespace Ropu.Shared.CallManagement
                     _clientMessageHandler?.HandleCallStart(requestId, callId, groupId);
                     break;
                 }
-                case CallManagementPacketType.Ack:
+                case LoadBalancerPacketType.Ack:
                 {
                     ushort requestId = data.Slice(1).ParseUshort();
                     HandleAck(requestId);
                     break;
                 }
-                case CallManagementPacketType.RegistrationUpdate:
+                case LoadBalancerPacketType.RegistrationUpdate:
                 {
                     ushort requestId = data.Slice(1).ParseUshort();
                     ushort groupId = data.Slice(3).ParseUshort();
@@ -121,7 +120,7 @@ namespace Ropu.Shared.CallManagement
                     _clientMessageHandler?.HandleRegistrationUpdate(requestId, groupId, userId, regEndPoint);
                     break;
                 }
-                case CallManagementPacketType.RegistrationRemoved:
+                case LoadBalancerPacketType.RegistrationRemoved:
                 {
                     ushort requestId = data.Slice(1).ParseUshort();
                     ushort groupId = data.Slice(3).ParseUshort();
@@ -129,13 +128,13 @@ namespace Ropu.Shared.CallManagement
                     _clientMessageHandler?.HandleRegistrationRemoved(requestId, groupId, userId);
                     break;
                 }
-                case CallManagementPacketType.RequestServingNode:
+                case LoadBalancerPacketType.RequestServingNode:
                 {
                     ushort requestId = data.Slice(1).ParseUshort();
                     _serverMessageHandler?.HandleRequestServingNode(requestId, endPoint);
                     break;
                 }
-                case CallManagementPacketType.ServingNodeResponse:
+                case LoadBalancerPacketType.ServingNodeResponse:
                 {
                     ushort requestId = data.Slice(1).ParseUshort();
                     IPEndPoint servingNodeEndPoint = data.Slice(3).ParseIPEndPoint();
@@ -143,7 +142,7 @@ namespace Ropu.Shared.CallManagement
                     break;
                 }
                 default:
-                    throw new NotSupportedException($"PacketType {(CallManagementPacketType)data[0]} was not recognized");
+                    throw new NotSupportedException($"PacketType {(LoadBalancerPacketType)data[0]} was not recognized");
             }
         }
 
@@ -221,7 +220,7 @@ namespace Ropu.Shared.CallManagement
             ushort requestId = _requestId++;
 
             // Packet Type 6 (byte)
-            sendBuffer[0] = (byte)CallManagementPacketType.RequestServingNode;
+            sendBuffer[0] = (byte)LoadBalancerPacketType.RequestServingNode;
             // Request ID (uint16)
             sendBuffer.WriteUshort(requestId, 1);
 
@@ -246,7 +245,7 @@ namespace Ropu.Shared.CallManagement
             ushort requestId = _requestId++;
 
             // Packet Type 6 (byte)
-            sendBuffer[0] = (byte)CallManagementPacketType.ServingNodeResponse;
+            sendBuffer[0] = (byte)LoadBalancerPacketType.ServingNodeResponse;
             // Request ID (uint16)
             sendBuffer.WriteUshort(requestId, 1);
             // Serving Node Endpoint (6 bytes)
@@ -257,42 +256,38 @@ namespace Ropu.Shared.CallManagement
             _sendBufferPool.Add(sendBuffer);
         }
 
-        public async Task<bool> RegisterMediaController(ushort port, IPEndPoint mediaEndpoint, IPEndPoint targetEndpoint)
+        public async Task<bool> SendRegisterServingNode(IPEndPoint mediaEndpoint, IPEndPoint targetEndpoint)
         {
             var sendBuffer = _sendBufferPool.Get();
 
             ushort requestId = _requestId++;
             // Packet Type 1
-            sendBuffer[0] = (byte)CallManagementPacketType.RegisterMediaController;
+            sendBuffer[0] = (byte)LoadBalancerPacketType.RegisterServingNode;
             // Request ID (ushort)
             sendBuffer.WriteUshort(requestId, 1);
-            // UDP Port (ushort)
-            sendBuffer.WriteUshort(port, 3);
-            // Media Endpoint
-            sendBuffer.WriteEndPoint(mediaEndpoint, 5);
+            // Serving Node Endpoint
+            sendBuffer.WriteEndPoint(mediaEndpoint, 3);
 
-            bool responseReceived = await SendAndWaitForAck(requestId, sendBuffer, 11, targetEndpoint);
+            bool responseReceived = await SendAndWaitForAck(requestId, sendBuffer, 9, targetEndpoint);
 
             _sendBufferPool.Add(sendBuffer);
 
             return responseReceived;
         }
 
-        public async Task<bool> RegisterFloorController(ushort port, IPEndPoint floorControlerEndpoint, IPEndPoint targetEndpoint)
+        public async Task<bool> SendRegisterCallController(IPEndPoint floorControlerEndpoint, IPEndPoint targetEndpoint)
         {
             var sendBuffer = _sendBufferPool.Get();
 
             ushort requestId = _requestId++;
             // Packet Type 1
-            sendBuffer[0] = (byte)CallManagementPacketType.RegisterFloorController;
+            sendBuffer[0] = (byte)LoadBalancerPacketType.RegisterCallController;
             // Request ID (uint16)
             sendBuffer.WriteUshort(requestId, 1);
-            // UDP Port (ushort)
-            sendBuffer.WriteUshort(port, 3);
-            // Floor Control Endpoint
+            // Call Control Endpoint
             sendBuffer.WriteEndPoint(floorControlerEndpoint, 5);
 
-            bool responseReceived = await SendAndWaitForAck(requestId, sendBuffer, 11, targetEndpoint);
+            bool responseReceived = await SendAndWaitForAck(requestId, sendBuffer, 9, targetEndpoint);
 
             _sendBufferPool.Add(sendBuffer);
 
@@ -305,7 +300,7 @@ namespace Ropu.Shared.CallManagement
 
             ushort requestId = _requestId++;
             // Packet Type 1
-            sendBuffer[0] = (byte)CallManagementPacketType.StartCall;
+            sendBuffer[0] = (byte)LoadBalancerPacketType.StartCall;
             // Request ID (uint16)
             sendBuffer.WriteUshort(requestId, 1);
             // Call ID (uint16)
@@ -324,7 +319,7 @@ namespace Ropu.Shared.CallManagement
         {
             var sendBuffer = _sendBufferPool.Get();
 
-            sendBuffer[0] = (byte)CallManagementPacketType.Ack;
+            sendBuffer[0] = (byte)LoadBalancerPacketType.Ack;
             // Request ID (uint16)
             sendBuffer.WriteUshort(requestId, 1);
             _socket.SendTo(sendBuffer, 0, 3, SocketFlags.None, ipEndPoint);

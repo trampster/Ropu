@@ -1,9 +1,9 @@
-namespace Ropu.Shared.CallManagement
+namespace Ropu.Shared.LoadBalancing
 {
-    public enum CallManagementPacketType
+    public enum LoadBalancerPacketType
     {
-        RegisterMediaController = 0,
-        RegisterFloorController = 1,
+        RegisterServingNode = 0,
+        RegisterCallController = 1,
         StartCall = 2,
         Ack = 3,
         RegistrationUpdate = 4,

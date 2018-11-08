@@ -3,17 +3,17 @@ using System.Net;
 
 namespace Ropu.LoadBalancer
 {
-    public class FloorController : IRegisteredController
+    public class RegisteredCallController : IRegisteredController
     {
 
-        IPEndPoint _floorEndPoint;
+        IPEndPoint _callEndPoint;
         DateTime _expirtyTime;
 
         readonly object _lock = new object();
-        public FloorController(IPEndPoint controlEndPoint, IPEndPoint floorEndPoint)
+        public RegisteredCallController(IPEndPoint controlEndPoint, IPEndPoint floorEndPoint)
         {
             ControlEndPoint = controlEndPoint;
-            _floorEndPoint = floorEndPoint;
+            _callEndPoint = floorEndPoint;
             SetupExpiryTime();
         }
 
@@ -22,11 +22,11 @@ namespace Ropu.LoadBalancer
             get;
         }
 
-        public IPEndPoint FloorEndPoint
+        public IPEndPoint CallEndPoint
         {
             get
             {
-                return _floorEndPoint;
+                return _callEndPoint;
             }
         }
 
@@ -35,11 +35,11 @@ namespace Ropu.LoadBalancer
             _expirtyTime = DateTime.UtcNow.AddSeconds(120);
         }
 
-        public void Update(IPEndPoint floorEndPoint)
+        public void Update(IPEndPoint callEndPoint)
         {
             lock(_lock)
             {
-                _floorEndPoint = floorEndPoint;
+                _callEndPoint = callEndPoint;
                 SetupExpiryTime();
             }
         }

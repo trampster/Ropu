@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Ropu.Client.StateModel;
 using Ropu.Shared;
-using Ropu.Shared.CallManagement;
+using Ropu.Shared.LoadBalancing;
 using Ropu.Shared.ControlProtocol;
 
 namespace Ropu.Client
@@ -27,7 +27,7 @@ namespace Ropu.Client
         RopuState _startingCall;
         RopuState _callInProgress;
         StateManager<EventId> _stateManager;
-        CallManagementProtocol _callManagementProtocol;
+        LoadBalancerProtocol _loadBalancerProtocol;
 
         readonly Ropu.Shared.Timer _retryTimer;
         readonly IPAddress _ipAddress;
@@ -37,11 +37,11 @@ namespace Ropu.Client
             ProtocolSwitch protocolSwitch, 
             ControllingFunctionClient controllingFunctionClient, 
             IPAddress address,
-            CallManagementProtocol callManagementProtocol,
+            LoadBalancerProtocol loadBalancerProtocol,
             IPEndPoint loadBalancerEndPoint)
         {
             _loadBalancerEndPoint = loadBalancerEndPoint;
-            _callManagementProtocol = callManagementProtocol;
+            _loadBalancerProtocol = loadBalancerProtocol;
             _protocolSwitch = protocolSwitch;
             _controllingFunctionClient = controllingFunctionClient;
             _controllingFunctionClient.SetControllingFunctionHandler(this);
@@ -79,7 +79,7 @@ namespace Ropu.Client
         public async Task Run()
         {
             var protocolSwitchTask = _protocolSwitch.Run();
-            var loadBalancerTask = _callManagementProtocol.Run();
+            var loadBalancerTask = _loadBalancerProtocol.Run();
             _stateManager.SetState(_unregistered, _start);
             await TaskCordinator.WaitAll(protocolSwitchTask, loadBalancerTask);
         }
@@ -99,7 +99,7 @@ namespace Ropu.Client
             while(_servingNodeEndpoint == null)
             {
                 Console.WriteLine($"Requesting Serving Node from LoadBalancer {_loadBalancerEndPoint}");
-                _servingNodeEndpoint = _callManagementProtocol.RequestServingNode(_loadBalancerEndPoint).Result;
+                _servingNodeEndpoint = _loadBalancerProtocol.RequestServingNode(_loadBalancerEndPoint).Result;
                 if(_servingNodeEndpoint == null)
                 {
                     Console.WriteLine("Failed to get a serving node");

@@ -1,5 +1,5 @@
-# Call Management Protocol
-This document details the protocol used for communication between the ControllingFunction and the other parts of the system
+# Load Balancer Protocol
+This document details the protocol used for communication between the Load Balancer and the other parts of the system
 
 ## Design Principles
 * Binary - to reduce packet size and increase parsing performance
@@ -7,19 +7,17 @@ This document details the protocol used for communication between the Controllin
 
 ## Packets
 
-### Register Media Controller
-Sent to the Controlling Function to register as a media controller
+### Register Serving Node
+Sent to the Controlling Function to register as a Serving Node
 * Packet Type 0 (byte)
 * Request ID (uint16)
-* UDP Control Port (uint16)
-* UDP Media Endpoint (4 bytes IP, 2 bytes port) - this needs to be the externally facing endpoint that clients can use
+* Serving Node Endpoint (4 bytes IP, 2 bytes port) - this needs to be the externally facing endpoint that clients can use
 
-### Register Floor Controller
+### Register Call Controller
 Sent to the Controlling Function to register as a floor controller
 * Packet Type 1 (byte)
 * Request ID (uint16)
-* UDP Port (ushort)
-* Floor Control Endpoint (4 bytes IP, 2 bytes port) - this needs to be the externally facing endpoint that clients can use
+* Call Control Endpoint (4 bytes IP, 2 bytes port) - this needs to be the externally facing endpoint that clients can use
 
 ### Start Call
 Tells the MediaController or Floor Controller to start managing a call
@@ -57,6 +55,25 @@ Used by a client to request to be allocated a serving node
 * Request ID (uint16)
 * Serving Node Endpoint (6 bytes)
 
+### Subscribe Serving Nodes
+Subscribes to be send serving nodes, 
+- this is acked
+- All current serving nodes are sent via the 'Serving Nodes' packets
+- As new serving nodes are registered they are sent via the 'Serving Nodes' packet
+- As serving nodes are removed 'Serving Node Removed' packets are sent
+and any new serving nodes are sent as they register and 
+* Packet Type 8 (byte)
+* Request ID (uint16)
+
+### Serving Nodes
+* Packet Type 9 (byte)
+* Request ID (uint16)
+* Serving Node Endpoint (6 bytes) - repeated N times
+
+### Serving Node Removed
+* Packet Type 10 (byte)
+* Request Id (uint16)
+* Serving Node Endpoint (6 bytes)
 
 
 

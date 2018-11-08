@@ -4,26 +4,26 @@ using Ropu.Shared;
 using System.Net;
 using System;
 
-namespace Ropu.FloorController
+namespace Ropu.CallController
 {
-    public class FloorControl
+    public class CallControl
     {
-        readonly CallManagementProtocol _callManagementProtocol;
+        readonly LoadBalancerProtocol _loadBalancerProtocol;
 
         readonly ServiceDiscovery _serviceDiscovery;
 
-        public FloorControl(CallManagementProtocol callManagementProtocol, ServiceDiscovery serviceDiscovery)
+        public FloorControl(LoadBalancerProtocol loadBalancerProtocol, ServiceDiscovery serviceDiscovery)
         {
-            _callManagementProtocol = callManagementProtocol;
+            _loadBalancerProtocol = loadBalancerProtocol;
             _serviceDiscovery = serviceDiscovery;
         }
 
         public async Task Run()
         {
-            var callManagementTask = _callManagementProtocol.Run();
+            var loadBalancerTask = _loadBalancerProtocol.Run();
             var registerTask = Register();
 
-            await TaskCordinator.WaitAll(callManagementTask, registerTask);
+            await TaskCordinator.WaitAll(loadBalancerTask, registerTask);
         }
 
         async Task Register()
@@ -31,8 +31,8 @@ namespace Ropu.FloorController
             while(true)
             {
                 var callManagementServerEndpoint = _serviceDiscovery.CallManagementServerEndpoint();
-                bool registered = await _callManagementProtocol.RegisterFloorController(
-                    _callManagementProtocol.ControlPort, 
+                bool registered = await _loadBalancerProtocol.RegisterFloorController(
+                    _loadBalancerProtocol.ControlPort, 
                     new IPEndPoint(_serviceDiscovery.GetMyAddress(), 9000), 
                     callManagementServerEndpoint);
                 if(registered)

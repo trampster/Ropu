@@ -1,9 +1,9 @@
 using System;
 using System.Net;
 
-namespace Ropu.Shared.CallManagement
+namespace Ropu.Shared.LoadBalancing
 {
-    public interface ICallManagementClientMessageHandler
+    public interface ILoadBalancerClientMessageHandler
     {
         void HandleCallStart(uint requestId, ushort callId, ushort groupId);
         void HandleFileManifestResponse(uint requestId, ushort numberOfParts, ushort fileId);

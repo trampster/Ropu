@@ -3,7 +3,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Ropu.LoadBalancer.FileServer;
-using Ropu.Shared.CallManagement;
+using Ropu.Shared.LoadBalancing;
 using Ropu.Shared.Groups;
 
 namespace Ropu.LoadBalancer
@@ -17,8 +17,8 @@ namespace Ropu.LoadBalancer
 
             var fileManager = new FileManager();
             var groupsClient = new HardcodedGroupsClient();
-            var callManagementProtocol = new CallManagementProtocol(5069);
-            var controller = new LoadBalancerRunner(callManagementProtocol, groupsClient, fileManager);
+            var loadBalancerProtocol = new LoadBalancerProtocol(5069);
+            var controller = new LoadBalancerRunner(loadBalancerProtocol, groupsClient, fileManager);
             await controller.Run();
         }   
     }
