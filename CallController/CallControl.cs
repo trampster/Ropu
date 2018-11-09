@@ -31,8 +31,7 @@ namespace Ropu.CallController
             while(true)
             {
                 var callManagementServerEndpoint = _serviceDiscovery.CallManagementServerEndpoint();
-                bool registered = await _loadBalancerProtocol.RegisterFloorController(
-                    _loadBalancerProtocol.ControlPort, 
+                bool registered = await _loadBalancerProtocol.SendRegisterCallController(
                     new IPEndPoint(_serviceDiscovery.GetMyAddress(), 9000), 
                     callManagementServerEndpoint);
                 if(registered)

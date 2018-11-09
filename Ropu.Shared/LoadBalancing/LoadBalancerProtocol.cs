@@ -275,7 +275,7 @@ namespace Ropu.Shared.LoadBalancing
             return responseReceived;
         }
 
-        public async Task<bool> SendRegisterCallController(IPEndPoint floorControlerEndpoint, IPEndPoint targetEndpoint)
+        public async Task<bool> SendRegisterCallController(IPEndPoint callControlerEndpoint, IPEndPoint targetEndpoint)
         {
             var sendBuffer = _sendBufferPool.Get();
 
@@ -285,7 +285,7 @@ namespace Ropu.Shared.LoadBalancing
             // Request ID (uint16)
             sendBuffer.WriteUshort(requestId, 1);
             // Call Control Endpoint
-            sendBuffer.WriteEndPoint(floorControlerEndpoint, 5);
+            sendBuffer.WriteEndPoint(callControlerEndpoint, 5);
 
             bool responseReceived = await SendAndWaitForAck(requestId, sendBuffer, 9, targetEndpoint);
 
