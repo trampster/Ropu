@@ -31,40 +31,26 @@ Acknoledgement to one of the other message types, all messages without specified
 * Packet Type 3 (byte)
 * Request ID (uint16)
 
-### Registration Update
-Could be a new registration or an update to an existing one
-* Packet Type 4 (byte)
-* Request ID (uint16)
-* Group ID (uint16)
-* User ID (uint32)
-* EndPoint (6 bytes)
-
-### Registration Removed
-* Packet Type 5 (byte)
-* Request ID (uint16)
-* Group ID (uint16)
-* User ID (uint32)
-
 ### Request Serving Node
 Used by a client to request to be allocated a serving node
-* Packet Type 6 (byte)
+* Packet Type 4 (byte)
 * Request ID (uint16)
 
 ### Serving Node Response
-* Packet Type 7 (byte)
+* Packet Type 5 (byte)
 * Request ID (uint16)
 * Serving Node Endpoint (6 bytes)
 
 ### Serving Nodes
 These is automatically sent to any Serving Node as soon as it registers to tell it about 
 the other serving nodes. It is also sent to all existing serving nodes whenever a serving node registeres.
-* Packet Type 9 (byte)
+* Packet Type 6 (byte)
 * Request ID (uint16)
-* Serving Node Endpoint (6 bytes) - repeated N times
+* Serving Node EndPoint(s) (6 bytes) - repeated N times
 
 ### Serving Node Removed
 Sent to all registered serving nodes whenever a ServingNode deregisters or it's registration expires.
-* Packet Type 10 (byte)
+* Packet Type 7 (byte)
 * Request Id (uint16)
 * Serving Node Endpoint (6 bytes)
 

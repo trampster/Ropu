@@ -111,23 +111,6 @@ namespace Ropu.Shared.LoadBalancing
                     HandleAck(requestId);
                     break;
                 }
-                case LoadBalancerPacketType.RegistrationUpdate:
-                {
-                    ushort requestId = data.Slice(1).ParseUshort();
-                    ushort groupId = data.Slice(3).ParseUshort();
-                    uint userId = data.Slice(5).ParseUint();
-                    IPEndPoint regEndPoint = data.Slice(11).ParseIPEndPoint();
-                    _clientMessageHandler?.HandleRegistrationUpdate(requestId, groupId, userId, regEndPoint);
-                    break;
-                }
-                case LoadBalancerPacketType.RegistrationRemoved:
-                {
-                    ushort requestId = data.Slice(1).ParseUshort();
-                    ushort groupId = data.Slice(3).ParseUshort();
-                    uint userId = data.Slice(5).ParseUint();
-                    _clientMessageHandler?.HandleRegistrationRemoved(requestId, groupId, userId);
-                    break;
-                }
                 case LoadBalancerPacketType.RequestServingNode:
                 {
                     ushort requestId = data.Slice(1).ParseUshort();
@@ -139,6 +122,19 @@ namespace Ropu.Shared.LoadBalancing
                     ushort requestId = data.Slice(1).ParseUshort();
                     IPEndPoint servingNodeEndPoint = data.Slice(3).ParseIPEndPoint();
                     GetRequestHandler<Action<IPEndPoint>>(requestId)?.Invoke(servingNodeEndPoint);
+                    break;
+                }
+                case LoadBalancerPacketType.ServingNodes:
+                {
+                    ushort requestId = data.Slice(1).ParseUshort();
+                    _clientMessageHandler?.HandleServingNodes(requestId, data.Slice(3));
+                    break;
+                }
+                case LoadBalancerPacketType.ServingNodeRemoved:
+                {
+                    ushort requestId = data.Slice(1).ParseUshort();
+                    var servingNodeEndPoint = data.Slice(3).ParseIPEndPoint();
+                    _clientMessageHandler?.HandleServingNodeRemoved(requestId, servingNodeEndPoint);
                     break;
                 }
                 default:
@@ -288,6 +284,53 @@ namespace Ropu.Shared.LoadBalancing
             sendBuffer.WriteEndPoint(callControlerEndpoint, 5);
 
             bool responseReceived = await SendAndWaitForAck(requestId, sendBuffer, 9, targetEndpoint);
+
+            _sendBufferPool.Add(sendBuffer);
+
+            return responseReceived;
+        }
+
+        public async Task<bool> SendServingNodes(IEnumerable<IPEndPoint> endPoints, IPEndPoint targetEndpoint)
+        {
+             var sendBuffer = _sendBufferPool.Get();
+
+            ushort requestId = _requestId++;
+            // Packet Type 1
+            sendBuffer[0] = (byte)LoadBalancerPacketType.ServingNodes;
+            // Request ID (uint16)
+            sendBuffer.WriteUshort(requestId, 1);
+            // Serving Node EndPoint(s)
+            int index = 3;
+            foreach(var endPoint in endPoints)
+            {
+                sendBuffer.WriteEndPoint(endPoint, index);
+                index += 6;
+            }
+
+            bool responseReceived = await SendAndWaitForAck(requestId, sendBuffer, index, targetEndpoint);
+
+            _sendBufferPool.Add(sendBuffer);
+
+            return responseReceived;
+        }
+
+        public async Task<bool> SendServingNodeRemoved(IPEndPoint servinNodeEndPoint, IPEndPoint targetEndpoint)
+        {
+             var sendBuffer = _sendBufferPool.Get();
+
+            ushort requestId = _requestId++;
+            // Packet Type 1
+            sendBuffer[0] = (byte)LoadBalancerPacketType.ServingNodes;
+            // Request ID (uint16)
+            sendBuffer.WriteUshort(requestId, 1);
+            // Serving Node EndPoint (6 bytes)
+            int index = 3;
+            {
+                sendBuffer.WriteEndPoint(servinNodeEndPoint, 3);
+                index += 6;
+            }
+
+            bool responseReceived = await SendAndWaitForAck(requestId, sendBuffer, index, targetEndpoint);
 
             _sendBufferPool.Add(sendBuffer);
 
