@@ -29,5 +29,18 @@ namespace Ropu.Shared
             task.Start();
             await task;
         }
+
+        public static async void DontWait(Func<Task> method)
+        {
+            try
+            {
+                await method();
+            }
+            catch(Exception exception)
+            {
+                Console.Error.WriteLine(exception);
+                Environment.Exit(1);
+            }
+        }
     }
 }

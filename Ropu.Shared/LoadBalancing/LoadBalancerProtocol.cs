@@ -28,11 +28,12 @@ namespace Ropu.Shared.LoadBalancing
         ILoadBalancerServerMessageHandler _serverMessageHandler;
         ILoadBalancerClientMessageHandler _clientMessageHandler;
 
-        public LoadBalancerProtocol(ushort port)
+        public LoadBalancerProtocol(PortFinder portFinder, ushort startingPort)
         {
-            _port = port;
-            _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             _sendArgs = CreateSocketAsyncEventArgs();
+            _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            _port = (ushort) portFinder.BindToAvailablePort(_socket, IPAddress.Any, startingPort);
+            Console.WriteLine($"Load BalancerProtocol bound to port {_port}");
         }
 
         public ushort ControlPort => _port;
@@ -56,17 +57,6 @@ namespace Ropu.Shared.LoadBalancing
 
         void ProcessPackets()
         {
-            Console.WriteLine($"Binding call management to port {_port}");
-            try
-            {
-                _socket.Bind(new IPEndPoint(IPAddress.Any, (int)_port));
-            }
-            catch(Exception exception)
-            {
-                Console.WriteLine(exception);
-                throw;
-            }
-
             byte[] _buffer = new byte[MaxUdpSize];
             EndPoint any = Any;
 

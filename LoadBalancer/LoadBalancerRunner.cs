@@ -55,9 +55,45 @@ namespace Ropu.LoadBalancer
         public void HandleRegisterServingNode(IPEndPoint from, ushort requestId, IPEndPoint servingNodeEndpoint)
         {
             Console.WriteLine($"Serving Node Registered at end point {servingNodeEndpoint}");
-            _servingNodes.Register(from, controller => controller.Update(servingNodeEndpoint), () => new RegisteredServingNode(from, servingNodeEndpoint));
+            bool newNode = _servingNodes.Register(from, controller => controller.Update(servingNodeEndpoint), () => new RegisteredServingNode(from, servingNodeEndpoint));
             _loadBalancerProtocol.SendAck(requestId, from);
+
+            if(!newNode) return;
+
+            TaskCordinator.DontWait(() => UpdateServingNodes(from, servingNodeEndpoint)); //we can't await because we are on the packet handler thread.
         }
+
+        async Task UpdateServingNodes(IPEndPoint from, IPEndPoint servingNodeEndpoint)
+        {
+            var existingEndPoints = 
+                from node in _servingNodes.GetControllers()
+                where node.ServingEndPoint != servingNodeEndpoint
+                select node.ServingEndPoint;
+
+            //inform that serving node of all existing serving nodes
+            Console.WriteLine($"informing new ServingNode of existing serving nodes");
+            await Retry(() => _loadBalancerProtocol.SendServingNodes(existingEndPoints, from));
+
+            //inform existing serving nodes of the new node
+            foreach(var endPoint in existingEndPoints)
+            {
+                Console.WriteLine($"informing {endPoint} of new serving node at {servingNodeEndpoint}");
+                TaskCordinator.DontWait(() => Retry(() => _loadBalancerProtocol.SendServingNodes(new IPEndPoint[]{from}, endPoint)));
+            }
+        }
+
+        async Task<bool> Retry(Func<Task<bool>> action)
+        {
+            for(int index = 0; index < 3; index++)
+            {
+                if(await action())
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
 
         public void HandleRegisterCallController(IPEndPoint from, ushort requestId, IPEndPoint callControlEndpoint)
         {

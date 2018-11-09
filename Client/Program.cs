@@ -22,7 +22,7 @@ namespace Ropu.Client
             var protocolSwitch = new ProtocolSwitch(_controlPort);
             var controllingFunctionClient = new ControllingFunctionClient(protocolSwitch);
             _mediaClient = new MediaClient(protocolSwitch);
-            var callManagementProtocol = new LoadBalancerProtocol(5079);
+            var callManagementProtocol = new LoadBalancerProtocol(new PortFinder(), 5079);
 
             var ipAddress = IPAddress.Parse(MyAddress);
 

@@ -13,15 +13,18 @@ namespace Ropu.ServingNode
 {
     class Program
     {
-        const ushort ControlPort = 5091;
-        const ushort MediaPort = 5071;
+        const ushort StartingLoadBalancerPort = 5091;
+        const ushort StartingServingNodePort = 5071;
 
         static async Task Main(string[] args)
         {
             Console.WriteLine("Ropu Serving Node");
             Console.WriteLine("Copyright (c) Daniel Hughes");
-            var mediaProtocol = new MediaProtocol(MediaPort);
-            var loadBalancerProtocol = new LoadBalancerProtocol(ControlPort);
+            Console.WriteLine();
+
+            var portFinder = new PortFinder();
+            var mediaProtocol = new MediaProtocol(portFinder, StartingServingNodePort);
+            var loadBalancerProtocol = new LoadBalancerProtocol(portFinder, StartingLoadBalancerPort);
             var serviceDiscovery = new ServiceDiscovery();
             var groupsClient = new HardcodedGroupsClient();
             var registra = new Registra(groupsClient);

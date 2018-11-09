@@ -23,11 +23,11 @@ namespace Ropu.ServingNode
 
         readonly byte[] _sendBuffer = new byte[MaxUdpSize];
 
-        public MediaProtocol(ushort port)
+        public MediaProtocol(PortFinder portFinder, int startingPort)
         {
-            MediaPort = port;
             _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            _socket.Bind(new IPEndPoint(IPAddress.Any, MediaPort));
+            MediaPort = (ushort)portFinder.BindToAvailablePort(_socket, IPAddress.Any, startingPort);
+            Console.WriteLine($"Serving Node Protocol bound to port {MediaPort}");
 
             //setup dummy group endpoints
             _endpoints = new IPEndPoint[10000];
