@@ -324,13 +324,9 @@ namespace Ropu.Shared.LoadBalancing
             // Request ID (uint16)
             sendBuffer.WriteUshort(requestId, 1);
             // Serving Node EndPoint (6 bytes)
-            int index = 3;
-            {
-                sendBuffer.WriteEndPoint(servinNodeEndPoint, 3);
-                index += 6;
-            }
+            sendBuffer.WriteEndPoint(servinNodeEndPoint, 3);
 
-            bool responseReceived = await SendAndWaitForAck(requestId, sendBuffer, index, targetEndpoint);
+            bool responseReceived = await SendAndWaitForAck(requestId, sendBuffer, 9, targetEndpoint);
 
             _sendBufferPool.Add(sendBuffer);
 
