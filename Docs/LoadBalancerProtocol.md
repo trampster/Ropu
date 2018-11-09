@@ -55,22 +55,15 @@ Used by a client to request to be allocated a serving node
 * Request ID (uint16)
 * Serving Node Endpoint (6 bytes)
 
-### Subscribe Serving Nodes
-Subscribes to be send serving nodes, 
-- this is acked
-- All current serving nodes are sent via the 'Serving Nodes' packets
-- As new serving nodes are registered they are sent via the 'Serving Nodes' packet
-- As serving nodes are removed 'Serving Node Removed' packets are sent
-and any new serving nodes are sent as they register and 
-* Packet Type 8 (byte)
-* Request ID (uint16)
-
 ### Serving Nodes
+These is automatically sent to any Serving Node as soon as it registers to tell it about 
+the other serving nodes. It is also sent to all existing serving nodes whenever a serving node registeres.
 * Packet Type 9 (byte)
 * Request ID (uint16)
 * Serving Node Endpoint (6 bytes) - repeated N times
 
 ### Serving Node Removed
+Sent to all registered serving nodes whenever a ServingNode deregisters or it's registration expires.
 * Packet Type 10 (byte)
 * Request Id (uint16)
 * Serving Node Endpoint (6 bytes)
