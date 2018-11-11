@@ -20,7 +20,7 @@ Sent to the Controlling Function to register as a floor controller
 * Call Control Endpoint (4 bytes IP, 2 bytes port) - this needs to be the externally facing endpoint that clients can use
 
 ### Start Call
-Tells the MediaController or Floor Controller to start managing a call
+Tells the ServingNode or Call Controller a call has started
 * Packet Type 2 (byte)
 * Request ID (uint16)
 * Call ID (uint16)

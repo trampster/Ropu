@@ -8,6 +8,7 @@ using Ropu.ServingNode;
 using Ropu.Shared;
 using Ropu.Shared.LoadBalancing;
 using Ropu.Shared.Groups;
+using System.Collections.Concurrent;
 
 namespace Ropu.ServingNode
 {
@@ -28,12 +29,14 @@ namespace Ropu.ServingNode
             var serviceDiscovery = new ServiceDiscovery();
             var groupsClient = new HardcodedGroupsClient();
             var registra = new Registra(groupsClient);
+            var servingNodes = new ServingNodes();
 
             var servingNodeRunner = new ServingNodeRunner(
                 mediaProtocol, 
                 loadBalancerProtocol, 
                 serviceDiscovery,
-                registra);
+                registra,
+                servingNodes);
 
             await servingNodeRunner.Run();
         }

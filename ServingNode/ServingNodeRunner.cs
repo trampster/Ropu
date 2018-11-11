@@ -6,18 +6,20 @@ using Ropu.Shared.LoadBalancing;
 
 namespace Ropu.ServingNode
 {
-    public class ServingNodeRunner : IMessageHandler
+    public class ServingNodeRunner : IMessageHandler, ILoadBalancerClientMessageHandler
     {
         readonly MediaProtocol _mediaProtocol;
         readonly LoadBalancerProtocol _loadBalancerProtocol;
         readonly ServiceDiscovery _serviceDiscovery;
         readonly Registra _registra;
+        readonly ServingNodes _servingNodes;
 
         public ServingNodeRunner(
             MediaProtocol mediaProtocol, 
             LoadBalancerProtocol loadBalancerProtocol, 
             ServiceDiscovery serviceDiscovery,
-            Registra registra)
+            Registra registra,
+            ServingNodes servingNodes)
         {
             _mediaProtocol = mediaProtocol;
             _mediaProtocol.SetMessageHandler(this);
@@ -66,6 +68,24 @@ namespace Ropu.ServingNode
                 Console.WriteLine("Failed to register");
             }
         }
-           
+
+        public void HandleServingNodes(ushort requestId, Span<byte> nodeEndPointsData)
+        {
+            _servingNodes.HandleServingNodesPayload(nodeEndPointsData);
+            var loadBalancerEndPoint = _serviceDiscovery.CallManagementServerEndpoint();
+            _loadBalancerProtocol.SendAck(requestId, loadBalancerEndPoint);
+        }
+
+        public void HandleServingNodeRemoved(ushort requestId, IPEndPoint endpoint)
+        {
+            _servingNodes.RemoveServingNode(endpoint);
+            var loadBalancerEndPoint = _serviceDiscovery.CallManagementServerEndpoint();
+            _loadBalancerProtocol.SendAck(requestId, loadBalancerEndPoint);
+        }
+
+        public void HandleCallStart(uint requestId, ushort callId, ushort groupId)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
