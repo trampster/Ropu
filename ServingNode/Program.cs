@@ -29,7 +29,7 @@ namespace Ropu.ServingNode
             var serviceDiscovery = new ServiceDiscovery();
             var groupsClient = new HardcodedGroupsClient();
             var registra = new Registra(groupsClient);
-            var servingNodes = new ServingNodes();
+            var servingNodes = new ServingNodes(100);
 
             var servingNodeRunner = new ServingNodeRunner(
                 mediaProtocol, 

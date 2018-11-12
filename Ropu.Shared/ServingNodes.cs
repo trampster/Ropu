@@ -1,48 +1,47 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+using Ropu.Shared.Concurrent;
 
 namespace Ropu.Shared
 {
+
     public class ServingNodes
     {
-        public List<IPEndPoint> _endPoints;
+        readonly Set<IPEndPoint> _set;
 
-        /// <summary>
-        /// it's save to iterate on this because it's replaced when a serving node is added or removed
-        /// </summary>
-        public IPEndPoint[] _safeEndPoints; 
-        public readonly object _lock = new object();
+        public ServingNodes(int max)
+        {
+            _set = new Set<IPEndPoint>(max);
+        }
 
         public void HandleServingNodesPayload(Span<byte> nodeEndPointsData)
         {
+            _set.SuspendRefresh();
             for(int index = 0; index < nodeEndPointsData.Length; index +=6)
             {
                 var endPoint = nodeEndPointsData.Slice(index).ParseIPEndPoint();
+                _set.Add(endPoint);
             }
+            _set.ResumeRefresh();
         }
 
-        void Add(IPEndPoint endPoint)
+        public ReusableMemory<IPEndPoint> EndPoints
         {
-            lock(_lock)
+            get
             {
-                if(!_endPoints.Contains(endPoint))
-                {
-                    _endPoints.Add(endPoint);
-                }
-                _safeEndPoints = _endPoints.ToArray();
+                return _set.Get();
             }
         }
-
-        public IPEndPoint[] EndPoints => _safeEndPoints;
 
         public void RemoveServingNode(IPEndPoint endPoint)
         {
-            lock(_lock)
-            {
-                _endPoints.Remove(endPoint);
-                _safeEndPoints = _endPoints.ToArray();
-            }
+            _set.Remove(endPoint);
+        }
+
+        public void Recycle(ReusableMemory<IPEndPoint> used)
+        {
+            _set.Recycle(used);
         }
     }
 }
