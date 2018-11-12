@@ -20,7 +20,7 @@ namespace Ropu.Shared.Concurrent
 
         public Span<T> AsSpan()
         {
-            return _memory.AsSpan(_length);
+            return _memory.AsSpan(0, _length);
         }
 
         public T[] Memory => _memory;
@@ -38,5 +38,7 @@ namespace Ropu.Shared.Concurrent
         {
             _length = length;
         }
+
+        public int Length => _length;
     }
 }
