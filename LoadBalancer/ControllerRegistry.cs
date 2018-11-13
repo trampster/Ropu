@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace Ropu.LoadBalancer
 {
@@ -38,6 +39,19 @@ namespace Ropu.LoadBalancer
                 }
             }
             return null;
+        }
+
+        public void RemoveExpired(Action<T> onRemove)
+        {
+            foreach(var controllerPair in _controllers)
+            {
+                if(controllerPair.Value.IsExpired())
+                {
+                    Console.WriteLine("Serving Node Expired");
+                    _controllers.TryRemove(controllerPair.Key, out T value);
+                    onRemove(controllerPair.Value);
+                }
+            }
         }
 
         public IEnumerable<IPEndPoint> GetLoadBalancerEndPoints()

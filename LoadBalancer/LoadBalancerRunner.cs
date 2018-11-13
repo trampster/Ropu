@@ -19,6 +19,7 @@ namespace Ropu.LoadBalancer
         readonly ControllerRegistry<RegisteredCallController> _callControllers;
         readonly IGroupsClient _groupsClient;
         readonly FileManager _fileManager;
+        volatile bool _closing = false;
 
         public LoadBalancerRunner(
             LoadBalancerProtocol loadBalancerProtocol, 
@@ -38,9 +39,31 @@ namespace Ropu.LoadBalancer
         public async Task Run()
         {
             var callManagement = _loadBalancerProtocol.Run();
+            var removeExpired = RemoveExpiredControllers();
 
-            await TaskCordinator.WaitAll(callManagement);
+            await TaskCordinator.WaitAll(callManagement, removeExpired);
         }
+
+        async Task RemoveExpiredControllers()
+        {
+            while(!_closing)
+            {   
+                await Task.Delay(30000);
+                _servingNodes.RemoveExpired(removedNode => 
+                {
+                    var servingNodeEndpoint = removedNode.ServingEndPoint;
+                    var existingControlNodeEndPoints = 
+                        from node in _servingNodes.GetControllers()
+                        select node.ControlEndPoint;
+                    foreach(var endPoint in existingControlNodeEndPoints)
+                    {
+                        Console.WriteLine($"Sending ServingNodeRemoved to {endPoint}");
+                        TaskCordinator.DontWait(() => Retry(() => _loadBalancerProtocol.SendServingNodeRemoved(servingNodeEndpoint, endPoint)));
+                    } 
+                });
+            }
+        }
+
 
         RegisteredServingNode GetServingNode()
         {

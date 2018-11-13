@@ -310,7 +310,7 @@ namespace Ropu.Shared.LoadBalancing
 
             ushort requestId = _requestId++;
             // Packet Type 1
-            sendBuffer[0] = (byte)LoadBalancerPacketType.ServingNodes;
+            sendBuffer[0] = (byte)LoadBalancerPacketType.ServingNodeRemoved;
             // Request ID (uint16)
             sendBuffer.WriteUshort(requestId, 1);
             // Serving Node EndPoint (6 bytes)

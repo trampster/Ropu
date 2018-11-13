@@ -80,6 +80,7 @@ namespace Ropu.ServingNode
 
         public void HandleServingNodeRemoved(ushort requestId, IPEndPoint endpoint)
         {
+            Console.WriteLine($"Serving Node Removed {endpoint}");
             _servingNodes.RemoveServingNode(endpoint);
             var loadBalancerEndPoint = _serviceDiscovery.CallManagementServerEndpoint();
             _loadBalancerProtocol.SendAck(requestId, loadBalancerEndPoint);
