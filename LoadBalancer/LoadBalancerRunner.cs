@@ -65,20 +65,26 @@ namespace Ropu.LoadBalancer
 
         async Task UpdateServingNodes(IPEndPoint from, IPEndPoint servingNodeEndpoint)
         {
-            var existingEndPoints = 
+            if(_servingNodes.Count == 1)
+            {
+                return;
+            }
+            var existingServingNodeEndPoints = 
                 from node in _servingNodes.GetControllers()
                 where node.ServingEndPoint != servingNodeEndpoint
                 select node.ServingEndPoint;
 
             //inform that serving node of all existing serving nodes
-            Console.WriteLine($"informing new ServingNode of existing serving nodes");
-            await Retry(() => _loadBalancerProtocol.SendServingNodes(existingEndPoints, from));
+            await Retry(() => _loadBalancerProtocol.SendServingNodes(existingServingNodeEndPoints, from));
 
             //inform existing serving nodes of the new node
-            foreach(var endPoint in existingEndPoints)
+            var existingControlNodeEndPoints = 
+                from node in _servingNodes.GetControllers()
+                where node.ServingEndPoint != servingNodeEndpoint
+                select node.ControlEndPoint;
+            foreach(var endPoint in existingControlNodeEndPoints)
             {
-                Console.WriteLine($"informing {endPoint} of new serving node at {servingNodeEndpoint}");
-                TaskCordinator.DontWait(() => Retry(() => _loadBalancerProtocol.SendServingNodes(new IPEndPoint[]{from}, endPoint)));
+                TaskCordinator.DontWait(() => Retry(() => _loadBalancerProtocol.SendServingNodes(new IPEndPoint[]{servingNodeEndpoint}, endPoint)));
             }
         }
 

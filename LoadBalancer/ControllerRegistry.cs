@@ -50,5 +50,6 @@ namespace Ropu.LoadBalancer
             return _controllers.Values;
         }
 
+        public int Count => _controllers.Count;
     }
 }

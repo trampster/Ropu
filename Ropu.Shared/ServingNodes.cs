@@ -21,6 +21,7 @@ namespace Ropu.Shared
             for(int index = 0; index < nodeEndPointsData.Length; index +=6)
             {
                 var endPoint = nodeEndPointsData.Slice(index).ParseIPEndPoint();
+                Console.WriteLine($"Added EndPoint {endPoint}");
                 _set.Add(endPoint);
             }
             _set.ResumeRefresh();

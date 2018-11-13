@@ -26,6 +26,8 @@ namespace Ropu.ServingNode
             _loadBalancerProtocol = loadBalancerProtocol;
             _serviceDiscovery = serviceDiscovery;
             _registra = registra;
+            _servingNodes = servingNodes;
+            loadBalancerProtocol.SetClientMessageHandler(this);
         }
 
         public async Task Run()
