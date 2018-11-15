@@ -39,6 +39,7 @@ namespace Ropu.Shared.Concurrent
         SpeedReadSet<T> _current;
         SpeedReadSet<T> _prestine; //this one is never used, so it's array is always upto date and can be used to clone new ones;
         readonly int _maxElements;
+        readonly MemoryPool<SetChange<T>> _setChangePool;
 
         readonly object _writeLock = new object();
 
@@ -46,9 +47,10 @@ namespace Ropu.Shared.Concurrent
 
         public SnapshotSet(int maxElements)
         {
+            _setChangePool = new MemoryPool<SetChange<T>>(() => new SetChange<T>());
             _maxElements = maxElements;
-            _current = new SpeedReadSet<T>(maxElements);
-            _prestine = new SpeedReadSet<T>(maxElements);
+            _current = new SpeedReadSet<T>(maxElements, _setChangePool);
+            _prestine = new SpeedReadSet<T>(maxElements, _setChangePool);
             _indexLookup = new Dictionary<T, int>(maxElements);
 
             _sets.Add(_current);
@@ -83,7 +85,7 @@ namespace Ropu.Shared.Concurrent
             if(newCurrent == null)
             {
                 //we ran out of available sets, so we don't have any that are upto date
-                newCurrent = new SpeedReadSet<T>(_maxElements, _prestine.GetSpan());
+                newCurrent = new SpeedReadSet<T>(_maxElements, _prestine.GetSpan(), _setChangePool);
                 _sets.Add(newCurrent);
                 
             }
@@ -145,15 +147,17 @@ namespace Ropu.Shared.Concurrent
     {
         T[] _array;
         int _length;
+        readonly MemoryPool<SetChange<T>> _setChangePool;
 
-        public SpeedReadSet(int max)
+        public SpeedReadSet(int max, MemoryPool<SetChange<T>> setChangePool)
         {
             _array = new T[max];
+            _setChangePool = setChangePool;
         }
 
         public int Length => _length;
 
-        public SpeedReadSet(int max, Span<T> initialData)
+        public SpeedReadSet(int max, Span<T> initialData, MemoryPool<SetChange<T>> setChangePool)
         {
             _array = new T[max];
 
@@ -162,6 +166,7 @@ namespace Ropu.Shared.Concurrent
                 _array[index] = initialData[index];
             }
             _length = initialData.Length;
+            _setChangePool = setChangePool;
         }
 
         void AddUnsafe(T item)
@@ -178,10 +183,10 @@ namespace Ropu.Shared.Concurrent
             }
             if(_users > 0)
             {
-                var setChange = new SetChange<T>();
+                var setChange = _setChangePool.Get();
                 setChange.ChangeType = ChangeType.Add;
                 setChange.Value = item;
-                _queuedChanges.Enqueue(setChange);
+                _queuedChanges.Add(setChange);
                 return;
             }
             AddUnsafe(item);
@@ -202,20 +207,20 @@ namespace Ropu.Shared.Concurrent
             }
             if(_users > 0)
             {
-                var setChange = new SetChange<T>();
+                var setChange = _setChangePool.Get();
                 setChange.ChangeType = ChangeType.Remove;
                 setChange.Index = 0;
-                _queuedChanges.Enqueue(setChange);
+                _queuedChanges.Add(setChange);
                 return;
             }
             RemoveUnsafe(index);
         }
 
-        Queue<SetChange<T>> _queuedChanges = new Queue<SetChange<T>>();
+        List<SetChange<T>> _queuedChanges = new List<SetChange<T>>();
 
         void ProcessQueuedChanges()
         {
-            while(_queuedChanges.TryDequeue(out SetChange<T> change))
+            foreach(var change in _queuedChanges)
             {
                 if(change.ChangeType == ChangeType.Add)
                 {
@@ -226,6 +231,7 @@ namespace Ropu.Shared.Concurrent
                     RemoveUnsafe(change.Index);
                 }
             }
+            _queuedChanges.Clear();
             _needsProcessing = false;
             _available = true;
         }
