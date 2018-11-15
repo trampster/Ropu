@@ -5,6 +5,34 @@ using System.Threading;
 
 namespace Ropu.Shared.Concurrent
 {
+
+    public enum ChangeType
+    {
+        Add,
+        Remove
+    }
+
+    public class SetChange<T>
+    {
+        public ChangeType ChangeType
+        {
+            get;
+            set;
+        }
+
+        public T Value
+        {
+            get;
+            set;
+        }
+
+        public int Index
+        {
+            get;
+            set;
+        }
+    }
+
     public class SnapshotSet<T>
     {
         readonly List<SpeedReadSet<T>> _sets = new List<SpeedReadSet<T>>();
@@ -14,11 +42,14 @@ namespace Ropu.Shared.Concurrent
 
         readonly object _writeLock = new object();
 
+        readonly Dictionary<T, int> _indexLookup;
+
         public SnapshotSet(int maxElements)
         {
             _maxElements = maxElements;
             _current = new SpeedReadSet<T>(maxElements);
             _prestine = new SpeedReadSet<T>(maxElements);
+            _indexLookup = new Dictionary<T, int>(maxElements);
 
             _sets.Add(_current);
         }
@@ -33,6 +64,7 @@ namespace Ropu.Shared.Concurrent
                     _sets[index].Add(item);
                 }
                 ChangeCurrent();
+                _indexLookup.Add(item, _prestine.Length -1);
             }
         }
 
@@ -67,11 +99,18 @@ namespace Ropu.Shared.Concurrent
         {
             lock(_writeLock)
             {
-                _prestine.Remove(item);
-                for(int index = 0; index < _sets.Count; index++)
+                if(!_indexLookup.TryGetValue(item, out int itemIndex))
                 {
-                    _sets[index].Remove(item);
+                    return;
                 }
+                var movedItem = _prestine.GetSpan()[_prestine.Length-1];
+                _prestine.Remove(itemIndex);
+                for(int setIndex = 0; setIndex < _sets.Count; setIndex++)
+                {
+                    _sets[setIndex].Remove(itemIndex);
+                }
+                _indexLookup.Remove(item);
+                _indexLookup[movedItem] = itemIndex; //the last item was moved to the index of the old one.
                 ChangeCurrent();
             }
         }
@@ -104,26 +143,23 @@ namespace Ropu.Shared.Concurrent
 
     public class SpeedReadSet<T> : ISetReader<T>
     {
-        public T[] _array;
-        public int _length;
-        public Dictionary<T, int> _indexLookup;
+        T[] _array;
+        int _length;
 
         public SpeedReadSet(int max)
         {
             _array = new T[max];
-            _indexLookup = new Dictionary<T, int>(max);
         }
+
+        public int Length => _length;
 
         public SpeedReadSet(int max, Span<T> initialData)
         {
             _array = new T[max];
-            _indexLookup = new Dictionary<T, int>(max);
 
             for(int index = 0; index < initialData.Length; index++)
             {
-                var item = initialData[index];
                 _array[index] = initialData[index];
-                _indexLookup.Add(item, index);
             }
             _length = initialData.Length;
         }
@@ -131,55 +167,73 @@ namespace Ropu.Shared.Concurrent
         void AddUnsafe(T item)
         {
             _array[_length] = item;
-            _indexLookup.Add(item, _length);
             _length++;
         }
 
         public void Add(T item)
         {
+            if(_needsProcessing)
+            {
+                ProcessQueuedChanges();
+            }
             if(_users > 0)
             {
-                _queuedChanges.Enqueue(() => AddUnsafe(item));
+                var setChange = new SetChange<T>();
+                setChange.ChangeType = ChangeType.Add;
+                setChange.Value = item;
+                _queuedChanges.Enqueue(setChange);
                 return;
             }
             AddUnsafe(item);
         }
 
-        void RemoveUnsafe(T item)
+        void RemoveUnsafe(int index)
         {
-            if(!_indexLookup.TryGetValue(item, out int index))
-            {
-                return;
-            }
             _array[index] = _array[_length -1];
             _array[_length - 1] = default(T);
-            _indexLookup.Remove(item);
             _length--;
         }
 
-        public void Remove(T item)
+        public void Remove(int index)
         {
+            if(_needsProcessing)
+            {
+                ProcessQueuedChanges();
+            }
             if(_users > 0)
             {
-                _queuedChanges.Enqueue(() => RemoveUnsafe(item));
+                var setChange = new SetChange<T>();
+                setChange.ChangeType = ChangeType.Remove;
+                setChange.Index = 0;
+                _queuedChanges.Enqueue(setChange);
                 return;
             }
-            RemoveUnsafe(item);
+            RemoveUnsafe(index);
         }
 
-        Queue<Action> _queuedChanges = new Queue<Action>();
+        Queue<SetChange<T>> _queuedChanges = new Queue<SetChange<T>>();
 
         void ProcessQueuedChanges()
         {
-            while(_queuedChanges.TryDequeue(out Action action))
+            while(_queuedChanges.TryDequeue(out SetChange<T> change))
             {
-                action();
+                if(change.ChangeType == ChangeType.Add)
+                {
+                    AddUnsafe(change.Value);
+                }
+                else
+                {
+                    RemoveUnsafe(change.Index);
+                }
             }
+            _needsProcessing = false;
+            _available = true;
         }
 
         int _users;
         bool _inUse;
         bool _available; // availble when not in use, all users have returned it and we are upto date with changes;
+        volatile bool _needsProcessing = false;
 
         public void Use()
         {
@@ -209,9 +263,7 @@ namespace Ropu.Shared.Concurrent
             Interlocked.Decrement(ref _users);
             if(_users == 0 && !_inUse)
             {
-                //safe to modify 
-                ProcessQueuedChanges();
-                _available = true;
+                _needsProcessing = true;
             }
         }
 

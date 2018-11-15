@@ -8,41 +8,34 @@ namespace Ropu.Shared
 
     public class ServingNodes
     {
-        readonly Set<IPEndPoint> _set;
+        readonly SnapshotSet<IPEndPoint> _set;
 
         public ServingNodes(int max)
         {
-            _set = new Set<IPEndPoint>(max);
+            _set = new SnapshotSet<IPEndPoint>(max);
         }
 
         public void HandleServingNodesPayload(Span<byte> nodeEndPointsData)
         {
-            _set.SuspendRefresh();
             for(int index = 0; index < nodeEndPointsData.Length; index +=6)
             {
                 var endPoint = nodeEndPointsData.Slice(index).ParseIPEndPoint();
                 Console.WriteLine($"Added EndPoint {endPoint}");
                 _set.Add(endPoint);
             }
-            _set.ResumeRefresh();
         }
 
-        public ReusableMemory<IPEndPoint> EndPoints
+        public ISetReader<IPEndPoint> EndPoints
         {
             get
             {
-                return _set.Get();
+                return _set.GetSnapShot();
             }
         }
 
         public void RemoveServingNode(IPEndPoint endPoint)
         {
             _set.Remove(endPoint);
-        }
-
-        public void Recycle(ReusableMemory<IPEndPoint> used)
-        {
-            _set.Recycle(used);
         }
     }
 }
