@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Net;
 using Ropu.Shared.Groups;
 using System.Linq;
+using Ropu.Shared.Concurrent;
 
 namespace Ropu.ServingNode
 {
     public class Registra
     {
-        readonly Dictionary<uint, Registration> _registrationLookup = new Dictionary<uint, Registration>();
+        readonly IntDictionary<Registration> _registrationLookup = new IntDictionary<Registration>();
         readonly IGroupsClient _groupsClient;
 
         public Registra(IGroupsClient groupsClient)
@@ -18,13 +19,7 @@ namespace Ropu.ServingNode
 
         public void Register(Registration registration)
         {
-            if(_registrationLookup.TryGetValue(registration.UserId, out Registration existing))
-            {
-                //update 
-                _registrationLookup[registration.UserId] = registration;
-                return;
-            }
-            _registrationLookup.Add(registration.UserId, registration);
+            _registrationLookup.AddOrUpdate(registration.UserId, registration);
         }
 
         public List<uint> GetUsers(ushort groupId)
