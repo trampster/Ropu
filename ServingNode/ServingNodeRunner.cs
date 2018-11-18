@@ -45,6 +45,7 @@ namespace Ropu.ServingNode
         {
             var registration = new Registration(userId, endPoint);
             _registra.Register(registration);
+
             _mediaProtocol.SendRegisterResponse(registration, endPoint);
         }
 

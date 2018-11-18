@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Ropu.Shared;
+using Ropu.Shared.AsyncTools;
 using Ropu.Shared.ControlProtocol;
 
 namespace Ropu.ServingNode
@@ -49,27 +50,46 @@ namespace Ropu.ServingNode
 
         public async Task Run()
         {
-            var task = new Task(ProcessPackets, TaskCreationOptions.LongRunning);
+            var task = new Task(() => AsyncPump.Run(ProcessPackets), TaskCreationOptions.LongRunning);
             task.Start();
             await task;
         }
 
-        void ProcessPackets()
+        async Task ProcessPackets()
         {
+
             byte[] buffer = new byte[MaxUdpSize];
+            var segment = new ArraySegment<byte>(buffer);
             EndPoint any = Any;
+
+            ManualResetEvent resetEvent = new ManualResetEvent(false);
+
+            var socketArgs = new SocketAsyncEventArgs();
+            socketArgs.SetBuffer(buffer);
+            socketArgs.RemoteEndPoint = any;
+            socketArgs.SocketFlags = SocketFlags.None;
+            socketArgs.Completed += (sender, args) =>
+            {
+                resetEvent.Set();
+            };
 
             while(true)
             {
-                int ammountRead = _socket.ReceiveFrom(buffer, ref any);
+                if(_socket.ReceiveFromAsync(socketArgs))
+                {
+                    //didn't complete yet, need to wait for it
+                    await Task.Run(() => resetEvent.WaitOne());
+                    resetEvent.Reset();
+                }
 
-                var receivedBytes = new Span<byte>(buffer, 0, ammountRead);
-                HandlePacket(receivedBytes, (IPEndPoint)any);
+                HandlePacket(buffer, socketArgs.BytesTransferred, (IPEndPoint)socketArgs.RemoteEndPoint);
             }
         }
 
-        void HandlePacket(Span<byte> data, IPEndPoint endPoint)
+        void HandlePacket(byte[] buffer, int ammountRead, IPEndPoint endPoint)
         {
+            var data = new Span<byte>(buffer, 0, ammountRead);
+
             switch((CombinedPacketType)data[0])
             {
                 case CombinedPacketType.Registration:
