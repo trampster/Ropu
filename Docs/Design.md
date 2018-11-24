@@ -87,8 +87,14 @@ The client will share a port for the control, media and floor packets. This is s
 Clients should play out everything they receive on the Media Plane, regardless of the call state. This way if the control messages and media packets arrive unsynchronized the client won't miss audio.
 Likewise when starting a call, the client should start streaming the media to the server as soon as they have received the Start Call Response before receiving floor granted. The call initiator is implicitly granted the floor.
 
-#### Packet
+#### Media Packet Individual Call
 * Packet Type 9
 * Call ID (uint16)
+* Key ID (uint16) - 0 means no encryption
+* Payload
+
+### Media Packet Group Call
+* Packet Type 10
+* Group Id (uint16)
 * Key ID (uint16) - 0 means no encryption
 * Payload

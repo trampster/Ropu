@@ -42,7 +42,7 @@ Used by a client to request to be allocated a serving node
 * Serving Node Endpoint (6 bytes)
 
 ### Serving Nodes
-These is automatically sent to any Serving Node as soon as it registers to tell it about 
+These are automatically sent to any Serving Node as soon as it registers to tell it about 
 the other serving nodes. It is also sent to all existing serving nodes whenever a serving node registeres.
 * Packet Type 6 (byte)
 * Request ID (uint16)
@@ -51,8 +51,21 @@ the other serving nodes. It is also sent to all existing serving nodes whenever 
 ### Serving Node Removed
 Sent to all registered serving nodes whenever a ServingNode deregisters or it's registration expires.
 * Packet Type 7 (byte)
-* Request Id (uint16)
+* Request ID (uint16)
 * Serving Node Endpoint (6 bytes)
 
+### Group Call Managers
+These are automatically sent to any serving node as soon as it registered to tell it about
+what call manager to use for each group, or whenever a group is added
+* Packet Type 8 (byte)
+* Request ID (uint16)
+The following is repeated for each group
+* Group ID (uint16)
+* Serving Node EndPoint (6 bytes)
+
+### Group Call Manager Removed
+* Packet Type 9 (byte)
+* Request ID (uint16)
+* Group ID (uint16)
 
 
