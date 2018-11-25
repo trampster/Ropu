@@ -127,6 +127,19 @@ namespace Ropu.Shared.LoadBalancing
                     _clientMessageHandler?.HandleServingNodeRemoved(requestId, servingNodeEndPoint);
                     break;
                 }
+                case LoadBalancerPacketType.GroupCallManagers:
+                {
+                    ushort requestId = data.Slice(1).ParseUshort();
+                    _clientMessageHandler?.HandleGroupCallManagers(requestId, data.Slice(3));
+                    break;
+                }
+                case LoadBalancerPacketType.GroupCallManagerRemoved:
+                {
+                    ushort requestId = data.Slice(1).ParseUshort();
+                    ushort groupId = data.Slice(3).ParseUshort();
+                    _clientMessageHandler?.HandleGroupCallManagerRemoved(requestId, groupId);
+                    break;    
+                }
                 default:
                     throw new NotSupportedException($"PacketType {(LoadBalancerPacketType)data[0]} was not recognized");
             }
@@ -317,6 +330,67 @@ namespace Ropu.Shared.LoadBalancing
             sendBuffer.WriteEndPoint(servinNodeEndPoint, 3);
 
             bool responseReceived = await SendAndWaitForAck(requestId, sendBuffer, 9, targetEndpoint);
+
+            _sendBufferPool.Add(sendBuffer);
+
+            return responseReceived;
+        }
+
+        public class GroupCallManager
+        {
+            public IPEndPoint EndPoint
+            {
+                get;
+                set;
+            }
+
+            public ushort GroupId
+            {
+                get;
+                set;
+            }
+
+        }
+
+        public async Task<bool> SendGroupCallManagers(IEnumerable<GroupCallManager> callManagers, IPEndPoint targetEndpoint)
+        {
+            var sendBuffer = _sendBufferPool.Get();
+
+            ushort requestId = _requestId++;
+            // Packet Type 1
+            sendBuffer[0] = (byte)LoadBalancerPacketType.GroupCallManagers;
+            // Request ID (uint16)
+            sendBuffer.WriteUshort(requestId, 1);
+            // Group Call Manager(s)
+            int index = 3;
+            foreach(var callManager in callManagers)
+            {
+                sendBuffer.WriteUshort(callManager.GroupId, index);
+                index += 2;
+                sendBuffer.WriteEndPoint(callManager.EndPoint, index);
+                index += 6;
+            }
+
+            bool responseReceived = await SendAndWaitForAck(requestId, sendBuffer, index, targetEndpoint);
+
+            _sendBufferPool.Add(sendBuffer);
+
+            return responseReceived;
+        }
+
+        public async Task<bool> SendGroupCallManagerRemoved(ushort groupId, IPEndPoint targetEndpoint)
+        {
+             var sendBuffer = _sendBufferPool.Get();
+
+            ushort requestId = _requestId++;
+            // Packet Type 1
+            sendBuffer[0] = (byte)LoadBalancerPacketType.ServingNodeRemoved;
+            // Request ID (uint16)
+            sendBuffer.WriteUshort(requestId, 1);
+            // Group ID (2 bytes)
+            sendBuffer.WriteUshort(groupId, 3);
+
+            bool responseReceived = await SendAndWaitForAck(requestId, sendBuffer, 5, targetEndpoint);
 
             _sendBufferPool.Add(sendBuffer);
 

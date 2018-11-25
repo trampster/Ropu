@@ -91,5 +91,15 @@ namespace Ropu.ServingNode
         {
             throw new NotImplementedException();
         }
+
+        public void HandleGroupCallManagers(ushort requestId, Span<byte> groupCallManagers)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void HandleGroupCallManagerRemoved(ushort requestId, ushort groupId)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

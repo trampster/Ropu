@@ -9,6 +9,8 @@ namespace Ropu.Shared.LoadBalancing
         RequestServingNode = 4,
         ServingNodeResponse = 5,
         ServingNodes = 6,
-        ServingNodeRemoved = 7
+        ServingNodeRemoved = 7,
+        GroupCallManagers = 8,
+        GroupCallManagerRemoved = 9,
     }
 }
