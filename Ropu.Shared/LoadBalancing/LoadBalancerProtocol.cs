@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Ropu.Shared;
+using Ropu.Shared.AsyncTools;
 using Ropu.Shared.ControlProtocol;
 
 namespace Ropu.Shared.LoadBalancing
@@ -50,27 +51,43 @@ namespace Ropu.Shared.LoadBalancing
 
         public async Task Run()
         {
-            var task = new Task(ProcessPackets, TaskCreationOptions.LongRunning);
+            var task = new Task(() => AsyncPump.Run(ProcessPackets), TaskCreationOptions.LongRunning);
             task.Start();
             await task;
         }
 
-        void ProcessPackets()
+        async Task ProcessPackets()
         {
-            byte[] _buffer = new byte[MaxUdpSize];
+            var buffer = new byte[MaxUdpSize];
             EndPoint any = Any;
+
+            var resetEvent = new ManualResetEvent(false);
+
+            var socketArgs = new SocketAsyncEventArgs();
+            socketArgs.SetBuffer(buffer);
+            socketArgs.RemoteEndPoint = any;
+            socketArgs.SocketFlags = SocketFlags.None;
+            socketArgs.Completed += (sender, args) =>
+            {
+                resetEvent.Set();
+            };
 
             while(true)
             {
-                int ammountRead = _socket.ReceiveFrom(_buffer, ref any);
+                if(_socket.ReceiveFromAsync(socketArgs))
+                {
+                    //didn't complete yet, need to wait for it
+                    await Task.Run(() => resetEvent.WaitOne());
+                    resetEvent.Reset();
+                }
 
-                var receivedBytes = new Span<byte>(_buffer, 0, ammountRead);
-                HandlePacket(receivedBytes, (IPEndPoint)any);
+                HandlePacket(buffer, socketArgs.BytesTransferred, (IPEndPoint)any);
             }
         }
 
-        void HandlePacket(Span<byte> data, IPEndPoint endPoint)
+        void HandlePacket(byte[] buffer, int ammountRead, IPEndPoint endPoint)
         {
+            var data = buffer.AsSpan(0, ammountRead);
             switch((LoadBalancerPacketType)data[0])
             {
                 case LoadBalancerPacketType.RegisterServingNode:

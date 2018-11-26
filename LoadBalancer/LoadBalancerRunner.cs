@@ -75,7 +75,7 @@ namespace Ropu.LoadBalancer
             return _callControllers.GetAvailableController();
         }
 
-        public void HandleRegisterServingNode(IPEndPoint from, ushort requestId, IPEndPoint servingNodeEndpoint)
+        public await void HandleRegisterServingNode(IPEndPoint from, ushort requestId, IPEndPoint servingNodeEndpoint)
         {
             Console.WriteLine($"Serving Node Registered at end point {servingNodeEndpoint}");
             bool newNode = _servingNodes.Register(from, controller => controller.Update(servingNodeEndpoint), () => new RegisteredServingNode(from, servingNodeEndpoint));
@@ -83,7 +83,7 @@ namespace Ropu.LoadBalancer
 
             if(!newNode) return;
 
-            TaskCordinator.DontWait(() => UpdateServingNodes(from, servingNodeEndpoint)); //we can't await because we are on the packet handler thread.
+            await UpdateServingNodes(from, servingNodeEndpoint);
         }
 
         async Task UpdateServingNodes(IPEndPoint from, IPEndPoint servingNodeEndpoint)

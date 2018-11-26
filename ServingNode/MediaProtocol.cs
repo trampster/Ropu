@@ -62,7 +62,7 @@ namespace Ropu.ServingNode
             var segment = new ArraySegment<byte>(buffer);
             EndPoint any = Any;
 
-            ManualResetEvent resetEvent = new ManualResetEvent(false);
+            var resetEvent = new ManualResetEvent(false);
 
             var socketArgs = new SocketAsyncEventArgs();
             socketArgs.SetBuffer(buffer);
