@@ -75,7 +75,7 @@ namespace Ropu.LoadBalancer
             return _callControllers.GetAvailableController();
         }
 
-        public await void HandleRegisterServingNode(IPEndPoint from, ushort requestId, IPEndPoint servingNodeEndpoint)
+        public async void HandleRegisterServingNode(IPEndPoint from, ushort requestId, IPEndPoint servingNodeEndpoint)
         {
             Console.WriteLine($"Serving Node Registered at end point {servingNodeEndpoint}");
             bool newNode = _servingNodes.Register(from, controller => controller.Update(servingNodeEndpoint), () => new RegisteredServingNode(from, servingNodeEndpoint));
