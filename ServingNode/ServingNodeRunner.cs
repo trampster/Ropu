@@ -13,6 +13,7 @@ namespace Ropu.ServingNode
         readonly ServiceDiscovery _serviceDiscovery;
         readonly Registra _registra;
         readonly ServingNodes _servingNodes;
+        readonly GroupCallControllerLookup _groupCallControllerLookup;
 
         public ServingNodeRunner(
             MediaProtocol mediaProtocol, 
@@ -92,14 +93,23 @@ namespace Ropu.ServingNode
             throw new NotImplementedException();
         }
 
-        public void HandleGroupCallManagers(ushort requestId, Span<byte> groupCallManagers)
+        public void HandleGroupCallControllers(ushort requestId, Span<byte> groupCallManagersData)
         {
-            throw new NotImplementedException();
+            for(int index = 0; index < groupCallManagersData.Length; index++)
+            {
+                var groupId = groupCallManagersData.Slice(index).ParseUshort();
+                var endPoint = groupCallManagersData.Slice(index+2).ParseIPEndPoint();
+                _groupCallControllerLookup.Add(groupId, endPoint);
+            }
+            var loadBalancerEndPoint = _serviceDiscovery.CallManagementServerEndpoint();
+            _loadBalancerProtocol.SendAck(requestId, loadBalancerEndPoint);
         }
 
-        public void HandleGroupCallManagerRemoved(ushort requestId, ushort groupId)
+        public void HandleGroupCallControllerRemoved(ushort requestId, ushort groupId)
         {
-            throw new NotImplementedException();
+            _groupCallControllerLookup.Remove(groupId);
+            var loadBalancerEndPoint = _serviceDiscovery.CallManagementServerEndpoint();
+            _loadBalancerProtocol.SendAck(requestId, loadBalancerEndPoint);
         }
     }
 }

@@ -144,17 +144,17 @@ namespace Ropu.Shared.LoadBalancing
                     _clientMessageHandler?.HandleServingNodeRemoved(requestId, servingNodeEndPoint);
                     break;
                 }
-                case LoadBalancerPacketType.GroupCallManagers:
+                case LoadBalancerPacketType.GroupCallControllers:
                 {
                     ushort requestId = data.Slice(1).ParseUshort();
-                    _clientMessageHandler?.HandleGroupCallManagers(requestId, data.Slice(3));
+                    _clientMessageHandler?.HandleGroupCallControllers(requestId, data.Slice(3));
                     break;
                 }
-                case LoadBalancerPacketType.GroupCallManagerRemoved:
+                case LoadBalancerPacketType.GroupCallControllerRemoved:
                 {
                     ushort requestId = data.Slice(1).ParseUshort();
                     ushort groupId = data.Slice(3).ParseUshort();
-                    _clientMessageHandler?.HandleGroupCallManagerRemoved(requestId, groupId);
+                    _clientMessageHandler?.HandleGroupCallControllerRemoved(requestId, groupId);
                     break;    
                 }
                 default:
@@ -353,29 +353,13 @@ namespace Ropu.Shared.LoadBalancing
             return responseReceived;
         }
 
-        public class GroupCallManager
-        {
-            public IPEndPoint EndPoint
-            {
-                get;
-                set;
-            }
-
-            public ushort GroupId
-            {
-                get;
-                set;
-            }
-
-        }
-
-        public async Task<bool> SendGroupCallManagers(IEnumerable<GroupCallManager> callManagers, IPEndPoint targetEndpoint)
+        public async Task<bool> SendGroupCallControllers(IEnumerable<GroupCallController> callManagers, IPEndPoint targetEndpoint)
         {
             var sendBuffer = _sendBufferPool.Get();
 
             ushort requestId = _requestId++;
             // Packet Type 1
-            sendBuffer[0] = (byte)LoadBalancerPacketType.GroupCallManagers;
+            sendBuffer[0] = (byte)LoadBalancerPacketType.GroupCallControllers;
             // Request ID (uint16)
             sendBuffer.WriteUshort(requestId, 1);
             // Group Call Manager(s)
@@ -395,7 +379,7 @@ namespace Ropu.Shared.LoadBalancing
             return responseReceived;
         }
 
-        public async Task<bool> SendGroupCallManagerRemoved(ushort groupId, IPEndPoint targetEndpoint)
+        public async Task<bool> SendGroupCallControllerRemoved(ushort groupId, IPEndPoint targetEndpoint)
         {
              var sendBuffer = _sendBufferPool.Get();
 

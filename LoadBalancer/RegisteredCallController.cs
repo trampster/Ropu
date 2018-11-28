@@ -1,23 +1,23 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
 
 namespace Ropu.LoadBalancer
 {
     public class RegisteredCallController : IRegisteredController
     {
-
         IPEndPoint _callEndPoint;
         DateTime _expirtyTime;
-
         readonly object _lock = new object();
-        public RegisteredCallController(IPEndPoint controlEndPoint, IPEndPoint floorEndPoint)
+
+        public RegisteredCallController(IPEndPoint loadBalancerEndPoint, IPEndPoint floorEndPoint)
         {
-            ControlEndPoint = controlEndPoint;
+            LoadBalancerEndPoint = loadBalancerEndPoint;
             _callEndPoint = floorEndPoint;
             SetupExpiryTime();
         }
 
-        public IPEndPoint ControlEndPoint
+        public IPEndPoint LoadBalancerEndPoint
         {
             get;
         }
@@ -50,6 +50,28 @@ namespace Ropu.LoadBalancer
             {
                 return _expirtyTime < DateTime.UtcNow;
             }
+        }
+
+        int _maxCapacity = 100;
+
+        readonly List<ushort> _groups = new List<ushort>();
+
+        public void AddGroup(ushort group)
+        {
+            _groups.Add(group);
+        }
+
+        public IEnumerable<ushort> Groups
+        {
+            get
+            {
+                return _groups;
+            }
+        }
+
+        public bool HasCapacity()
+        {
+            return _groups.Count < _maxCapacity;
         }
     }
 }

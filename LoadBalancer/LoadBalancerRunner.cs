@@ -16,7 +16,7 @@ namespace Ropu.LoadBalancer
     {
         readonly LoadBalancerProtocol _loadBalancerProtocol;
         readonly ControllerRegistry<RegisteredServingNode> _servingNodes;
-        readonly ControllerRegistry<RegisteredCallController> _callControllers;
+        readonly CallControllerRegistry _callControllers;
         readonly IGroupsClient _groupsClient;
         readonly FileManager _fileManager;
         volatile bool _closing = false;
@@ -33,7 +33,7 @@ namespace Ropu.LoadBalancer
 
             _servingNodes = new ControllerRegistry<RegisteredServingNode>();
 
-            _callControllers = new ControllerRegistry<RegisteredCallController>();
+            _callControllers = new CallControllerRegistry(groupsClient);
         }
 
         public async Task Run()
@@ -70,11 +70,6 @@ namespace Ropu.LoadBalancer
             return _servingNodes.GetAvailableController();
         }
 
-        RegisteredCallController GetCallController()
-        {
-            return _callControllers.GetAvailableController();
-        }
-
         public async void HandleRegisterServingNode(IPEndPoint from, ushort requestId, IPEndPoint servingNodeEndpoint)
         {
             Console.WriteLine($"Serving Node Registered at end point {servingNodeEndpoint}");
@@ -109,6 +104,14 @@ namespace Ropu.LoadBalancer
             {
                 TaskCordinator.DontWait(() => Retry(() => _loadBalancerProtocol.SendServingNodes(new IPEndPoint[]{servingNodeEndpoint}, endPoint)));
             }
+
+            await InformServingNodeOfGroupCallControllers(from);
+        }
+
+        async Task InformServingNodeOfGroupCallControllers(IPEndPoint servingNodeEndPoint)
+        {
+            var managers = _callControllers.GroupCallControllers;
+            await Retry(() => _loadBalancerProtocol.SendGroupCallControllers(managers, servingNodeEndPoint));
         }
 
         async Task<bool> Retry(Func<Task<bool>> action)
@@ -123,11 +126,10 @@ namespace Ropu.LoadBalancer
             return false;
         }
 
-
         public void HandleRegisterCallController(IPEndPoint from, ushort requestId, IPEndPoint callControlEndpoint)
         {
             Console.WriteLine($"Call Controller Registered at end point {callControlEndpoint}");
-            _callControllers.Register(from, controller => controller.Update(callControlEndpoint), () => new RegisteredCallController(from, callControlEndpoint));
+            _callControllers.Register(from, new RegisteredCallController(from, callControlEndpoint));
             _loadBalancerProtocol.SendAck(requestId, from);
         }
 

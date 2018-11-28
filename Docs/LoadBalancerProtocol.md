@@ -54,16 +54,16 @@ Sent to all registered serving nodes whenever a ServingNode deregisters or it's 
 * Request ID (uint16)
 * Serving Node Endpoint (6 bytes)
 
-### Group Call Managers
+### Group Call Controllers
 These are automatically sent to any serving node as soon as it registered to tell it about
-what call manager to use for each group, or whenever a group is added
+what call controllers to use for each group, or whenever a group is added
 * Packet Type 8 (byte)
 * Request ID (uint16)
 The following is repeated for each group
 * Group ID (uint16)
 * Serving Node EndPoint (6 bytes)
 
-### Group Call Manager Removed
+### Group Call Controller Removed
 * Packet Type 9 (byte)
 * Request ID (uint16)
 * Group ID (uint16)
