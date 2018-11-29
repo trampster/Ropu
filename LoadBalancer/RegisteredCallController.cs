@@ -35,11 +35,10 @@ namespace Ropu.LoadBalancer
             _expirtyTime = DateTime.UtcNow.AddSeconds(120);
         }
 
-        public void Update(IPEndPoint callEndPoint)
+        public void RefreshExpiry()
         {
             lock(_lock)
             {
-                _callEndPoint = callEndPoint;
                 SetupExpiryTime();
             }
         }

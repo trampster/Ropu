@@ -58,7 +58,7 @@ namespace Ropu.LoadBalancer
                     foreach(var endPoint in existingControlNodeEndPoints)
                     {
                         Console.WriteLine($"Sending ServingNodeRemoved to {endPoint}");
-                        TaskCordinator.DontWait(() => Retry(() => _loadBalancerProtocol.SendServingNodeRemoved(servingNodeEndpoint, endPoint)));
+                        TaskCordinator.DontWait(() => TaskCordinator.Retry(() => _loadBalancerProtocol.SendServingNodeRemoved(servingNodeEndpoint, endPoint)));
                     } 
                 });
             }
@@ -93,7 +93,7 @@ namespace Ropu.LoadBalancer
                 select node.ServingEndPoint;
 
             //inform that serving node of all existing serving nodes
-            await Retry(() => _loadBalancerProtocol.SendServingNodes(existingServingNodeEndPoints, from));
+            await TaskCordinator.Retry(() => _loadBalancerProtocol.SendServingNodes(existingServingNodeEndPoints, from));
 
             //inform existing serving nodes of the new node
             var existingControlNodeEndPoints = 
@@ -102,7 +102,7 @@ namespace Ropu.LoadBalancer
                 select node.ControlEndPoint;
             foreach(var endPoint in existingControlNodeEndPoints)
             {
-                TaskCordinator.DontWait(() => Retry(() => _loadBalancerProtocol.SendServingNodes(new IPEndPoint[]{servingNodeEndpoint}, endPoint)));
+                TaskCordinator.DontWait(() => TaskCordinator.Retry(() => _loadBalancerProtocol.SendServingNodes(new IPEndPoint[]{servingNodeEndpoint}, endPoint)));
             }
 
             await InformServingNodeOfGroupCallControllers(from);
@@ -111,26 +111,23 @@ namespace Ropu.LoadBalancer
         async Task InformServingNodeOfGroupCallControllers(IPEndPoint servingNodeEndPoint)
         {
             var managers = _callControllers.GroupCallControllers;
-            await Retry(() => _loadBalancerProtocol.SendGroupCallControllers(managers, servingNodeEndPoint));
+            await TaskCordinator.Retry(() => _loadBalancerProtocol.SendGroupCallControllers(managers, servingNodeEndPoint));
         }
 
-        async Task<bool> Retry(Func<Task<bool>> action)
+        public async void HandleRegisterCallController(IPEndPoint from, ushort requestId, IPEndPoint callControlEndpoint)
         {
-            for(int index = 0; index < 3; index++)
-            {
-                if(await action())
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public void HandleRegisterCallController(IPEndPoint from, ushort requestId, IPEndPoint callControlEndpoint)
-        {
-            Console.WriteLine($"Call Controller Registered at end point {callControlEndpoint}");
-            _callControllers.Register(from, new RegisteredCallController(from, callControlEndpoint));
+            Console.WriteLine($"Call Controller Registered at end point {callControlEndpoint} from {from}");
+            byte? controllerId = _callControllers.Register(from, new RegisteredCallController(from, callControlEndpoint));
             _loadBalancerProtocol.SendAck(requestId, from);
+
+            if(controllerId == null)
+            {
+                Console.WriteLine("To many call controllers registered");
+                //TODO: probably need a response to indicate this
+                return;
+            }
+
+            await TaskCordinator.Retry(() => _loadBalancerProtocol.SendControllerRegistrationInfo(controllerId.Value, 30, from));
         }
 
         public void HandleRequestServingNode(ushort requestId, IPEndPoint endPoint)
@@ -146,6 +143,12 @@ namespace Ropu.LoadBalancer
             Console.WriteLine($"Sending Serving Node Response to {endPoint}"); 
 
             _loadBalancerProtocol.SendServingNodeResponse(servingNodeEndPoint, endPoint);
+        }
+
+        public void HandleRefreshCallController(ushort requestId, byte controllerId, IPEndPoint endPoint)
+        {
+            _callControllers.Refresh(controllerId);
+            _loadBalancerProtocol.SendAck(requestId, endPoint);
         }
     }
 }

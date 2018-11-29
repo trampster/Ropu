@@ -10,5 +10,6 @@ namespace Ropu.Shared.LoadBalancing
         void HandleServingNodeRemoved(ushort requestId, IPEndPoint endpoint);
         void HandleGroupCallControllers(ushort requestId, Span<byte> groupCallControllers);
         void HandleGroupCallControllerRemoved(ushort requestId, ushort groupId);
+        void HandleControllerRegistrationInfo(ushort requestId, byte controllerId, ushort refreshInterval, IPEndPoint endPoint);
     }
 }

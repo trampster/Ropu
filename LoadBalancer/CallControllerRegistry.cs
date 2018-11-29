@@ -159,5 +159,10 @@ namespace Ropu.LoadBalancer
             _listener.GroupsChanged(list);
         }
 
+        public void Refresh(byte controllerId)
+        {
+            Console.WriteLine($"Refresing CallController {controllerId}");
+            _controllers[controllerId].RefreshExpiry();
+        }
     }
 }

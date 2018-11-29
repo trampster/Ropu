@@ -81,32 +81,45 @@ namespace Ropu.Shared.LoadBalancing
                     resetEvent.Reset();
                 }
 
-                HandlePacket(buffer, socketArgs.BytesTransferred, (IPEndPoint)any);
+                HandlePacket(buffer, socketArgs.BytesTransferred, (IPEndPoint)socketArgs.RemoteEndPoint);
             }
         }
 
         void HandlePacket(byte[] buffer, int ammountRead, IPEndPoint endPoint)
         {
             var data = buffer.AsSpan(0, ammountRead);
+
+            ushort requestId = data.Slice(1).ParseUshort();
+
             switch((LoadBalancerPacketType)data[0])
             {
                 case LoadBalancerPacketType.RegisterServingNode:
                 {
-                    ushort requestId = data.Slice(1).ParseUshort();
                     var mediaEndpoint = data.Slice(3).ParseIPEndPoint();
                     _serverMessageHandler?.HandleRegisterServingNode(endPoint, requestId, mediaEndpoint);
                     break;
                 }
                 case LoadBalancerPacketType.RegisterCallController:
                 {
-                    ushort requestId = data.Slice(1).ParseUshort();
                     var floorControlEndpoint = data.Slice(3).ParseIPEndPoint();
                     _serverMessageHandler?.HandleRegisterCallController(endPoint, requestId,  floorControlEndpoint);
                     break;
                 }
+                case LoadBalancerPacketType.ControllerRegistrationInfo:
+                {
+                    byte controllerId = data[3];
+                    ushort refreshInterval = data.Slice(4).ParseUshort();
+                    _clientMessageHandler?.HandleControllerRegistrationInfo(requestId, controllerId, refreshInterval, endPoint);
+                    break;
+                }
+                case LoadBalancerPacketType.RefreshCallController:
+                {
+                    byte controllerId = data[3];
+                    _serverMessageHandler?.HandleRefreshCallController(requestId, controllerId, endPoint);
+                    break;
+                }
                 case LoadBalancerPacketType.StartCall:
                 {
-                    ushort requestId = data.Slice(1).ParseUshort();
                     ushort callId = data.Slice(3).ParseUshort();
                     ushort groupId = data.Slice(5).ParseUshort();
                     _clientMessageHandler?.HandleCallStart(requestId, callId, groupId);
@@ -114,45 +127,38 @@ namespace Ropu.Shared.LoadBalancing
                 }
                 case LoadBalancerPacketType.Ack:
                 {
-                    ushort requestId = data.Slice(1).ParseUshort();
                     HandleAck(requestId);
                     break;
                 }
                 case LoadBalancerPacketType.RequestServingNode:
                 {
-                    ushort requestId = data.Slice(1).ParseUshort();
                     _serverMessageHandler?.HandleRequestServingNode(requestId, endPoint);
                     break;
                 }
                 case LoadBalancerPacketType.ServingNodeResponse:
                 {
-                    ushort requestId = data.Slice(1).ParseUshort();
                     IPEndPoint servingNodeEndPoint = data.Slice(3).ParseIPEndPoint();
                     GetRequestHandler<Action<IPEndPoint>>(requestId)?.Invoke(servingNodeEndPoint);
                     break;
                 }
                 case LoadBalancerPacketType.ServingNodes:
                 {
-                    ushort requestId = data.Slice(1).ParseUshort();
                     _clientMessageHandler?.HandleServingNodes(requestId, data.Slice(3));
                     break;
                 }
                 case LoadBalancerPacketType.ServingNodeRemoved:
                 {
-                    ushort requestId = data.Slice(1).ParseUshort();
                     var servingNodeEndPoint = data.Slice(3).ParseIPEndPoint();
                     _clientMessageHandler?.HandleServingNodeRemoved(requestId, servingNodeEndPoint);
                     break;
                 }
                 case LoadBalancerPacketType.GroupCallControllers:
                 {
-                    ushort requestId = data.Slice(1).ParseUshort();
                     _clientMessageHandler?.HandleGroupCallControllers(requestId, data.Slice(3));
                     break;
                 }
                 case LoadBalancerPacketType.GroupCallControllerRemoved:
                 {
-                    ushort requestId = data.Slice(1).ParseUshort();
                     ushort groupId = data.Slice(3).ParseUshort();
                     _clientMessageHandler?.HandleGroupCallControllerRemoved(requestId, groupId);
                     break;    
@@ -301,7 +307,7 @@ namespace Ropu.Shared.LoadBalancing
             // Request ID (uint16)
             sendBuffer.WriteUshort(requestId, 1);
             // Call Control Endpoint
-            sendBuffer.WriteEndPoint(callControlerEndpoint, 5);
+            sendBuffer.WriteEndPoint(callControlerEndpoint, 3);
 
             bool responseReceived = await SendAndWaitForAck(requestId, sendBuffer, 9, targetEndpoint);
 
@@ -419,6 +425,46 @@ namespace Ropu.Shared.LoadBalancing
             return repsonseReceived;
         }
 
+        public async Task<bool> SendControllerRegistrationInfo(byte controllerId, ushort refreshInterval, IPEndPoint targetEndpoint)
+        {
+            var sendBuffer = _sendBufferPool.Get();
+
+            ushort requestId = _requestId++;
+            // Packet Type
+            sendBuffer[0] = (byte)LoadBalancerPacketType.ControllerRegistrationInfo;
+            // Request ID (uint16)
+            sendBuffer.WriteUshort(requestId, 1);
+            //Controller ID (byte) - to be included in the Refresh Controller packet
+            sendBuffer[3] = controllerId;
+            // Refresh Interval (ushort) - in seconds
+            sendBuffer.WriteUshort(refreshInterval, 4);
+
+            bool repsonseReceived = await SendAndWaitForAck(requestId, sendBuffer, 6, targetEndpoint);
+
+            _sendBufferPool.Add(sendBuffer);
+
+            return repsonseReceived;
+        }
+
+        public async Task<bool> SendControllerRefreshCallController (byte controllerId, IPEndPoint targetEndpoint)
+        {
+            var sendBuffer = _sendBufferPool.Get();
+
+            ushort requestId = _requestId++;
+            // Packet Type
+            sendBuffer[0] = (byte)LoadBalancerPacketType.RefreshCallController;
+            // Request ID (uint16)
+            sendBuffer.WriteUshort(requestId, 1);
+            //Controller ID (byte) 
+            sendBuffer[3] = controllerId;
+
+            bool repsonseReceived = await SendAndWaitForAck(requestId, sendBuffer, 4, targetEndpoint);
+
+            _sendBufferPool.Add(sendBuffer);
+
+            return repsonseReceived;
+        }
+
         public void SendAck(ushort requestId, IPEndPoint ipEndPoint)
         {
             var sendBuffer = _sendBufferPool.Get();
@@ -426,6 +472,7 @@ namespace Ropu.Shared.LoadBalancing
             sendBuffer[0] = (byte)LoadBalancerPacketType.Ack;
             // Request ID (uint16)
             sendBuffer.WriteUshort(requestId, 1);
+            Console.WriteLine($"Sending Ack to {ipEndPoint}");
             _socket.SendTo(sendBuffer, 0, 3, SocketFlags.None, ipEndPoint);
 
             _sendBufferPool.Add(sendBuffer);

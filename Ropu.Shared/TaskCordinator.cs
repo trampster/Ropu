@@ -42,5 +42,17 @@ namespace Ropu.Shared
                 Environment.Exit(1);
             }
         }
+
+        public static async Task<bool> Retry(Func<Task<bool>> action)
+        {
+            for(int index = 0; index < 3; index++)
+            {
+                if(await action())
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 }

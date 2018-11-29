@@ -6,15 +6,18 @@ using System;
 
 namespace Ropu.CallController
 {
-    public class CallControl
+    public class CallControl : ILoadBalancerClientMessageHandler
     {
         readonly LoadBalancerProtocol _loadBalancerProtocol;
+        byte? _controllerId;
+        ushort? _refreshInterval;
 
         readonly ServiceDiscovery _serviceDiscovery;
 
         public CallControl(LoadBalancerProtocol loadBalancerProtocol, ServiceDiscovery serviceDiscovery)
         {
             _loadBalancerProtocol = loadBalancerProtocol;
+            _loadBalancerProtocol.SetClientMessageHandler(this);
             _serviceDiscovery = serviceDiscovery;
         }
 
@@ -37,12 +40,68 @@ namespace Ropu.CallController
                 if(registered)
                 {
                     Console.WriteLine("Registered");
-                    await Task.Delay(60000);
-                    continue;
+                    while(true)
+                    {
+                        await Task.Delay(GetRefreshIntervalMilliseconds());
+                        if(_controllerId == null)
+                        {
+                            //never received a Controller Registration Info Packet
+                            Console.WriteLine("Never received a Controller Registration Info Packet");
+                            //need to resend our registration
+                            break;
+                        }
+                        Console.WriteLine("Refreshing registration");
+                        await TaskCordinator.Retry(() => _loadBalancerProtocol.SendControllerRefreshCallController(_controllerId.Value, callManagementServerEndpoint));
+                        continue;
+                    }
                 }
-                Console.WriteLine("Failed to register");
+                else
+                {
+                    Console.WriteLine("Failed to register");
+                }
             }
         }
 
+        ushort GetRefreshIntervalMilliseconds()
+        {
+            if(_refreshInterval == null)
+            {
+                return (ushort)(_refreshInterval.Value * 1000);
+            }
+            const ushort defaultInterval = 30000;
+            return defaultInterval;
+        }
+
+        public void HandleCallStart(uint requestId, ushort callId, ushort groupId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void HandleServingNodes(ushort requestId, Span<byte> nodeEndPointsData)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void HandleServingNodeRemoved(ushort requestId, IPEndPoint endpoint)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void HandleGroupCallControllers(ushort requestId, Span<byte> groupCallControllers)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void HandleGroupCallControllerRemoved(ushort requestId, ushort groupId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void HandleControllerRegistrationInfo(ushort requestId, byte controllerId, ushort refreshInterval, IPEndPoint endPoint)
+        {
+            _controllerId = controllerId;
+            _refreshInterval = refreshInterval;
+            _loadBalancerProtocol.SendAck(requestId, endPoint);
+        }
     }
 }

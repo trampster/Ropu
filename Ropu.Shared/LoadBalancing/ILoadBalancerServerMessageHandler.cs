@@ -7,5 +7,6 @@ namespace Ropu.Shared.LoadBalancing
         void HandleRegisterServingNode(IPEndPoint from, ushort requestId, IPEndPoint mediaEndpoint);
         void HandleRegisterCallController(IPEndPoint from, ushort requestId, IPEndPoint callControlEndpoint);
         void HandleRequestServingNode(ushort requestId, IPEndPoint endPoint);
+        void HandleRefreshCallController(ushort requestId, byte controllerId, IPEndPoint endPoint);
     }
 }

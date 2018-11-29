@@ -4,13 +4,15 @@ namespace Ropu.Shared.LoadBalancing
     {
         RegisterServingNode = 0,
         RegisterCallController = 1,
-        StartCall = 2,
-        Ack = 3,
-        RequestServingNode = 4,
-        ServingNodeResponse = 5,
-        ServingNodes = 6,
-        ServingNodeRemoved = 7,
-        GroupCallControllers = 8,
-        GroupCallControllerRemoved = 9,
+        ControllerRegistrationInfo = 2,
+        RefreshCallController = 3,
+        StartCall = 4,
+        Ack = 5,
+        RequestServingNode = 6,
+        ServingNodeResponse = 7,
+        ServingNodes = 8,
+        ServingNodeRemoved = 9,
+        GroupCallControllers = 10,
+        GroupCallControllerRemoved = 11,
     }
 }
