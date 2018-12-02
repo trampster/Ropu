@@ -12,7 +12,7 @@ using Ropu.Shared.Groups;
 
 namespace Ropu.LoadBalancer
 {
-    public class LoadBalancerRunner : ILoadBalancerServerMessageHandler
+    public class LoadBalancerRunner : ILoadBalancerServerMessageHandler, IGroupCallControllerListener
     {
         readonly LoadBalancerProtocol _loadBalancerProtocol;
         readonly ControllerRegistry<RegisteredServingNode> _servingNodes;
@@ -34,6 +34,7 @@ namespace Ropu.LoadBalancer
             _servingNodes = new ControllerRegistry<RegisteredServingNode>();
 
             _callControllers = new CallControllerRegistry(groupsClient);
+            _callControllers.SetGroupCallControllerListener(this);
         }
 
         public async Task Run()
@@ -61,6 +62,7 @@ namespace Ropu.LoadBalancer
                         TaskCordinator.DontWait(() => TaskCordinator.Retry(() => _loadBalancerProtocol.SendServingNodeRemoved(servingNodeEndpoint, endPoint)));
                     } 
                 });
+                _callControllers.RemoveExpired();
             }
         }
 
@@ -149,6 +151,24 @@ namespace Ropu.LoadBalancer
         {
             _callControllers.Refresh(controllerId);
             _loadBalancerProtocol.SendAck(requestId, endPoint);
+        }
+
+        public async void GroupsChanged(IEnumerable<GroupCallController> groupCallcontrollers)
+        {
+            var managers = _callControllers.GroupCallControllers;
+            foreach(var servingNode in _servingNodes.GetControllers())
+            {
+                await TaskCordinator.Retry(() => _loadBalancerProtocol.SendGroupCallControllers(groupCallcontrollers, servingNode.ControlEndPoint));
+            }
+        }
+
+        public async void GroupCallControllerRemoved(ushort groupId)
+        {
+            var managers = _callControllers.GroupCallControllers;
+            foreach(var servingNode in _servingNodes.GetControllers())
+            {
+                await TaskCordinator.Retry(() => _loadBalancerProtocol.SendGroupCallControllerRemoved(groupId, servingNode.ControlEndPoint));
+            };
         }
     }
 }

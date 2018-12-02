@@ -20,7 +20,8 @@ namespace Ropu.ServingNode
             LoadBalancerProtocol loadBalancerProtocol, 
             ServiceDiscovery serviceDiscovery,
             Registra registra,
-            ServingNodes servingNodes)
+            ServingNodes servingNodes,
+            GroupCallControllerLookup groupCallControllerLookup)
         {
             _mediaProtocol = mediaProtocol;
             _mediaProtocol.SetMessageHandler(this);
@@ -28,6 +29,7 @@ namespace Ropu.ServingNode
             _serviceDiscovery = serviceDiscovery;
             _registra = registra;
             _servingNodes = servingNodes;
+            _groupCallControllerLookup = groupCallControllerLookup;
             loadBalancerProtocol.SetClientMessageHandler(this);
         }
 
@@ -95,10 +97,11 @@ namespace Ropu.ServingNode
 
         public void HandleGroupCallControllers(ushort requestId, Span<byte> groupCallManagersData)
         {
-            for(int index = 0; index < groupCallManagersData.Length; index++)
+            for(int index = 0; index < groupCallManagersData.Length; index += 8)
             {
                 var groupId = groupCallManagersData.Slice(index).ParseUshort();
                 var endPoint = groupCallManagersData.Slice(index+2).ParseIPEndPoint();
+                Console.WriteLine($"Added Group Call Controller Group ID: {groupId}, End Point: {endPoint}");
                 _groupCallControllerLookup.Add(groupId, endPoint);
             }
             var loadBalancerEndPoint = _serviceDiscovery.CallManagementServerEndpoint();
@@ -107,9 +110,14 @@ namespace Ropu.ServingNode
 
         public void HandleGroupCallControllerRemoved(ushort requestId, ushort groupId)
         {
+            Console.WriteLine($"Group Call Controller Removed, Group ID: {groupId}");
             _groupCallControllerLookup.Remove(groupId);
             var loadBalancerEndPoint = _serviceDiscovery.CallManagementServerEndpoint();
             _loadBalancerProtocol.SendAck(requestId, loadBalancerEndPoint);
+        }
+
+        public void HandleControllerRegistrationInfo(ushort requestId, byte controllerId, ushort refreshInterval, IPEndPoint endPoint)
+        {
         }
     }
 }

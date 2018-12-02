@@ -13,6 +13,8 @@ namespace Ropu.LoadBalancer
     public interface IGroupCallControllerListener
     {
         void GroupsChanged(IEnumerable<GroupCallController> groupCallcontrollers);
+
+        void GroupCallControllerRemoved(ushort groupId);
     }
 
     public class CallControllerRegistry
@@ -104,18 +106,17 @@ namespace Ropu.LoadBalancer
             return controllerId;
         }
 
-        public void RemoveExpired(Action<RegisteredCallController> onRemove)
+        public void RemoveExpired()
         {
             for(int index = 0; index < MaxControllers; index++)
             {
                 var controller = _controllers[index];
                 if(controller != null && controller.IsExpired())
                 {
-                    Console.WriteLine("Controlling Node Expired");
+                    Console.WriteLine("Call Controller Expired");
                     _controllers[index] = null;
                     RedistributeGroups(controller.Groups);
                     _count--;
-                    onRemove(controller);
                 }
             }
         }
@@ -138,25 +139,31 @@ namespace Ropu.LoadBalancer
         void RedistributeGroups(IEnumerable<ushort> groups)
         {
             var list = new List<GroupCallController>();
-            foreach(ushort group in groups)
-            {
-                _unassignedGroups.Enqueue(group);
-            }
+
+            var enumerator = groups.GetEnumerator();
+
             foreach(var controller in Controllers)
             {
-                if(_unassignedGroups.Count == 0)
-                {
-                    return;
-                }
                 while(controller.HasCapacity())
                 {
-                    var group = _unassignedGroups.Dequeue();
+                    if(!enumerator.MoveNext())
+                    {
+                        return;
+                    }
+                    var group = enumerator.Current;
                     controller.AddGroup(_unassignedGroups.Dequeue());
                     list.Add(new GroupCallController(){EndPoint = controller.CallEndPoint, GroupId = group});
                 }
             }
 
-            _listener.GroupsChanged(list);
+            _listener?.GroupsChanged(list);
+
+            while(enumerator.MoveNext())
+            {
+                var groupId = enumerator.Current;
+                _unassignedGroups.Enqueue(groupId);
+                _listener?.GroupCallControllerRemoved(groupId);
+            }
         }
 
         public void Refresh(byte controllerId)

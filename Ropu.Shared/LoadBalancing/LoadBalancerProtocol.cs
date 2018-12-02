@@ -391,7 +391,7 @@ namespace Ropu.Shared.LoadBalancing
 
             ushort requestId = _requestId++;
             // Packet Type 1
-            sendBuffer[0] = (byte)LoadBalancerPacketType.ServingNodeRemoved;
+            sendBuffer[0] = (byte)LoadBalancerPacketType.GroupCallControllerRemoved;
             // Request ID (uint16)
             sendBuffer.WriteUshort(requestId, 1);
             // Group ID (2 bytes)
@@ -472,7 +472,6 @@ namespace Ropu.Shared.LoadBalancing
             sendBuffer[0] = (byte)LoadBalancerPacketType.Ack;
             // Request ID (uint16)
             sendBuffer.WriteUshort(requestId, 1);
-            Console.WriteLine($"Sending Ack to {ipEndPoint}");
             _socket.SendTo(sendBuffer, 0, 3, SocketFlags.None, ipEndPoint);
 
             _sendBufferPool.Add(sendBuffer);

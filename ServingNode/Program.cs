@@ -30,13 +30,15 @@ namespace Ropu.ServingNode
             var groupsClient = new HardcodedGroupsClient();
             var registra = new Registra(groupsClient);
             var servingNodes = new ServingNodes(100);
+            var groupCallControllerLookup = new GroupCallControllerLookup();
 
             var servingNodeRunner = new ServingNodeRunner(
                 mediaProtocol, 
                 loadBalancerProtocol, 
                 serviceDiscovery,
                 registra,
-                servingNodes);
+                servingNodes,
+                groupCallControllerLookup);
 
             await servingNodeRunner.Run();
         }
