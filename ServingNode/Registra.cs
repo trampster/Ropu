@@ -22,17 +22,20 @@ namespace Ropu.ServingNode
             _registrationLookup.AddOrUpdate(registration.UserId, registration);
         }
 
-        public List<uint> GetUsers(ushort groupId)
+        public Span<IPEndPoint> GetUserEndPoints(ushort groupId)
         {
             //TODO: we need maintain lists of group members which we update at registration time
             //doing a dictionary lookup for every single member will be to slow, ideally we would be
             //just returning an existing list so no allocation or looping is required
-            var query = 
-                from userId in _groupsClient.Get(groupId).GroupMembers
-                where _registrationLookup.ContainsKey(userId)
-                select userId;
-            return query.ToList();
+            var list = new List<IPEndPoint>();
+            foreach(var userId in _groupsClient.Get(groupId).GroupMembers)
+            {
+                if(_registrationLookup.TryGetValue(userId, out Registration registration))
+                {
+                    list.Add(registration.EndPoint);
+                }
+            }
+            return list.ToArray().AsSpan();
         }
-
     }
 }

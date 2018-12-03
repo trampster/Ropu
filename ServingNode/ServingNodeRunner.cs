@@ -8,7 +8,7 @@ namespace Ropu.ServingNode
 {
     public class ServingNodeRunner : IMessageHandler, ILoadBalancerClientMessageHandler
     {
-        readonly MediaProtocol _mediaProtocol;
+        readonly RopuProtocol _mediaProtocol;
         readonly LoadBalancerProtocol _loadBalancerProtocol;
         readonly ServiceDiscovery _serviceDiscovery;
         readonly Registra _registra;
@@ -16,7 +16,7 @@ namespace Ropu.ServingNode
         readonly GroupCallControllerLookup _groupCallControllerLookup;
 
         public ServingNodeRunner(
-            MediaProtocol mediaProtocol, 
+            RopuProtocol mediaProtocol, 
             LoadBalancerProtocol loadBalancerProtocol, 
             ServiceDiscovery serviceDiscovery,
             Registra registra,
@@ -52,9 +52,22 @@ namespace Ropu.ServingNode
             _mediaProtocol.SendRegisterResponse(registration, endPoint);
         }
 
-        public void StartGroupCall(uint userId, ushort groupId, IPEndPoint endPoint)
+        public void HandleCallControllerMessage(ushort groupId, byte[] packetData, int length)
         {
+            var endPoint = _groupCallControllerLookup.LookupEndPoint(groupId);
+            _mediaProtocol.SendPacket(packetData, length, endPoint);
+        }
 
+        public void HandleMediaPacket(ushort groupId, byte[] packetData, int length)
+        {
+            //forward to all serving nodes
+            var servingNodeEndPoints = _servingNodes.EndPoints;
+            _mediaProtocol.BulkSendAsync(packetData, length, servingNodeEndPoints.GetSpan());
+            servingNodeEndPoints.Release();
+
+            //forward to clients that have registered with us
+            var clientEndPoints = _registra.GetUserEndPoints(groupId);
+            _mediaProtocol.BulkSendAsync(packetData, length, clientEndPoints);
         }
 
         async Task Register()

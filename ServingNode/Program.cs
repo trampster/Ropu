@@ -24,7 +24,7 @@ namespace Ropu.ServingNode
             Console.WriteLine();
 
             var portFinder = new PortFinder();
-            var mediaProtocol = new MediaProtocol(portFinder, StartingServingNodePort);
+            var mediaProtocol = new RopuProtocol(portFinder, StartingServingNodePort);
             var loadBalancerProtocol = new LoadBalancerProtocol(portFinder, StartingLoadBalancerPort);
             var serviceDiscovery = new ServiceDiscovery();
             var groupsClient = new HardcodedGroupsClient();

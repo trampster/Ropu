@@ -11,7 +11,7 @@ using Ropu.Shared.ControlProtocol;
 
 namespace Ropu.ServingNode
 {
-    public class MediaProtocol
+    public class RopuProtocol
     {
         IPEndPoint[] _endpoints;
         readonly Socket _socket;
@@ -24,7 +24,7 @@ namespace Ropu.ServingNode
 
         readonly byte[] _sendBuffer = new byte[MaxUdpSize];
 
-        public MediaProtocol(PortFinder portFinder, int startingPort)
+        public RopuProtocol(PortFinder portFinder, int startingPort)
         {
             _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             MediaPort = (ushort)portFinder.BindToAvailablePort(_socket, IPAddress.Any, startingPort);
@@ -101,26 +101,31 @@ namespace Ropu.ServingNode
                 case CombinedPacketType.StartGroupCall:
                 {
                     // User ID (uint32)
-                    uint userId = data.Slice(1).ParseUint();
+                    //uint userId = data.Slice(1).ParseUint();
                     // Group ID (uint16)
                     ushort groupId = data.Slice(5).ParseUshort();
-                    _messageHandler.StartGroupCall(userId, groupId, endPoint);
+                    _messageHandler.HandleCallControllerMessage(groupId, buffer, ammountRead);
                     break;
                 }
             }
         }
 
-        void BulkSendAsync(byte[] buffer, int length, Socket socket)
+        public void SendPacket(byte[] packet, int length, IPEndPoint target)
+        {
+            _socket.SendTo(packet, 0, length, SocketFlags.None, target);
+        }
+
+        public void BulkSendAsync(byte[] buffer, int length, Span<IPEndPoint> endPoints)
         {
             for(int endpointIndex = 0; endpointIndex < _endpoints.Length; endpointIndex++)
             {
                 var args = new SocketAsyncEventArgs()
                 {
-                    RemoteEndPoint = _endpoints[endpointIndex],
+                    RemoteEndPoint = endPoints[endpointIndex],
                 };
                 args.SetBuffer(buffer, 0, length);
 
-                socket.SendAsync(args);
+                _socket.SendAsync(args);
             }
         }
 

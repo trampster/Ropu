@@ -1,3 +1,4 @@
+using System;
 using System.Net;
 
 namespace Ropu.ServingNode
@@ -5,6 +6,7 @@ namespace Ropu.ServingNode
     public interface IMessageHandler
     {
         void Registration(uint userId, IPEndPoint endPoint);
-        void StartGroupCall(uint userId, ushort groupId, IPEndPoint endPoint);
+        void HandleCallControllerMessage(ushort groupId, byte[] packetData, int length);
+        void HandleMediaPacket(ushort groupId, byte[] packetData, int length);
     }
 }
