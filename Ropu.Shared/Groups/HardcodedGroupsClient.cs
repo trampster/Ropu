@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 
 namespace Ropu.Shared.Groups
@@ -32,6 +33,18 @@ namespace Ropu.Shared.Groups
                 return group;
             }
             return null;
+        }
+
+        public IEnumerable<ushort> GetUsersGroups(uint userId)
+        {
+            foreach(var group in _groupLookup)
+            {
+                if(group.Value.HasMember(userId))
+
+                {
+                    yield return group.Key;
+                }
+            }
         }
 
         void AddTestGroup(ushort groupId, uint startUnitId, uint endUnitId)

@@ -36,6 +36,8 @@ namespace Ropu.ServingNode
             {
                 _endpoints[endpointIndex] = new IPEndPoint(IPAddress.Parse("192.168.1.2"), endpointIndex + 1000);
             }
+
+            _socketEventArgsPool = new MemoryPool<SocketAsyncEventArgs>(() => CreateSocketAsyncEventArgs());
         }
 
         public void SetMessageHandler(IMessageHandler messageHandler)
@@ -115,31 +117,58 @@ namespace Ropu.ServingNode
             _socket.SendTo(packet, 0, length, SocketFlags.None, target);
         }
 
-        public void BulkSendAsync(byte[] buffer, int length, Span<IPEndPoint> endPoints)
-        {
-            for(int endpointIndex = 0; endpointIndex < _endpoints.Length; endpointIndex++)
-            {
-                var args = new SocketAsyncEventArgs()
-                {
-                    RemoteEndPoint = endPoints[endpointIndex],
-                };
-                args.SetBuffer(buffer, 0, length);
+        readonly MemoryPool<SocketAsyncEventArgs> _socketEventArgsPool;
+        int _waitingSendCount = 0;
+        Action _onBulkAsyncFinished;
+        readonly object _asyncCompleteLock = new object();
 
-                _socket.SendAsync(args);
+        SocketAsyncEventArgs CreateSocketAsyncEventArgs()
+        {
+            var args = new SocketAsyncEventArgs();
+            args.Completed += AsyncSendComplete;
+            return args;
+        }
+
+        void AsyncSendComplete(object sender, SocketAsyncEventArgs args)
+        {
+            
+            _socketEventArgsPool.Add(args);
+
+            lock(_asyncCompleteLock)
+            {
+                int newCount = Interlocked.Decrement(ref _waitingSendCount);
+                if(newCount == 0)
+                {
+                    _onBulkAsyncFinished?.Invoke();
+                    _onBulkAsyncFinished = null;
+                }
+
             }
         }
 
-        void BulkSendParallelFor(byte[] buffer, int length, Socket socket)
-        {
-            Parallel.For(0, _endpoints.Length, new ParallelOptions(){MaxDegreeOfParallelism = 40}, endpointIndex => 
-                socket.SendTo(buffer, 0, length, SocketFlags.None, _endpoints[endpointIndex]));
-        }
-
-        void BulkSendSync(byte[] buffer, int length, Socket socket)
+        public void BulkSendAsync(byte[] buffer, int length, Span<IPEndPoint> endPoints, Action onComplete)
         {
             for(int endpointIndex = 0; endpointIndex < _endpoints.Length; endpointIndex++)
             {
-                socket.SendTo(buffer, 0, length, SocketFlags.None, _endpoints[endpointIndex]);
+                var args = _socketEventArgsPool.Get();
+                args.RemoteEndPoint = endPoints[endpointIndex];
+                args.SetBuffer(buffer, 0, length);
+
+                if(!_socket.SendToAsync(args))
+                {
+                    Interlocked.Increment(ref _waitingSendCount);
+                    //completed syncronously
+                    _socketEventArgsPool.Add(args); //release the memory back to the pool
+                }
+            }
+            lock(_asyncCompleteLock)
+            {
+                if(_waitingSendCount == 0) 
+                {
+                    onComplete();
+                    return;
+                }
+                _onBulkAsyncFinished = onComplete;
             }
         }
 

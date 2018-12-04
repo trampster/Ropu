@@ -62,12 +62,11 @@ namespace Ropu.ServingNode
         {
             //forward to all serving nodes
             var servingNodeEndPoints = _servingNodes.EndPoints;
-            _mediaProtocol.BulkSendAsync(packetData, length, servingNodeEndPoints.GetSpan());
-            servingNodeEndPoints.Release();
+            _mediaProtocol.BulkSendAsync(packetData, length, servingNodeEndPoints.GetSpan(), () => servingNodeEndPoints.Release());
 
-            //forward to clients that have registered with us
+            //forward to clients that have registered with us and belong to that group
             var clientEndPoints = _registra.GetUserEndPoints(groupId);
-            _mediaProtocol.BulkSendAsync(packetData, length, clientEndPoints);
+            _mediaProtocol.BulkSendAsync(packetData, length, clientEndPoints.GetSpan(), () => clientEndPoints.Release());
         }
 
         async Task Register()

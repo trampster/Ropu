@@ -16,5 +16,7 @@ namespace Ropu.Shared.Groups
         {
             get;
         }
+
+        IEnumerable<ushort> GetUsersGroups(uint userId);
     }
 }

@@ -148,10 +148,11 @@ namespace Ropu.Shared.Concurrent
         T[] _array;
         int _length;
         readonly MemoryPool<SetChange<T>> _setChangePool;
+        readonly int _maxElements;
 
-        public SpeedReadSet(int max, MemoryPool<SetChange<T>> setChangePool)
+        public SpeedReadSet(int maxElements, MemoryPool<SetChange<T>> setChangePool)
         {
-            _array = new T[max];
+            _array = new T[4];
             _setChangePool = setChangePool;
         }
 
@@ -171,6 +172,15 @@ namespace Ropu.Shared.Concurrent
 
         void AddUnsafe(T item)
         {
+            if(_length >= _array.Length)
+            {
+                int newLength = _array.Length *2;
+                if(newLength > _maxElements)
+                {
+                    newLength = _maxElements;
+                }
+                _array = new T[newLength];
+            }
             _array[_length] = item;
             _length++;
         }

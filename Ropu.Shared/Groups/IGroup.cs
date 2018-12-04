@@ -17,5 +17,7 @@ namespace Ropu.Shared.Groups
         {
             get;
         }
+
+        bool HasMember(uint userId);
     }
 }
