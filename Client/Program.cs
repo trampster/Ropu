@@ -58,7 +58,16 @@ namespace Ropu.Client
             switch(command)
             {
                 case 'g':
-                    var group = ushort.Parse(commandLine.AsSpan(1));
+                    if(commandLine.Length < 3)
+                    {
+                        Console.WriteLine("error: You must specify the group to call");
+                        return;
+                    }
+                    if(!ushort.TryParse(commandLine.AsSpan(2), out ushort group))
+                    {
+                        Console.WriteLine("error: You must specify the group to call as a number");
+                        return;
+                    }
                     _ropuClient.StartCall(group);
                     break;
                 case 'm':

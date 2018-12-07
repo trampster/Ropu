@@ -44,20 +44,21 @@ The client will share a port for the control, media and floor packets. This is s
 * Codec (byte) (defined via an enum, this is the codec/bitrate used by the system, you must support it, this is required so the server doesn’t have to transcode, which is an expensive operation)
 * Bitrate (uint16)
 
-#### Call Ended (units receiving this packet should not stop playing out media they receive, this should only be used to update the UI)
+#### Call Ended 
+units receiving this packet should not stop playing out media they receive, this should only be used to update the UI)
 * Packet Type 2
 * Group ID (uint16)
 * Call ID (uint16)
 
 #### Start Group Call
 * Packet Type 3
-* User ID (uint32)
 * Group ID ((uint16))
+* User ID (uint32)
 
 #### Call Started (IPv4)
 * Packet Type 4
-* User Id (uint32)
 * Group ID (uint16)
+* User Id (uint32)
 * Call ID (uint16) unique identifier for the call, to be included in the media stream
 * Media Endpoint (4 bytes IP Address, 2 bytes port)
 * Floor Control Endpoint (4 bytes IP Address, 2 bytes port)

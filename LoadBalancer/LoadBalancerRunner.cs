@@ -144,7 +144,7 @@ namespace Ropu.LoadBalancer
             var servingNodeEndPoint = servingNode.ServingEndPoint;
             Console.WriteLine($"Sending Serving Node Response to {endPoint}"); 
 
-            _loadBalancerProtocol.SendServingNodeResponse(servingNodeEndPoint, endPoint);
+            _loadBalancerProtocol.SendServingNodeResponse(servingNodeEndPoint, endPoint, requestId);
         }
 
         public void HandleRefreshCallController(ushort requestId, byte controllerId, IPEndPoint endPoint)

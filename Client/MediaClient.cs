@@ -24,7 +24,7 @@ namespace Ropu.Client
 
         int BuildMediaPacket(ushort callId, byte[] payload, byte[] buffer)
         {
-            buffer[0] = (byte)CombinedPacketType.Media;
+            buffer[0] = (byte)RopuPacketType.Media;
             buffer.WriteUshort(callId, 1);
             buffer.WriteUshort(0, 3);
             buffer.AsSpan(5).WriteArray(buffer);

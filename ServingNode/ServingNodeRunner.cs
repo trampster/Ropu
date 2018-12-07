@@ -8,7 +8,7 @@ namespace Ropu.ServingNode
 {
     public class ServingNodeRunner : IMessageHandler, ILoadBalancerClientMessageHandler
     {
-        readonly RopuProtocol _mediaProtocol;
+        readonly RopuProtocol _ropuProtocol;
         readonly LoadBalancerProtocol _loadBalancerProtocol;
         readonly ServiceDiscovery _serviceDiscovery;
         readonly Registra _registra;
@@ -23,8 +23,8 @@ namespace Ropu.ServingNode
             ServingNodes servingNodes,
             GroupCallControllerLookup groupCallControllerLookup)
         {
-            _mediaProtocol = mediaProtocol;
-            _mediaProtocol.SetMessageHandler(this);
+            _ropuProtocol = mediaProtocol;
+            _ropuProtocol.SetMessageHandler(this);
             _loadBalancerProtocol = loadBalancerProtocol;
             _serviceDiscovery = serviceDiscovery;
             _registra = registra;
@@ -36,7 +36,7 @@ namespace Ropu.ServingNode
         public async Task Run()
         {
             Task callManagementTask = _loadBalancerProtocol.Run();
-            Task mediaTask = _mediaProtocol.Run();
+            Task mediaTask = _ropuProtocol.Run();
 
             Task registerTask = Register();
 
@@ -49,24 +49,24 @@ namespace Ropu.ServingNode
             var registration = new Registration(userId, endPoint);
             _registra.Register(registration);
 
-            _mediaProtocol.SendRegisterResponse(registration, endPoint);
+            _ropuProtocol.SendRegisterResponse(registration, endPoint);
         }
 
         public void HandleCallControllerMessage(ushort groupId, byte[] packetData, int length)
         {
             var endPoint = _groupCallControllerLookup.LookupEndPoint(groupId);
-            _mediaProtocol.SendPacket(packetData, length, endPoint);
+            _ropuProtocol.SendPacket(packetData, length, endPoint);
         }
 
-        public void HandleMediaPacket(ushort groupId, byte[] packetData, int length)
+        public void HandleMediaPacket(ushort groupId, byte[] packetData, int length, IPEndPoint from)
         {
             //forward to all serving nodes
             var servingNodeEndPoints = _servingNodes.EndPoints;
-            _mediaProtocol.BulkSendAsync(packetData, length, servingNodeEndPoints.GetSpan(), () => servingNodeEndPoints.Release());
+            _ropuProtocol.BulkSendAsync(packetData, length, servingNodeEndPoints.GetSpan(), () => servingNodeEndPoints.Release());
 
             //forward to clients that have registered with us and belong to that group
             var clientEndPoints = _registra.GetUserEndPoints(groupId);
-            _mediaProtocol.BulkSendAsync(packetData, length, clientEndPoints.GetSpan(), () => clientEndPoints.Release());
+            _ropuProtocol.BulkSendAsync(packetData, length, clientEndPoints.GetSpan(), () => clientEndPoints.Release(), from);
         }
 
         async Task Register()
@@ -75,7 +75,7 @@ namespace Ropu.ServingNode
             {
                 var callManagementServerEndpoint = _serviceDiscovery.CallManagementServerEndpoint();
                 bool registered = await _loadBalancerProtocol.SendRegisterServingNode(
-                    new IPEndPoint(_serviceDiscovery.GetMyAddress(), _mediaProtocol.MediaPort), 
+                    new IPEndPoint(_serviceDiscovery.GetMyAddress(), _ropuProtocol.MediaPort), 
                     callManagementServerEndpoint);
                 if(registered)
                 {

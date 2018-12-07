@@ -7,6 +7,6 @@ namespace Ropu.ServingNode
     {
         void Registration(uint userId, IPEndPoint endPoint);
         void HandleCallControllerMessage(ushort groupId, byte[] packetData, int length);
-        void HandleMediaPacket(ushort groupId, byte[] packetData, int length);
+        void HandleMediaPacket(ushort groupId, byte[] packetData, int length, IPEndPoint from);
     }
 }

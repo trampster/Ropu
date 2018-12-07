@@ -260,11 +260,9 @@ namespace Ropu.Shared.LoadBalancing
             return servingNodeEndPoint;
         }
 
-        public void SendServingNodeResponse(IPEndPoint servingNodeEndPoint, IPEndPoint targetEndPoint)
+        public void SendServingNodeResponse(IPEndPoint servingNodeEndPoint, IPEndPoint targetEndPoint, ushort requestId)
         {
             var sendBuffer = _sendBufferPool.Get();
-
-            ushort requestId = _requestId++;
 
             // Packet Type 6 (byte)
             sendBuffer[0] = (byte)LoadBalancerPacketType.ServingNodeResponse;

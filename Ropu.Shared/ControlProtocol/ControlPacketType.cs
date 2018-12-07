@@ -1,6 +1,6 @@
 namespace Ropu.Shared.ControlProtocol
 {
-    public enum CombinedPacketType
+    public enum RopuPacketType
     {
         //Control Protocol
         Registration = 0,

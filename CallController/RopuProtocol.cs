@@ -9,7 +9,7 @@ using Ropu.Shared;
 using Ropu.Shared.AsyncTools;
 using Ropu.Shared.ControlProtocol;
 
-namespace Ropu.ServingNode
+namespace Ropu.CallController
 {
     public class RopuProtocol
     {
@@ -94,23 +94,11 @@ namespace Ropu.ServingNode
 
             switch((RopuPacketType)data[0])
             {
-                case RopuPacketType.Registration:
-                {
-                    uint userId = data.Slice(1).ParseUint();
-                    _messageHandler?.Registration(userId, endPoint);
-                    break;
-                }
                 case RopuPacketType.StartGroupCall:
                 {
                     ushort groupId = data.Slice(1).ParseUshort();
-                    _messageHandler?.HandleCallControllerMessage(groupId, buffer, ammountRead);
-                    break;
-                }
-                case RopuPacketType.CallStarted:
-                case RopuPacketType.CallEnded:
-                {
-                    ushort groupId = data.Slice(1).ParseUshort();
-                    _messageHandler?.HandleMediaPacket(groupId, buffer, ammountRead, endPoint);
+                    uint userId = data.Slice(3).ParseUint();
+                    _messageHandler?.HandleStartGroupCall(groupId, userId, buffer, ammountRead);
                     break;
                 }
             }
@@ -207,21 +195,6 @@ namespace Ropu.ServingNode
             }
         }
 
-        public void SendRegisterResponse(Registration registration, IPEndPoint endPoint)
-        {
-            // Packet Type
-            _sendBuffer[0] = (byte)RopuPacketType.RegistrationResponse;
-            // User ID (uint32)
-            _sendBuffer.WriteUint(registration.UserId, 1);
-            // Codec (byte) (defined via an enum, this is the codec/bitrate used by the system, you must support it, 
-            // this is required so the server doesn’t have to transcode, which is an expensive operation)
-            _sendBuffer[7] = (byte)Codecs.Opus;
-            // Bitrate (uint16)
-            _sendBuffer.WriteUshort(8000, 8);
-
-            Console.WriteLine($"Sending registration response to {endPoint}");
-            _socket.SendTo(_sendBuffer, 0, 10, SocketFlags.None, endPoint);
-        }
 
         public void SendCallStarted(
             uint userId, ushort groupId, ushort callId, 

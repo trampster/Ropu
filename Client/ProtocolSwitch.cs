@@ -66,31 +66,31 @@ namespace Ropu.Client
 
         void HandlePacket(Span<byte> data, IPAddress ipaddress)
         {
-            var packetType = (CombinedPacketType)data[0];
-            switch((CombinedPacketType)data[0])
+            var packetType = (RopuPacketType)data[0];
+            switch((RopuPacketType)data[0])
             {
                 //Control
-                case CombinedPacketType.RegistrationResponse:
+                case RopuPacketType.RegistrationResponse:
                     _controlPacketParser?.ParseRegistrationResponse(data);
                     break;
-                case CombinedPacketType.CallEnded:
+                case RopuPacketType.CallEnded:
                     _controlPacketParser?.ParseCallEnded(data);
                     break;
-                case CombinedPacketType.CallStarted:
+                case RopuPacketType.CallStarted:
                     _controlPacketParser?.ParseCallStarted(data);
                     break;
-                case CombinedPacketType.CallStartFailed:
+                case RopuPacketType.CallStartFailed:
                     _controlPacketParser?.ParseCallStartFailed(data);
                     break;
                 //floor
-                case CombinedPacketType.FloorDenied:
+                case RopuPacketType.FloorDenied:
                     throw new NotImplementedException();
-                case CombinedPacketType.FloorGranted:
+                case RopuPacketType.FloorGranted:
                     throw new NotImplementedException();
-                case CombinedPacketType.FloorReleased:
+                case RopuPacketType.FloorReleased:
                     throw new NotImplementedException();
                 //media
-                case CombinedPacketType.Media:
+                case RopuPacketType.Media:
                     throw new NotImplementedException();
                 default:
                     throw new NotSupportedException($"Received unrecognized Packet Type {packetType}");

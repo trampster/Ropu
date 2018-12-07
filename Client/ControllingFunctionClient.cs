@@ -27,7 +27,7 @@ namespace Ropu.Client
         {
             var sendBuffer = _protocolSwitch.SendBuffer();
             //packet type (byte)
-            sendBuffer[0] = (byte)CombinedPacketType.Registration;
+            sendBuffer[0] = (byte)RopuPacketType.Registration;
             // User ID (uint32)
             sendBuffer.WriteUint(userId, 1);
 
@@ -38,11 +38,12 @@ namespace Ropu.Client
         {
             var sendBuffer = _protocolSwitch.SendBuffer();
             //packet type (byte)
-            sendBuffer[0] = (byte)CombinedPacketType.StartGroupCall;
-            // User ID (uint32)
-            sendBuffer.WriteUint(userId, 1);
+            sendBuffer[0] = (byte)RopuPacketType.StartGroupCall;
             // Group ID (uint16)
-            sendBuffer.WriteUshort(groupId, 5);
+            sendBuffer.WriteUshort(groupId, 1);
+            // User ID (uint32)
+            sendBuffer.WriteUint(userId, 3);
+            
 
             _protocolSwitch.Send(7, remoteEndPoint);
         }
@@ -64,9 +65,10 @@ namespace Ropu.Client
 
         public void ParseCallStarted(Span<byte> data)
         {
-            // User Id (uint32), skip
             // Group ID (uint16)
-            uint groupId = data.Slice(5).ParseUshort();
+            ushort groupId = data.Slice(1).ParseUshort();
+            // User Id (uint32), skip
+            ushort userId = data.Slice(3).ParseUshort();
             // Call ID (uint16) unique identifier for the call, to be included in the media stream
             ushort callId = data.Slice(7).ParseUshort();
             // Media Endpoint (4 bytes IP Address, 2 bytes port)

@@ -9,33 +9,40 @@ namespace Ropu.CallController
     public class CallControl : ILoadBalancerClientMessageHandler
     {
         readonly LoadBalancerProtocol _loadBalancerProtocol;
+        readonly RopuProtocol _ropuProtocol;
         byte? _controllerId;
         ushort? _refreshInterval;
 
         readonly ServiceDiscovery _serviceDiscovery;
 
-        public CallControl(LoadBalancerProtocol loadBalancerProtocol, ServiceDiscovery serviceDiscovery)
+        public CallControl(
+            LoadBalancerProtocol loadBalancerProtocol, 
+            ServiceDiscovery serviceDiscovery,
+            RopuProtocol ropuProtocol)
         {
             _loadBalancerProtocol = loadBalancerProtocol;
             _loadBalancerProtocol.SetClientMessageHandler(this);
             _serviceDiscovery = serviceDiscovery;
+            _ropuProtocol = ropuProtocol;
         }
 
         public async Task Run()
         {
             var loadBalancerTask = _loadBalancerProtocol.Run();
+            var ropuProtocolTask = _ropuProtocol.Run();
             var registerTask = Register();
 
-            await TaskCordinator.WaitAll(loadBalancerTask, registerTask);
+            await TaskCordinator.WaitAll(loadBalancerTask, registerTask, ropuProtocolTask);
         }
 
         async Task Register()
         {
             while(true)
             {
+                
                 var callManagementServerEndpoint = _serviceDiscovery.CallManagementServerEndpoint();
                 bool registered = await _loadBalancerProtocol.SendRegisterCallController(
-                    new IPEndPoint(_serviceDiscovery.GetMyAddress(), 9000), 
+                    new IPEndPoint(_serviceDiscovery.GetMyAddress(), _ropuProtocol.MediaPort), 
                     callManagementServerEndpoint);
                 if(registered)
                 {
