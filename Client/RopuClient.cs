@@ -117,7 +117,7 @@ namespace Ropu.Client
 
         public void StartCall(ushort groupId)
         {
-            Console.WriteLine("sending StartGroupCall");
+            Console.WriteLine($"sending StartGroupCall to {_servingNodeEndpoint}");
             _controllingFunctionClient.StartGroupCall(_userId, groupId, _servingNodeEndpoint);
             StartRetryTimer(1000, () => StartCall(groupId));
             if(_stateManager.CurrentState != _startingCall)

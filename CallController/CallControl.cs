@@ -6,7 +6,7 @@ using System;
 
 namespace Ropu.CallController
 {
-    public class CallControl : ILoadBalancerClientMessageHandler
+    public class CallControl : ILoadBalancerClientMessageHandler, IMessageHandler
     {
         readonly LoadBalancerProtocol _loadBalancerProtocol;
         readonly RopuProtocol _ropuProtocol;
@@ -24,6 +24,7 @@ namespace Ropu.CallController
             _loadBalancerProtocol.SetClientMessageHandler(this);
             _serviceDiscovery = serviceDiscovery;
             _ropuProtocol = ropuProtocol;
+            _ropuProtocol.SetMessageHandler(this);
         }
 
         public async Task Run()
@@ -109,6 +110,12 @@ namespace Ropu.CallController
             _controllerId = controllerId;
             _refreshInterval = refreshInterval;
             _loadBalancerProtocol.SendAck(requestId, endPoint);
+        }
+
+        public void HandleStartGroupCall(ushort groupId, uint userId, byte[] packetData, int length)
+        {
+            Console.WriteLine("Received StartGroupCall");
+            throw new NotImplementedException();
         }
     }
 }

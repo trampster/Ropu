@@ -60,6 +60,12 @@ namespace Ropu.Shared.Concurrent
         {
             lock(_writeLock)
             {
+                //check if we already have it
+                if(_indexLookup.ContainsKey(item))
+                {
+                    return; 
+                }
+
                 _prestine.Add(item);
                 for(int index = 0; index < _sets.Count; index++)
                 {
@@ -152,6 +158,7 @@ namespace Ropu.Shared.Concurrent
 
         public SpeedReadSet(int maxElements, MemoryPool<SetChange<T>> setChangePool)
         {
+            _maxElements = maxElements;
             _array = new T[4];
             _setChangePool = setChangePool;
         }
