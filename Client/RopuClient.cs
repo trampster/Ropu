@@ -138,7 +138,7 @@ namespace Ropu.Client
             _stateManager.HandleEvent(EventId.RegistrationResponseReceived);
         }
 
-        public void HandleCallStarted(uint groupId, ushort callId, IPEndPoint mediaEndpoint, IPEndPoint floorControlEndpoint)
+        public void HandleCallStarted(ushort groupId, uint userId)
         {
             _stateManager.HandleEvent(EventId.CallStarted);
         }

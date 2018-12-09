@@ -7,7 +7,7 @@ namespace Ropu.Client
     public interface IControllingFunctionPacketHandler
     {
         void HandleRegistrationResponseReceived(Codec codec, ushort bitrate);
-        void HandleCallStarted(uint groupId, ushort callId, IPEndPoint mediaEndpoint, IPEndPoint floorControlEndpoint);
+        void HandleCallStarted(ushort groupId, uint userId);
         void HandleCallStartFailed(CallFailedReason reason);
     }
 }

@@ -7,7 +7,7 @@ namespace Ropu.Shared.ControlProtocol
         RegistrationResponse = 1,
         CallEnded = 2,
         StartGroupCall = 3,
-        CallStarted = 4,
+        GroupCallStarted = 4,
         CallStartFailed = 5,
         //Floor Control
         FloorDenied = 6,

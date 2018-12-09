@@ -19,9 +19,10 @@ namespace Ropu.CallController
             var ropuProtocol = new RopuProtocol(portFinder, 9000);
             var loadBalancerProtocol = new LoadBalancerProtocol(portFinder, StartingControlPort);
             var serviceDiscovery = new ServiceDiscovery();
-            var floorControl = new CallControl(loadBalancerProtocol, serviceDiscovery, ropuProtocol);
+            var servingNodes = new ServingNodes(100);
+            var callControl = new CallControl(loadBalancerProtocol, serviceDiscovery, ropuProtocol, servingNodes);
 
-            await floorControl.Run();
+            await callControl.Run();
         }
     }
 }

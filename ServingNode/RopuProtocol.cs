@@ -13,7 +13,6 @@ namespace Ropu.ServingNode
 {
     public class RopuProtocol
     {
-        IPEndPoint[] _endpoints;
         readonly Socket _socket;
         const int MaxUdpSize = 0x10000;
         const int AnyPort = IPEndPoint.MinPort;
@@ -29,13 +28,6 @@ namespace Ropu.ServingNode
             _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             MediaPort = (ushort)portFinder.BindToAvailablePort(_socket, IPAddress.Any, startingPort);
             Console.WriteLine($"Serving Node Protocol bound to port {MediaPort}");
-
-            //setup dummy group endpoints
-            _endpoints = new IPEndPoint[10000];
-            for(int endpointIndex = 0; endpointIndex < _endpoints.Length; endpointIndex++)
-            {
-                _endpoints[endpointIndex] = new IPEndPoint(IPAddress.Parse("192.168.1.2"), endpointIndex + 1000);
-            }
 
             _socketEventArgsPool = new MemoryPool<SocketAsyncEventArgs>(() => CreateSocketAsyncEventArgs());
         }
@@ -106,7 +98,7 @@ namespace Ropu.ServingNode
                     _messageHandler?.HandleCallControllerMessage(groupId, buffer, ammountRead);
                     break;
                 }
-                case RopuPacketType.CallStarted:
+                case RopuPacketType.GroupCallStarted:
                 case RopuPacketType.CallEnded:
                 {
                     ushort groupId = data.Slice(1).ParseUshort();
@@ -152,7 +144,7 @@ namespace Ropu.ServingNode
 
         public void BulkSendAsync(byte[] buffer, int length, Span<IPEndPoint> endPoints, Action onComplete, IPEndPoint except)
         {
-            for(int endpointIndex = 0; endpointIndex < _endpoints.Length; endpointIndex++)
+            for(int endpointIndex = 0; endpointIndex < endPoints.Length; endpointIndex++)
             {
                 var args = _socketEventArgsPool.Get();
                 var endPoint = endPoints[endpointIndex];
@@ -183,7 +175,7 @@ namespace Ropu.ServingNode
 
         public void BulkSendAsync(byte[] buffer, int length, Span<IPEndPoint> endPoints, Action onComplete)
         {
-            for(int endpointIndex = 0; endpointIndex < _endpoints.Length; endpointIndex++)
+            for(int endpointIndex = 0; endpointIndex < endPoints.Length; endpointIndex++)
             {
                 var args = _socketEventArgsPool.Get();
                 args.RemoteEndPoint = endPoints[endpointIndex];
@@ -229,21 +221,15 @@ namespace Ropu.ServingNode
             IEnumerable<IPEndPoint> endPoints)
         {
             // Packet Type
-            _sendBuffer[0] = (byte)RopuPacketType.CallStarted;
+            _sendBuffer[0] = (byte)RopuPacketType.GroupCallStarted;
             // Group ID (uint16)
             _sendBuffer.WriteUshort(groupId, 1);
             // User Id (uint32)
             _sendBuffer.WriteUint(userId, 3);
-            // Call ID (uint16) unique identifier for the call, to be included in the media stream
-            _sendBuffer.WriteUshort(callId, 7);
-            // Media Endpoint (4 bytes IP Address, 2 bytes port)
-            _sendBuffer.WriteEndPoint(mediaEndpoint, 9);
-            // Floor Control Endpoint (4 bytes IP Address, 2 bytes port)
-            _sendBuffer.WriteEndPoint(mediaEndpoint, 15);
 
             foreach(var endpoint in endPoints)
             {
-                _socket.SendTo(_sendBuffer, 0, 21, SocketFlags.None, endpoint);
+                _socket.SendTo(_sendBuffer, 0, 7, SocketFlags.None, endpoint);
             }
         }
 

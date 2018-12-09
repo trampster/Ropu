@@ -10,6 +10,8 @@ namespace Ropu.CallController
     {
         readonly LoadBalancerProtocol _loadBalancerProtocol;
         readonly RopuProtocol _ropuProtocol;
+        readonly ServingNodes _servingNodes;
+
         byte? _controllerId;
         ushort? _refreshInterval;
 
@@ -18,13 +20,15 @@ namespace Ropu.CallController
         public CallControl(
             LoadBalancerProtocol loadBalancerProtocol, 
             ServiceDiscovery serviceDiscovery,
-            RopuProtocol ropuProtocol)
+            RopuProtocol ropuProtocol,
+            ServingNodes servingNodes)
         {
             _loadBalancerProtocol = loadBalancerProtocol;
             _loadBalancerProtocol.SetClientMessageHandler(this);
             _serviceDiscovery = serviceDiscovery;
             _ropuProtocol = ropuProtocol;
             _ropuProtocol.SetMessageHandler(this);
+            _servingNodes = servingNodes;
         }
 
         public async Task Run()
@@ -87,12 +91,16 @@ namespace Ropu.CallController
 
         public void HandleServingNodes(ushort requestId, Span<byte> nodeEndPointsData)
         {
-            throw new NotImplementedException();
+            _servingNodes.HandleServingNodesPayload(nodeEndPointsData);
+            var loadBalancerEndPoint = _serviceDiscovery.CallManagementServerEndpoint();
+            _loadBalancerProtocol.SendAck(requestId, loadBalancerEndPoint);
         }
 
         public void HandleServingNodeRemoved(ushort requestId, IPEndPoint endpoint)
         {
-            throw new NotImplementedException();
+            _servingNodes.RemoveServingNode(endpoint);
+            var loadBalancerEndPoint = _serviceDiscovery.CallManagementServerEndpoint();
+            _loadBalancerProtocol.SendAck(requestId, loadBalancerEndPoint);
         }
 
         public void HandleGroupCallControllers(ushort requestId, Span<byte> groupCallControllers)
@@ -112,10 +120,12 @@ namespace Ropu.CallController
             _loadBalancerProtocol.SendAck(requestId, endPoint);
         }
 
-        public void HandleStartGroupCall(ushort groupId, uint userId, byte[] packetData, int length)
+        public void HandleStartGroupCall(ushort groupId, uint userId)
         {
-            Console.WriteLine("Received StartGroupCall");
-            throw new NotImplementedException();
+            //Send Call Started to all Serving Nodes
+            var endPointsReader = _servingNodes.EndPoints;
+            _ropuProtocol.SendCallStarted(userId, groupId, endPointsReader.GetSpan());
+            endPointsReader.Release();
         }
     }
 }

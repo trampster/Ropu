@@ -68,14 +68,9 @@ namespace Ropu.Client
             // Group ID (uint16)
             ushort groupId = data.Slice(1).ParseUshort();
             // User Id (uint32), skip
-            ushort userId = data.Slice(3).ParseUshort();
-            // Call ID (uint16) unique identifier for the call, to be included in the media stream
-            ushort callId = data.Slice(7).ParseUshort();
-            // Media Endpoint (4 bytes IP Address, 2 bytes port)
-            var mediaEndpoint = data.Slice(9).ParseIPEndPoint();
-            // Floor Control Endpoint (4 bytes IP Address, 2 bytes port)
-            var floorControlEndpoint = data.Slice(15).ParseIPEndPoint();
-            _controllingFunctionHandler?.HandleCallStarted(groupId, callId, mediaEndpoint, floorControlEndpoint);
+            uint userId = data.Slice(3).ParseUint();
+            
+            _controllingFunctionHandler?.HandleCallStarted(groupId, userId);
         }
 
         public void ParseCallStartFailed(Span<byte> data)

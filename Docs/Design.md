@@ -55,13 +55,10 @@ units receiving this packet should not stop playing out media they receive, this
 * Group ID ((uint16))
 * User ID (uint32)
 
-#### Call Started (IPv4)
+#### Group Call Started (IPv4)
 * Packet Type 4
 * Group ID (uint16)
 * User Id (uint32)
-* Call ID (uint16) unique identifier for the call, to be included in the media stream
-* Media Endpoint (4 bytes IP Address, 2 bytes port)
-* Floor Control Endpoint (4 bytes IP Address, 2 bytes port)
 
 ### Call Start Failed
 * Packet Type 5

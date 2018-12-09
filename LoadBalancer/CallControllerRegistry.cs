@@ -121,7 +121,7 @@ namespace Ropu.LoadBalancer
             }
         }
 
-        IEnumerable<RegisteredCallController> Controllers
+        public IEnumerable<RegisteredCallController> Controllers
         {
             get
             {

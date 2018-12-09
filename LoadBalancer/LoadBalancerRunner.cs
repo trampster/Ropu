@@ -53,10 +53,13 @@ namespace Ropu.LoadBalancer
                 _servingNodes.RemoveExpired(removedNode => 
                 {
                     var servingNodeEndpoint = removedNode.ServingEndPoint;
-                    var existingControlNodeEndPoints = 
+                    var existingServingNodeEndPoints = 
                         from node in _servingNodes.GetControllers()
                         select node.ControlEndPoint;
-                    foreach(var endPoint in existingControlNodeEndPoints)
+                    var callContollerEndPoints = 
+                        from node in _callControllers.Controllers
+                        select node.LoadBalancerEndPoint;
+                    foreach(var endPoint in existingServingNodeEndPoints.Concat(callContollerEndPoints))
                     {
                         Console.WriteLine($"Sending ServingNodeRemoved to {endPoint}");
                         TaskCordinator.DontWait(() => TaskCordinator.Retry(() => _loadBalancerProtocol.SendServingNodeRemoved(servingNodeEndpoint, endPoint)));
@@ -65,7 +68,6 @@ namespace Ropu.LoadBalancer
                 _callControllers.RemoveExpired();
             }
         }
-
 
         RegisteredServingNode GetServingNode()
         {
@@ -102,7 +104,11 @@ namespace Ropu.LoadBalancer
                 from node in _servingNodes.GetControllers()
                 where node.ServingEndPoint != servingNodeEndpoint
                 select node.ControlEndPoint;
-            foreach(var endPoint in existingControlNodeEndPoints)
+            var existingCallControllers =
+                from controller in _callControllers.Controllers
+                select controller.LoadBalancerEndPoint;
+
+            foreach(var endPoint in existingControlNodeEndPoints.Concat(existingCallControllers))
             {
                 TaskCordinator.DontWait(() => TaskCordinator.Retry(() => _loadBalancerProtocol.SendServingNodes(new IPEndPoint[]{servingNodeEndpoint}, endPoint)));
             }
@@ -130,6 +136,12 @@ namespace Ropu.LoadBalancer
             }
 
             await TaskCordinator.Retry(() => _loadBalancerProtocol.SendControllerRegistrationInfo(controllerId.Value, 30, from));
+
+            //inform Call Controller of exiting Serving Nodes
+            var existingServingNodeEndPoints = 
+                from node in _servingNodes.GetControllers()
+                select node.ServingEndPoint;
+            await TaskCordinator.Retry(() => _loadBalancerProtocol.SendServingNodes(existingServingNodeEndPoints, from));
         }
 
         public void HandleRequestServingNode(ushort requestId, IPEndPoint endPoint)

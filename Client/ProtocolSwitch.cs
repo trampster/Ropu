@@ -76,7 +76,7 @@ namespace Ropu.Client
                 case RopuPacketType.CallEnded:
                     _controlPacketParser?.ParseCallEnded(data);
                     break;
-                case RopuPacketType.CallStarted:
+                case RopuPacketType.GroupCallStarted:
                     _controlPacketParser?.ParseCallStarted(data);
                     break;
                 case RopuPacketType.CallStartFailed:
