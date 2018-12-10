@@ -10,7 +10,7 @@ namespace Ropu.Client
 {
     class Program
     {
-        const ushort _controlPort = 5061;
+        const ushort _controlPortStarting = 5061;
         static RopuClient _ropuClient;
         const string LoadBalancerIP =  "192.168.1.6";
         const string MyAddress = "192.168.1.6";
@@ -18,8 +18,13 @@ namespace Ropu.Client
         static MediaClient _mediaClient;
         static async Task Main(string[] args)
         {
+            var settings = new CommandLineClientSettings();
+            if(!settings.ParseArgs(args))
+            {
+                return;
+            }
 
-            var protocolSwitch = new ProtocolSwitch(_controlPort);
+            var protocolSwitch = new ProtocolSwitch(_controlPortStarting, new PortFinder());
             var controllingFunctionClient = new ControllingFunctionClient(protocolSwitch);
             _mediaClient = new MediaClient(protocolSwitch);
             var callManagementProtocol = new LoadBalancerProtocol(new PortFinder(), 5079);
@@ -27,7 +32,7 @@ namespace Ropu.Client
             var ipAddress = IPAddress.Parse(MyAddress);
 
             IPEndPoint loadBalancerEndpoint = new IPEndPoint(IPAddress.Parse(LoadBalancerIP), LoadBalancerPort);
-            _ropuClient = new RopuClient(protocolSwitch, controllingFunctionClient, ipAddress, callManagementProtocol, loadBalancerEndpoint);
+            _ropuClient = new RopuClient(protocolSwitch, controllingFunctionClient, ipAddress, callManagementProtocol, loadBalancerEndpoint, settings);
             var ropuClientTask = _ropuClient.Run();
 
             var consoleTask = TaskCordinator.RunLong(HandleCommands);

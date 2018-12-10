@@ -2,6 +2,7 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using Ropu.Shared;
 using Ropu.Shared.ControlProtocol;
 
 namespace Ropu.Client
@@ -14,11 +15,10 @@ namespace Ropu.Client
         static readonly IPEndPoint Any = new IPEndPoint(IPAddress.Any, AnyPort);
         IControlPacketParser _controlPacketParser;
         
-        public ProtocolSwitch(ushort port)
+        public ProtocolSwitch(ushort startingPort, PortFinder portFinder)
         {
-            LocalPort = port;
             _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            _socket.Bind(new IPEndPoint(IPAddress.Any, port));
+            LocalPort = (ushort)portFinder.BindToAvailablePort(_socket, IPAddress.Any, startingPort);
         }
 
         public void SetControlPacketParser(IControlPacketParser controlPacketParser)

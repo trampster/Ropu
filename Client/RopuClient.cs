@@ -13,11 +13,11 @@ namespace Ropu.Client
 {
     public class RopuClient : IControllingFunctionPacketHandler
     {
-        const uint _userId = 1234;
         const ushort _port = 1000;
 
         readonly ControllingFunctionClient _controllingFunctionClient;
         readonly ProtocolSwitch _protocolSwitch;
+        readonly IClientSettings _clientSettings;
 
         IPEndPoint _servingNodeEndpoint;
 
@@ -38,8 +38,10 @@ namespace Ropu.Client
             ControllingFunctionClient controllingFunctionClient, 
             IPAddress address,
             LoadBalancerProtocol loadBalancerProtocol,
-            IPEndPoint loadBalancerEndPoint)
+            IPEndPoint loadBalancerEndPoint,
+            IClientSettings clientSettings)
         {
+            _clientSettings = clientSettings;
             _loadBalancerEndPoint = loadBalancerEndPoint;
             _loadBalancerProtocol = loadBalancerProtocol;
             _protocolSwitch = protocolSwitch;
@@ -109,7 +111,7 @@ namespace Ropu.Client
 
             Console.WriteLine($"Got serving node at {_servingNodeEndpoint}");
 
-            _controllingFunctionClient.Register(_userId, _servingNodeEndpoint);
+            _controllingFunctionClient.Register(_clientSettings.UserId, _servingNodeEndpoint);
             _retryTimer.Duration = 2000;
             _retryTimer.Callback = Register;
             _retryTimer.Start();
@@ -118,7 +120,7 @@ namespace Ropu.Client
         public void StartCall(ushort groupId)
         {
             Console.WriteLine($"sending StartGroupCall to {_servingNodeEndpoint}");
-            _controllingFunctionClient.StartGroupCall(_userId, groupId, _servingNodeEndpoint);
+            _controllingFunctionClient.StartGroupCall(_clientSettings.UserId, groupId, _servingNodeEndpoint);
             StartRetryTimer(1000, () => StartCall(groupId));
             if(_stateManager.CurrentState != _startingCall)
             {

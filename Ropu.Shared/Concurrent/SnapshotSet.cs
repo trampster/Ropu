@@ -92,8 +92,8 @@ namespace Ropu.Shared.Concurrent
             {
                 //we ran out of available sets, so we don't have any that are upto date
                 newCurrent = new SpeedReadSet<T>(_maxElements, _prestine.GetSpan(), _setChangePool);
+                _prestine.Release();
                 _sets.Add(newCurrent);
-                
             }
 
             var oldCurrent = _current;
@@ -260,6 +260,10 @@ namespace Ropu.Shared.Concurrent
 
         public void Use()
         {
+            if(_needsProcessing)
+            {
+                ProcessQueuedChanges();
+            }
             _inUse = true;
             _available = false;
         }
