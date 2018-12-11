@@ -62,7 +62,6 @@ namespace Ropu.CallController
                             //need to resend our registration
                             break;
                         }
-                        Console.WriteLine("Refreshing registration");
                         await TaskCordinator.Retry(() => _loadBalancerProtocol.SendControllerRefreshCallController(_controllerId.Value, callManagementServerEndpoint));
                         continue;
                     }

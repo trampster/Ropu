@@ -79,7 +79,6 @@ namespace Ropu.ServingNode
                     callManagementServerEndpoint);
                 if(registered)
                 {
-                    Console.WriteLine("Registered");
                     await Task.Delay(60000);
                     continue;
                 }

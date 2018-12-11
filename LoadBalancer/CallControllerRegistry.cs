@@ -168,7 +168,6 @@ namespace Ropu.LoadBalancer
 
         public void Refresh(byte controllerId)
         {
-            Console.WriteLine($"Refresing CallController {controllerId}");
             _controllers[controllerId].RefreshExpiry();
         }
     }
