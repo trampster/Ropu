@@ -51,6 +51,7 @@ namespace Ropu.Client
             _start = new RopuState(StateId.Start);
             _registered = new RopuState(StateId.Registered);
             _registered.AddTransition(EventId.CallRequest, () => _startingCall);
+            _registered.AddTransition(EventId.CallStarted, () => _callInProgress);
             _unregistered = new RopuState(StateId.Unregistered)
             {
                 Entry = () => Register(),
