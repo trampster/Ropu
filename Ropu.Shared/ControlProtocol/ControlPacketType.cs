@@ -14,6 +14,7 @@ namespace Ropu.Shared.ControlProtocol
         FloorGranted = 7,
         FloorReleased = 8,
         //Media 
-        Media = 9
+        MediaPacketIndivdualCall = 9,
+        MediaPacketGroupCall = 10
     }
 }

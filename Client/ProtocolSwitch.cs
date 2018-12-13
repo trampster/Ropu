@@ -14,6 +14,7 @@ namespace Ropu.Client
         const int AnyPort = IPEndPoint.MinPort;
         static readonly IPEndPoint Any = new IPEndPoint(IPAddress.Any, AnyPort);
         IControlPacketParser _controlPacketParser;
+        IMediaPacketParser _mediaPacketParser;
         
         public ProtocolSwitch(ushort startingPort, PortFinder portFinder)
         {
@@ -24,6 +25,11 @@ namespace Ropu.Client
         public void SetControlPacketParser(IControlPacketParser controlPacketParser)
         {
             _controlPacketParser = controlPacketParser;
+        }
+
+        public void SetMediaPacketParser(IMediaPacketParser mediaPacketParser)
+        {
+            _mediaPacketParser = mediaPacketParser;
         }
 
         public ushort LocalPort
@@ -90,8 +96,9 @@ namespace Ropu.Client
                 case RopuPacketType.FloorReleased:
                     throw new NotImplementedException();
                 //media
-                case RopuPacketType.Media:
-                    throw new NotImplementedException();
+                case RopuPacketType.MediaPacketGroupCall:
+                    _mediaPacketParser?.ParseMediaPacketGroupCall(data);
+                    break;
                 default:
                     throw new NotSupportedException($"Received unrecognized Packet Type {packetType}");
             }

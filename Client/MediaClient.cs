@@ -6,13 +6,19 @@ using Ropu.Shared.ControlProtocol;
 
 namespace Ropu.Client
 {
-    public class MediaClient
+    public class MediaClient : IMediaPacketParser
     {
         readonly ProtocolSwitch _protocolSwitch;
 
         public MediaClient(ProtocolSwitch protocolSwitch)
         {
             _protocolSwitch = protocolSwitch;
+            _protocolSwitch.SetMediaPacketParser(this);
+        }
+
+        public void ParseMediaPacketGroupCall(Span<byte> data)
+        {
+            throw new NotImplementedException();
         }
 
         public void SendMediaPacket(ushort callId, byte[] payload, IPEndPoint endPoint)
@@ -24,7 +30,7 @@ namespace Ropu.Client
 
         int BuildMediaPacket(ushort callId, byte[] payload, byte[] buffer)
         {
-            buffer[0] = (byte)RopuPacketType.Media;
+            buffer[0] = (byte)RopuPacketType.MediaPacketGroupCall;
             buffer.WriteUshort(callId, 1);
             buffer.WriteUshort(0, 3);
             buffer.AsSpan(5).WriteArray(buffer);

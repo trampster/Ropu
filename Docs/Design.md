@@ -94,5 +94,7 @@ Likewise when starting a call, the client should start streaming the media to th
 ### Media Packet Group Call
 * Packet Type 10
 * Group Id (uint16)
+* Sequence Number (uint16)
+* User ID (uint32)
 * Key ID (uint16) - 0 means no encryption
 * Payload
