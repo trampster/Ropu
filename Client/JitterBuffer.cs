@@ -52,21 +52,25 @@ namespace Ropu.Client
         BufferEntry[] _buffer;
         int _readIndex = 0;
         int _writeIndex = 0;
-        ushort _nextSequenceNumber = 0;
+        ushort _nextExpectedSequenceNumber = 0;
         uint _currentUserId = 0;
         Memory<ushort>? _lastAudioData;
         readonly Memory<ushort> _silence = new Memory<ushort>(new ushort[160]);
-        float _packetSuccessFraction;
         const float _packetSuccessRequired = 0.95f;
         int _bufferSize;
         readonly int _min;
+
+        float[] _requiredBufferSizeCounts;
+        int _packetsAveraged = 0;
+
+        const int _packetsToAverageOver = 5*50;
 
         public JitterBuffer(int min, int max)
         {
             _buffer = new BufferEntry[max];
             _bufferSize = min;
             _min = min;
-            ResetSuccessRateStats();
+            _requiredBufferSizeCounts = new float[max*2];
         }
 
         void AddAudio(uint userId, ushort sequenceNumber, Memory<ushort> audioData)
@@ -74,93 +78,117 @@ namespace Ropu.Client
             if(userId != _currentUserId)
             {
                 //receiving from a different user so reset the sequenceNumber
-                _nextSequenceNumber = sequenceNumber;
+                _nextExpectedSequenceNumber = sequenceNumber;
                 _currentUserId = userId;
             }
 
-            int offset = sequenceNumber - _nextSequenceNumber;
+            int offset = sequenceNumber - _nextExpectedSequenceNumber;
+
             int index = (_writeIndex + offset) % _buffer.Length;
+            RecordRequiredBufferSize(_bufferSize - (index - _readIndex));
 
 
             int maxNegitiveOffset = GetMaxNegativeOffset();
             int maxPostiveOffset = maxNegitiveOffset + _buffer.Length;
             if(offset < maxNegitiveOffset || //packet is to late and we already played out it's spot
-               offset > maxPostiveOffset) // packet is to far in the future
+               offset > maxPostiveOffset) // buffer is not large enough to store this one...
             {
-                RecordMiss();
                 return;
             }
 
             _buffer[index].Fill(userId, sequenceNumber, audioData);
         }
 
+        void RecordRequiredBufferSize(int requiredBufferSize)
+        {
+            float reduceAmount = 1/_packetsToAverageOver;
+
+            for(int index = 0; index < _requiredBufferSizeCounts.Length; index++)
+            {
+                float hitCount = _requiredBufferSizeCounts[index];
+                if(hitCount > reduceAmount)
+                {
+                    _requiredBufferSizeCounts[index] = hitCount - reduceAmount;
+                    continue;
+                }
+                _requiredBufferSizeCounts[index] = 0;
+            }
+
+            _requiredBufferSizeCounts[requiredBufferSize] += 1;
+
+            _packetsAveraged++;
+        }
+
+        int CalulateIdealBufferSize()
+        {
+            //find the total
+            float total = 0;
+            for(int index = 0; index < _requiredBufferSizeCounts.Length; index++)
+            {
+                var count = _requiredBufferSizeCounts[index];
+                total += count;
+            }
+
+            float required = total*_packetSuccessRequired;
+            float soFar = 0;
+
+
+            for(int index = 0; index < _requiredBufferSizeCounts.Length; index++)
+            {
+                soFar += _requiredBufferSizeCounts[index];
+                if(soFar > required)
+                {
+                    return index + 1;
+                }
+            }
+            return _requiredBufferSizeCounts.Length;
+        }
+
+        void UpdateBufferSize()
+        {
+            var idealBufferSize = CalulateIdealBufferSize();
+            if(_bufferSize == idealBufferSize)
+            {
+                return;
+            }
+            if(_bufferSize < idealBufferSize)
+            {
+                _readIndex--;
+                _bufferSize++;
+                return;
+            }
+            //buffer is to large, need to skip a packet
+            _buffer[_readIndex].Empty();
+            _readIndex++;
+            _bufferSize--;
+        }
+
         Memory<ushort> GetNext()
         {
+            //This should get called every 20 milliseconds, so we use this to increment the _writeIndex
+            _writeIndex++;
+            _nextExpectedSequenceNumber++;
+
             var entry = _buffer[_readIndex];
+            _readIndex++;
+            UpdateBufferSize();
+
             if(entry.IsSet)
             {
+                //success, the packet is available
                 _readIndex++;
                 var audioData = entry.AudioData;
                 _lastAudioData = audioData;
                 entry.Empty();
-                RecordHit();
-                if(_packetSuccessFraction > 0.99f)
-                {
-                    //buffer could be smaller, we can do this by skipping a packet
-                    _readIndex++;
-                    ResetSuccessRateStats();
-                }
                 return audioData;
             }
-            // we don't record a miss here, we only record packets that actually arrive
-            // as misses, this is because we don't want dropped packets, or end of streams to
-            // effect our stats and thus change the buffer size.
-
-            if(_packetSuccessFraction < _packetSuccessRequired && _bufferSize < _buffer.Length)
-            {
-                //by not incrementing the read index, we effectively increase the buffer size
-                _bufferSize++;
-                ResetSuccessRateStats();
-            }
-            else
-            {
-                _readIndex++;
-            }
-
+            // Was a miss (either late or lost)
             if(_lastAudioData == null)
             {
                 _lastAudioData = null; //only use this once, after that silence
                 return _lastAudioData.Value;
             }
             return _silence;
-        }
-        int _packetsAveraged = 0;
-        const int _packetsToAverageOver = 5*50;
-        void RecordMiss()
-        {
-            _packetSuccessFraction = _packetSuccessFraction - 
-                (_packetSuccessFraction/_packetsAveraged);
-
-            if(_packetsAveraged < _packetsToAverageOver)
-            {
-                _packetsAveraged++;
-            }
-        }
-
-        void RecordHit()
-        {
-            _packetSuccessFraction = _packetSuccessFraction - 
-                (_packetSuccessFraction/_packetsAveraged) + 
-                1/_packetsAveraged;
-            if(_packetsAveraged < _packetsToAverageOver)
-            {
-                _packetsAveraged++;
-            }
-        }
-
-        void ResetSuccessRateStats()
-        {
-            _packetSuccessFraction = (1-_packetSuccessRequired)/2;
         }
 
         int GetMaxNegativeOffset()
