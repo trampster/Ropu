@@ -51,7 +51,7 @@ namespace Ropu.Client
 
         BufferEntry[] _buffer;
         int _readIndex = 0;
-        int _writeIndex = 0;
+        int _writeIndex;
         ushort _nextExpectedSequenceNumber = 0;
         uint _currentUserId = 0;
         Memory<ushort>? _lastAudioData;
@@ -71,6 +71,7 @@ namespace Ropu.Client
             _bufferSize = min;
             _min = min;
             _requiredBufferSizeCounts = new float[max*2];
+            _writeIndex = _min;
         }
 
         void AddAudio(uint userId, ushort sequenceNumber, Memory<ushort> audioData)
