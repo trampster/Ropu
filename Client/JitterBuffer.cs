@@ -68,13 +68,18 @@ namespace Ropu.Client
         public JitterBuffer(int min, int max)
         {
             _buffer = new BufferEntry[max];
+            for(int index = 0; index < _buffer.Length; index++)
+            {
+                _buffer[index] = new BufferEntry();
+            }
             _bufferSize = min;
             _min = min;
             _requiredBufferSizeCounts = new float[max*2];
+            _requiredBufferSizeCounts[min-1] = 50; //will ensure, buffer size doesn't change instantly
             _writeIndex = _min;
         }
 
-        void AddAudio(uint userId, ushort sequenceNumber, Memory<ushort> audioData)
+        public void AddAudio(uint userId, ushort sequenceNumber, Memory<ushort> audioData)
         {
             if(userId != _currentUserId)
             {
@@ -86,7 +91,7 @@ namespace Ropu.Client
             int offset = sequenceNumber - _nextExpectedSequenceNumber;
 
             int index = (_writeIndex + offset) % _buffer.Length;
-            RecordRequiredBufferSize(_bufferSize - (index - _readIndex));
+            RecordRequiredBufferSize(_bufferSize - distanceAheadOfReadIndex(index));
 
 
             int maxNegitiveOffset = GetMaxNegativeOffset();
@@ -100,21 +105,35 @@ namespace Ropu.Client
             _buffer[index].Fill(userId, sequenceNumber, audioData);
         }
 
+        int distanceAheadOfReadIndex(int index)
+        {
+            var diff = index - _readIndex;
+            if(diff >= 0)
+            {
+                return diff;
+            }
+            return _buffer.Length - (diff*-1);
+        }
+
         void RecordRequiredBufferSize(int requiredBufferSize)
         {
-            float reduceAmount = 1/_packetsToAverageOver;
+            float reduceAmount = 1f/(float)_packetsToAverageOver;
 
             for(int index = 0; index < _requiredBufferSizeCounts.Length; index++)
             {
                 float hitCount = _requiredBufferSizeCounts[index];
                 if(hitCount > reduceAmount)
                 {
-                    _requiredBufferSizeCounts[index] = hitCount - reduceAmount;
+                    _requiredBufferSizeCounts[index] = (float)(hitCount - reduceAmount);
                     continue;
                 }
                 _requiredBufferSizeCounts[index] = 0;
             }
 
+            if(requiredBufferSize > _requiredBufferSizeCounts.Length -1)
+            {
+                requiredBufferSize = _requiredBufferSizeCounts.Length -1;
+            }
             _requiredBufferSizeCounts[requiredBufferSize] += 1;
 
             _packetsAveraged++;
@@ -151,46 +170,65 @@ namespace Ropu.Client
             if(_bufferSize == idealBufferSize)
             {
                 return;
-            }
+            } 
             if(_bufferSize < idealBufferSize)
             {
-                _readIndex--;
+                DecrementWithWrap(ref _readIndex);
                 _bufferSize++;
                 return;
             }
             //buffer is to large, need to skip a packet
             _buffer[_readIndex].Empty();
-            _readIndex++;
+            IncrementWithWrap(ref _readIndex);
             _bufferSize--;
         }
 
-        Memory<ushort> GetNext()
+        public Memory<ushort> GetNext()
         {
             //This should get called every 20 milliseconds, so we use this to increment the _writeIndex
-            _writeIndex++;
+            IncrementWithWrap(ref _writeIndex);
             _nextExpectedSequenceNumber++;
 
             var entry = _buffer[_readIndex];
-            _readIndex++;
+            IncrementWithWrap(ref _readIndex);
             UpdateBufferSize();
 
             if(entry.IsSet)
             {
                 //success, the packet is available
-                _readIndex++;
                 var audioData = entry.AudioData;
                 _lastAudioData = audioData;
                 entry.Empty();
                 return audioData;
             }
             // Was a miss (either late or lost)
-            if(_lastAudioData == null)
+            if(_lastAudioData != null)
             {
+                var last = _lastAudioData.Value;
                 _lastAudioData = null; //only use this once, after that silence
-                return _lastAudioData.Value;
+                return last;
             }
             return _silence;
         }
+
+        void IncrementWithWrap(ref int index)
+        {
+            index++;
+            if(index == _buffer.Length)
+            {
+                index = 0;
+            }
+        }
+
+        void DecrementWithWrap(ref int index)
+        {
+            index--;
+            if(index < 0)
+            {
+                index = _buffer.Length - 1;
+            }
+        }
+
 
         int GetMaxNegativeOffset()
         {
