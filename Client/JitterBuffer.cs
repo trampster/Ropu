@@ -59,8 +59,11 @@ namespace Ropu.Client
         const float _packetSuccessRequired = 0.95f;
         int _bufferSize;
         readonly int _min;
+        readonly int _max;
 
         float[] _requiredBufferSizeCounts;
+        readonly int[] _expireStats = new int[_packetsToAverageOver];
+        int _expireIndex = 0;
         int _packetsAveraged = 0;
 
         const int _packetsToAverageOver = 5*50;
@@ -74,9 +77,23 @@ namespace Ropu.Client
             }
             _bufferSize = min;
             _min = min;
-            _requiredBufferSizeCounts = new float[max*2];
-            _requiredBufferSizeCounts[min-1] = 50; //will ensure, buffer size doesn't change instantly
+            _max = max;
+
             _writeIndex = _min;
+            IntializeStats();
+        }
+
+        void IntializeStats()
+        {
+            _requiredBufferSizeCounts = new float[_max*2];
+            
+            //will ensure, buffer size doesn't change instantly
+            for(int index = 0; index < _expireStats.Length; index++)
+            {
+                _requiredBufferSizeCounts[_min-1] += 1;
+                _expireStats[index] = _min -1;
+            }
+
         }
 
         public void AddAudio(uint userId, ushort sequenceNumber, Memory<ushort> audioData)
@@ -117,18 +134,16 @@ namespace Ropu.Client
 
         void RecordRequiredBufferSize(int requiredBufferSize)
         {
-            float reduceAmount = 1f/(float)_packetsToAverageOver;
+            //expire the oldest stat
+            var index = _expireStats[_expireIndex];
+            _requiredBufferSizeCounts[index]--;
 
-            for(int index = 0; index < _requiredBufferSizeCounts.Length; index++)
-            {
-                float hitCount = _requiredBufferSizeCounts[index];
-                if(hitCount > reduceAmount)
-                {
-                    _requiredBufferSizeCounts[index] = (float)(hitCount - reduceAmount);
-                    continue;
-                }
-                _requiredBufferSizeCounts[index] = 0;
-            }
+            //record out entry so we can expire it later
+            _expireStats[_expireIndex] = requiredBufferSize;
+
+            //increment with wrap
+            _expireIndex = (_expireIndex + 1) % _expireStats.Length;
+            
 
             if(requiredBufferSize > _requiredBufferSizeCounts.Length -1)
             {
