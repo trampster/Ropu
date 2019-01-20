@@ -79,7 +79,7 @@ namespace Ropu.Client
             _min = min;
             _max = max;
 
-            _writeIndex = _min;
+            _writeIndex = _min - 1;
             IntializeStats();
         }
 

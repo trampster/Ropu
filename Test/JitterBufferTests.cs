@@ -26,24 +26,32 @@ namespace Ropu.Tests.Client
             SpanAssert.AreEqual(new ushort[160].AsSpan(), audio.Span);
         }
 
+        int GetBufferDelay()
+        {
+            var data = new ushort[160];
+            data[0] = 4242;
+            _jitterBuffer.AddAudio(12, 2, data.AsMemory());
+            int size = 0;
+            while(true)
+            {
+                size++;
+                var audioOut = _jitterBuffer.GetNext().Span;
+                if(audioOut[0] == 4242)
+                {
+                    return size;
+                }
+            }
+        }
+
         [Test]
         public void AddAudio_NewBuffer_ComesOutOfterBufferMinSize()
         {
             // arrange
-            var data = new ushort[160];
-            for(int index = 0; index < data.Length; index++)
-            {
-                data[index] = (ushort)index;
-            }
-
             // act
-            _jitterBuffer.AddAudio(12, 2, data.AsMemory());
-            _jitterBuffer.GetNext();
-            _jitterBuffer.GetNext();
-            var result = _jitterBuffer.GetNext();
+            var bufferSize = GetBufferDelay();
 
             // assert
-            SpanAssert.AreEqual(data.AsSpan(), result.Span);
+            Assert.That(bufferSize, Is.EqualTo(2));
         }
     }
 }
