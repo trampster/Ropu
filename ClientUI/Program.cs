@@ -5,42 +5,24 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 
-namespace ClientUI
+namespace Ropu.ClientUI
 {
 
-    public class MyModel : INotifyPropertyChanged
+    public class MyModel : BaseViewModel
     {
         public MyModel()
         {
-           var pttCommand = new Command();
-           pttCommand.Executed += (sender, args)  =>
-           {
-               State = "Clicked";
-           };
-           PttClickCommand = pttCommand;
         }
+
         string _state = "unregistered";
         public string State
         {
-            get { return _state; }
-            set
-            {
-                if (_state != value)
-                {
-                    _state = value;
-                    OnPropertyChanged();
-                }
-            }
+            get => _state;
+            set => SetProperty(ref _state, value);
         }
 
-        void OnPropertyChanged([CallerMemberName] string memberName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(memberName));
-        }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        public ICommand PttClickCommand { get; }
+        public ICommand PttDownCommand => new ActionCommand(() => State = "PTT Down");
+        public ICommand PttUpCommand => new ActionCommand(() => State = "PTT Up");
     }
 
     public class MyForm : Form
@@ -52,11 +34,12 @@ namespace ClientUI
 
             var stateLabel = new Label();
             stateLabel.TextBinding.BindDataContext<MyModel>(m => m.State);
-            var button = new Button()
+            var button = new PttButton()
             {
                 Text = "Push To Talk"
             };
-            button.BindDataContext(c => c.Command, (MyModel model) => model.PttClickCommand);
+            button.BindDataContext(c => c.ButtonDownCommand, (MyModel model) => model.PttDownCommand);
+            button.BindDataContext(c => c.ButtonUpCommand, (MyModel model) => model.PttUpCommand);
 
             Content = new TableLayout
             {
