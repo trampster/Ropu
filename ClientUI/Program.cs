@@ -58,7 +58,8 @@ namespace ClientUI
             };
             button.BindDataContext(c => c.Command, (MyModel model) => model.PttClickCommand);
 
-            Content = new TableLayout 
+            Content = new TableLayout
+            {
                 Rows = 
                 { 
                     stateLabel, 
