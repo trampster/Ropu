@@ -10,4 +10,9 @@
     <PackageReference Include="Eto.Platform.Gtk" Version="2.4.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="../Ropu.Shared/Ropu.Shared.csproj" />
+    <ProjectReference Include="../Client/Client.csproj" />
+  </ItemGroup>
+
 </Project>

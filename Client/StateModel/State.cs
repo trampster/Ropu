@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Ropu.Client.StateModel
 {
-    public class State<Id, EventT> : IState<EventT>
+    public class State<Id, EventT> : IState<Id, EventT>
     {
         readonly List<Transition<EventT, State<Id, EventT>>> _transitions;
 
@@ -24,7 +24,7 @@ namespace Ropu.Client.StateModel
             _transitions.Add(new Transition<EventT, State<Id, EventT> >(eventId, getState));
         }
 
-        public IState<EventT> Transition(EventT eventType)
+        public IState<Id, EventT> Transition(EventT eventType)
         {
             foreach(var transition in _transitions)
             {

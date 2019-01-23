@@ -3,11 +3,13 @@ using System.Collections.Generic;
 
 namespace Ropu.Client.StateModel
 {
-    public interface IState<EventT>
+    public interface IState<Id, EventT>
     {
         Action Entry {get;}
         Action Exit {get;}
 
-        IState<EventT> Transition(EventT eventType);
+        Id Identifier {get;}
+
+        IState<Id, EventT> Transition(EventT eventType);
     }
 }

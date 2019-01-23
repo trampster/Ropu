@@ -3,16 +3,17 @@ using System.Threading;
 
 namespace Ropu.Client.StateModel
 {
-    public class StateManager<EventT>
+    public class StateManager<Id, EventT>
     {
-        IState<EventT> _current;
+        IState<Id, EventT> _current;
+        public event EventHandler<EventArgs> StateChanged;
 
-        public StateManager(IState<EventT> start)
+        public StateManager(IState<Id, EventT> start)
         {
             _current = start;
         }
 
-        public IState<EventT> CurrentState
+        public IState<Id, EventT> CurrentState
         {
             get
             {
@@ -26,9 +27,9 @@ namespace Ropu.Client.StateModel
         /// <param name="newState">The state to change to</param>
         /// <param name="expected">The expected current state, if this doesn't match then the state wont change</param>
         /// <returns>The original state</returns>
-        public IState<EventT> SetState(IState<EventT> newState, IState<EventT> expected)
+        public IState<Id, EventT> SetState(IState<Id, EventT> newState, IState<Id, EventT> expected)
         {
-            IState<EventT> original = Interlocked.CompareExchange(ref _current, newState, expected);
+            IState<Id, EventT> original = Interlocked.CompareExchange(ref _current, newState, expected);
             if(original == expected)
             {
                 expected.Exit();
@@ -52,6 +53,7 @@ namespace Ropu.Client.StateModel
                 var original = SetState(newState, current);
                 if(original == current)
                 {
+                    StateChanged?.Invoke(this, EventArgs.Empty);
                     Console.WriteLine($"State Transition {current} -> {newState}");
                     break;
                 }

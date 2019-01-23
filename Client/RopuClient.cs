@@ -26,12 +26,14 @@ namespace Ropu.Client
         RopuState _unregistered;
         RopuState _startingCall;
         RopuState _callInProgress;
-        StateManager<EventId> _stateManager;
+        StateManager<StateId, EventId> _stateManager;
         LoadBalancerProtocol _loadBalancerProtocol;
 
         readonly Ropu.Shared.Timer _retryTimer;
         readonly IPAddress _ipAddress;
         readonly IPEndPoint _loadBalancerEndPoint;
+
+        public event EventHandler<EventArgs> StateChanged;
 
         public RopuClient(
             ProtocolSwitch protocolSwitch, 
@@ -66,8 +68,14 @@ namespace Ropu.Client
             _startingCall.AddTransition(EventId.CallStarted, () => _callInProgress);
             _callInProgress = new RopuState(StateId.CallInProgress);
 
-            _stateManager = new StateManager<EventId>(_start);
+            _stateManager = new StateManager<StateId, EventId>(_start);
+            _stateManager.StateChanged += (sender, args) => StateChanged?.Invoke(this, args);
             _ipAddress = address;
+        }
+
+        public StateId State
+        {
+            get => _stateManager.CurrentState.Identifier;
         }
 
         System.Timers.Timer CreateTimer(int interval, Action callback)
@@ -97,16 +105,16 @@ namespace Ropu.Client
             Register();
         }
 
-        void Register()
+        async void Register()
         {
             while(_servingNodeEndpoint == null)
             {
                 Console.WriteLine($"Requesting Serving Node from LoadBalancer {_loadBalancerEndPoint}");
-                _servingNodeEndpoint = _loadBalancerProtocol.RequestServingNode(_loadBalancerEndPoint).Result;
+                _servingNodeEndpoint = await _loadBalancerProtocol.RequestServingNode(_loadBalancerEndPoint);
                 if(_servingNodeEndpoint == null)
                 {
                     Console.WriteLine("Failed to get a serving node");
-                    Task.Delay(500).Wait();
+                    await Task.Delay(500);
                 }
             }
 
