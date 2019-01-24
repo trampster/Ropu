@@ -14,13 +14,16 @@ namespace Ropu.ClientUI
 
     public class MainViewModel : BaseViewModel
     {
-        RopuClient _ropuClient;
+        readonly RopuClient _ropuClient;
+        readonly IClientSettings _clientSettings;
 
-        public MainViewModel(RopuClient ropuClient)
+        public MainViewModel(RopuClient ropuClient, IClientSettings clientSettings)
         {
+            _clientSettings = clientSettings;
             _ropuClient = ropuClient;
             _ropuClient.StateChanged += (sender, args) => State = _ropuClient.State.ToString();
             State = _ropuClient.State.ToString();
+            UserId = _clientSettings.UserId.ToString();
         }
 
         string _state = "";
@@ -37,6 +40,13 @@ namespace Ropu.ClientUI
             set => SetProperty(ref _pttState, value);
         }
 
+        string _userId = "";
+        public string UserId
+        {
+            get => _userId;
+            set => SetProperty(ref _userId, value);
+        }
+
         public ICommand PttDownCommand => new ActionCommand(() => PttState = "PTT Down");
         public ICommand PttUpCommand => new ActionCommand(() => PttState = "PTT Up");
     }
@@ -46,7 +56,7 @@ namespace Ropu.ClientUI
         public MainForm (MainViewModel mainViewModel)
         {
             Title = "Ropu Client";
-            ClientSize = new Size(200, 200);
+            ClientSize = new Size(250, 200);
 
             var pttStateLabel = new Label();
             pttStateLabel.TextBinding.BindDataContext<MainViewModel>(m => m.PttState);
@@ -61,13 +71,20 @@ namespace Ropu.ClientUI
             button.BindDataContext(c => c.ButtonDownCommand, (MainViewModel model) => model.PttDownCommand);
             button.BindDataContext(c => c.ButtonUpCommand, (MainViewModel model) => model.PttUpCommand);
 
+
+            var textBox = new TextBox();
+            textBox.TextBinding.BindDataContext<MainViewModel>(m => m.UserId);
+
             Content = new TableLayout
             {
+                Padding = new Padding(10,10,10,10),
+                Spacing = new Size(5,5),
                 Rows = 
                 {
-                    stateLabel,
+                    new TableLayout(){ Rows = { new TableRow(new TableCell(new Label { Text = "State: "}), stateLabel)}},
+                    new TableLayout(){ Rows = { new TableRow(new TableCell(new Label { Text = "User ID: ", VerticalAlignment = VerticalAlignment.Center}), textBox)}},
                     pttStateLabel, 
-                    button,
+                    new TableRow(button),
                 }
             };
             DataContext = mainViewModel;
@@ -96,7 +113,7 @@ namespace Ropu.ClientUI
             var ropuClient = new RopuClient(protocolSwitch, controllingFunctionClient, ipAddress, callManagementProtocol, loadBalancerEndpoint, settings);
             var ropuClientTask = ropuClient.Run();
 
-            new Application().Run(new MainForm(new MainViewModel(ropuClient)));
+            new Application().Run(new MainForm(new MainViewModel(ropuClient, settings)));
             ropuClientTask.Wait();
         }
     }
