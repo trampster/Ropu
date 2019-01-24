@@ -98,3 +98,10 @@ Likewise when starting a call, the client should start streaming the media to th
 * User ID (uint32)
 * Key ID (uint16) - 0 means no encryption
 * Payload
+
+### Heartbeat
+* Packet Type 11
+* User ID (uint32)
+
+### Heartbeat resposne
+* Packet Type 12
