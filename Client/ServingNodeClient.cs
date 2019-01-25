@@ -7,12 +7,12 @@ using Ropu.Shared.ControlProtocol;
 
 namespace Ropu.Client
 {
-    public class ControllingFunctionClient : IControlPacketParser
+    public class ServingNodeClient : IControlPacketParser
     {
         readonly ProtocolSwitch _protocolSwitch;
         IControllingFunctionPacketHandler _controllingFunctionHandler;
 
-        public ControllingFunctionClient(ProtocolSwitch protocolSwitch)
+        public ServingNodeClient(ProtocolSwitch protocolSwitch)
         {
             _protocolSwitch = protocolSwitch;
             _protocolSwitch.SetControlPacketParser(this);
@@ -28,6 +28,17 @@ namespace Ropu.Client
             var sendBuffer = _protocolSwitch.SendBuffer();
             //packet type (byte)
             sendBuffer[0] = (byte)RopuPacketType.Registration;
+            // User ID (uint32)
+            sendBuffer.WriteUint(userId, 1);
+
+            _protocolSwitch.Send(5, remoteEndPoint);
+        }
+
+        public void SendHeartbeat(uint userId, IPEndPoint remoteEndPoint)
+        {
+            var sendBuffer = _protocolSwitch.SendBuffer();
+            //packet type (byte)
+            sendBuffer[0] = (byte)RopuPacketType.Heartbeat;
             // User ID (uint32)
             sendBuffer.WriteUint(userId, 1);
 
@@ -56,6 +67,11 @@ namespace Ropu.Client
             // Bitrate (uint16)
             ushort bitrate = data.Slice(6).ParseUshort();
             _controllingFunctionHandler?.HandleRegistrationResponseReceived(codec, bitrate);
+        }
+
+        public void ParseHeartbeatResponse(Span<byte> data)
+        {
+            _controllingFunctionHandler?.HandleHeartbeatResponseReceived();
         }
 
         public void ParseCallEnded(Span<byte> data)

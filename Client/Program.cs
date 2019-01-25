@@ -25,14 +25,14 @@ namespace Ropu.Client
             }
 
             var protocolSwitch = new ProtocolSwitch(_controlPortStarting, new PortFinder());
-            var controllingFunctionClient = new ControllingFunctionClient(protocolSwitch);
+            var servingNodeClient = new ServingNodeClient(protocolSwitch);
             _mediaClient = new MediaClient(protocolSwitch);
             var callManagementProtocol = new LoadBalancerProtocol(new PortFinder(), 5079);
 
             var ipAddress = IPAddress.Parse(MyAddress);
 
             IPEndPoint loadBalancerEndpoint = new IPEndPoint(IPAddress.Parse(LoadBalancerIP), LoadBalancerPort);
-            _ropuClient = new RopuClient(protocolSwitch, controllingFunctionClient, ipAddress, callManagementProtocol, loadBalancerEndpoint, settings);
+            _ropuClient = new RopuClient(protocolSwitch, servingNodeClient, ipAddress, callManagementProtocol, loadBalancerEndpoint, settings);
             var ropuClientTask = _ropuClient.Run();
 
             var consoleTask = TaskCordinator.RunLong(HandleCommands);

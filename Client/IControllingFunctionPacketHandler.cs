@@ -9,5 +9,6 @@ namespace Ropu.Client
         void HandleRegistrationResponseReceived(Codec codec, ushort bitrate);
         void HandleCallStarted(ushort groupId, uint userId);
         void HandleCallStartFailed(CallFailedReason reason);
+        void HandleHeartbeatResponseReceived();
     }
 }

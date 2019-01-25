@@ -15,6 +15,8 @@ namespace Ropu.Shared.ControlProtocol
         FloorReleased = 8,
         //Media 
         MediaPacketIndivdualCall = 9,
-        MediaPacketGroupCall = 10
+        MediaPacketGroupCall = 10,
+        Heartbeat = 11,
+        HeartbeatResponse = 12
     }
 }
