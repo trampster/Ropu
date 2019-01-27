@@ -11,5 +11,7 @@ namespace Ropu.Client.StateModel
         Id Identifier {get;}
 
         IState<Id, EventT> Transition(EventT eventType);
+
+        void AddTransition(EventT eventId, Func<IState<Id, EventT>> getState);
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 
 namespace Ropu.Client.StateModel
@@ -7,10 +8,28 @@ namespace Ropu.Client.StateModel
     {
         IState<Id, EventT> _current;
         public event EventHandler<EventArgs> StateChanged;
+        readonly List<IState<Id, EventT>> _states = new List<IState<Id, EventT>>();
+        
 
         public StateManager(IState<Id, EventT> start)
         {
             _current = start;
+        }
+
+        public void AddState(IState<Id, EventT> state)
+        {
+            _states.Add(state);
+        }
+
+        public void AddTransitionToAll(EventT eventId, Func<State<Id, EventT>> getState, Func<Id, bool> filter)
+        {
+            foreach(var state in _states)
+            {
+                if(filter(state.Identifier))
+                {
+                    state.AddTransition(eventId, getState);
+                }
+            }
         }
 
         public IState<Id, EventT> CurrentState

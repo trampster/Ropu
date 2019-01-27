@@ -21,7 +21,10 @@ namespace Ropu.ClientUI
         {
             _clientSettings = clientSettings;
             _ropuClient = ropuClient;
-            _ropuClient.StateChanged += (sender, args) => State = _ropuClient.State.ToString();
+            _ropuClient.StateChanged += (sender, args) => 
+            {
+                Application.Instance.Invoke(() => State = _ropuClient.State.ToString());
+            };
             State = _ropuClient.State.ToString();
             UserId = _clientSettings.UserId.ToString();
         }

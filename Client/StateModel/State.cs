@@ -5,11 +5,11 @@ namespace Ropu.Client.StateModel
 {
     public class State<Id, EventT> : IState<Id, EventT>
     {
-        readonly List<Transition<EventT, State<Id, EventT>>> _transitions;
+        readonly List<Transition<EventT, IState<Id, EventT>>> _transitions;
 
         public State(Id identifier)
         {
-            _transitions = new List<Transition<EventT, State<Id, EventT>>>();
+            _transitions = new List<Transition<EventT, IState<Id, EventT>>>();
             Identifier = identifier;
             Entry = () => {};
             Exit = () => {};
@@ -19,9 +19,9 @@ namespace Ropu.Client.StateModel
         public  Action Entry {get;set;}
         public Action Exit {get;set;}
 
-        public void AddTransition(EventT eventId, Func<State<Id, EventT>> getState)
+        public void AddTransition(EventT eventId, Func<IState<Id, EventT>> getState)
         {
-            _transitions.Add(new Transition<EventT, State<Id, EventT> >(eventId, getState));
+            _transitions.Add(new Transition<EventT, IState<Id, EventT> >(eventId, getState));
         }
 
         public IState<Id, EventT> Transition(EventT eventType)

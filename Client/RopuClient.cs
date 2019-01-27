@@ -50,26 +50,47 @@ namespace Ropu.Client
             _servingNodeClient = servingNodeClient;
             _servingNodeClient.SetControllingFunctionHandler(this);
             _retryTimer = new Ropu.Shared.Timer();
+
+            //start
             _start = new RopuState(StateId.Start);
-            _registered = new RopuState(StateId.Registered);
+            _stateManager = new StateManager<StateId, EventId>(_start);
+            _stateManager.AddState(_start);
+
+            //registered
+            _registered = new RopuState(StateId.Registered)
+            {
+                Entry = () => Heartbeat()
+            };
+            _stateManager.AddState(_registered);
             _registered.AddTransition(EventId.CallRequest, () => _startingCall);
             _registered.AddTransition(EventId.CallStarted, () => _callInProgress);
+
+            //unregistered
             _unregistered = new RopuState(StateId.Unregistered)
             {
                 Entry = () => Register(),
                 Exit = () => _retryTimer.Cancel(),
             };
             _unregistered.AddTransition(EventId.RegistrationResponseReceived, () => _registered);
+            _stateManager.AddState(_unregistered);
+
+            //starting call
             _startingCall = new RopuState(StateId.StartingCall)
             {
                 Exit = () => _retryTimer.Cancel()
             };
             _startingCall.AddTransition(EventId.CallStartFailed, () => _registered);
             _startingCall.AddTransition(EventId.CallStarted, () => _callInProgress);
-            _callInProgress = new RopuState(StateId.CallInProgress);
+            _stateManager.AddState(_startingCall);
 
-            _stateManager = new StateManager<StateId, EventId>(_start);
+            //call in progress
+            _callInProgress = new RopuState(StateId.CallInProgress);
+            _stateManager.AddState(_callInProgress);
+
             _stateManager.StateChanged += (sender, args) => StateChanged?.Invoke(this, args);
+            
+            _stateManager.AddTransitionToAll(EventId.HeartbeatFailed, () => _unregistered, stateId => stateId != StateId.Unregistered);
+
             _ipAddress = address;
         }
 
@@ -103,6 +124,32 @@ namespace Ropu.Client
         void StartCallTimerExpired()
         {
             Register();
+        }
+
+        readonly ManualResetEvent _heartbeatResetEvent = new ManualResetEvent(false);
+
+        async void Heartbeat()
+        {
+            while(true)
+            {
+                await Task.Delay(25000);
+                _heartbeatResetEvent.Reset();
+                bool heartbeatReceived = false;
+                for(int attemptNumber = 0; attemptNumber < 3; attemptNumber++)
+                {
+                    _servingNodeClient.SendHeartbeat(4242, _servingNodeEndpoint);
+                    heartbeatReceived = await Task.Run(() => _heartbeatResetEvent.WaitOne(1000));
+                    if(heartbeatReceived)
+                    {
+                        break;
+                    }
+                }
+                if(heartbeatReceived == false)
+                {
+                    _stateManager.HandleEvent(EventId.HeartbeatFailed);
+                    return;
+                }
+            }
         }
 
         async void Register()
