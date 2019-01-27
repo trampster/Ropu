@@ -130,5 +130,13 @@ namespace Ropu.ServingNode
         public void HandleControllerRegistrationInfo(ushort requestId, byte controllerId, ushort refreshInterval, IPEndPoint endPoint)
         {
         }
+
+        public void Heartbeat(uint userId, IPEndPoint endPoint)
+        {
+            if(_registra.UpdateRegistration(userId))
+            {
+                _ropuProtocol.SendHeartbeatResponse(endPoint);
+            }
+        }
     }
 }

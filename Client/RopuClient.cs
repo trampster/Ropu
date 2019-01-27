@@ -137,7 +137,7 @@ namespace Ropu.Client
                 bool heartbeatReceived = false;
                 for(int attemptNumber = 0; attemptNumber < 3; attemptNumber++)
                 {
-                    _servingNodeClient.SendHeartbeat(4242, _servingNodeEndpoint);
+                    _servingNodeClient.SendHeartbeat(_clientSettings.UserId, _servingNodeEndpoint);
                     heartbeatReceived = await Task.Run(() => _heartbeatResetEvent.WaitOne(1000));
                     if(heartbeatReceived)
                     {
@@ -210,7 +210,7 @@ namespace Ropu.Client
 
         public void HandleHeartbeatResponseReceived()
         {
-            throw new NotImplementedException();
+            _heartbeatResetEvent.Set();
         }
     }
 }

@@ -92,6 +92,12 @@ namespace Ropu.ServingNode
                     _messageHandler?.Registration(userId, endPoint);
                     break;
                 }
+                case RopuPacketType.Heartbeat:
+                {
+                    uint userId = data.Slice(1).ParseUint();
+                    _messageHandler?.Heartbeat(userId, endPoint);
+                    break;
+                }
                 case RopuPacketType.StartGroupCall:
                 {
                     ushort groupId = data.Slice(1).ParseUshort();
@@ -171,6 +177,13 @@ namespace Ropu.ServingNode
                 }
                 _onBulkAsyncFinished = onComplete;
             }
+        }
+
+        public void SendHeartbeatResponse(IPEndPoint endPoint)
+        {
+             // Packet Type
+            _sendBuffer[0] = (byte)RopuPacketType.HeartbeatResponse;
+            _socket.SendTo(_sendBuffer, 0, 1, SocketFlags.None, endPoint);
         }
 
         public void BulkSendAsync(byte[] buffer, int length, Span<IPEndPoint> endPoints, Action onComplete)

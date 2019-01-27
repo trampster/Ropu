@@ -114,10 +114,9 @@ namespace Ropu.ClientUI
 
             IPEndPoint loadBalancerEndpoint = new IPEndPoint(IPAddress.Parse(loadBalancerIP), loadBalancerPort);
             var ropuClient = new RopuClient(protocolSwitch, servingNodeClient, ipAddress, callManagementProtocol, loadBalancerEndpoint, settings);
-            var ropuClientTask = ropuClient.Run();
 
-            new Application().Run(new MainForm(new MainViewModel(ropuClient, settings)));
-            ropuClientTask.Wait();
+            var application = new RopuApplication(ropuClient);
+            application.Run(new MainForm(new MainViewModel(ropuClient, settings)));
         }
     }
 }

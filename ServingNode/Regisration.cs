@@ -7,6 +7,8 @@ namespace Ropu.ServingNode
 {
     public class Registration
     {
+        DateTime _lastSeen;
+
         public Registration(uint userId, IPEndPoint endPoint)
         {
             UserId = userId;
@@ -21,6 +23,13 @@ namespace Ropu.ServingNode
         public IPEndPoint EndPoint
         {
             get;
+        }
+
+        public DateTime LastSeen => _lastSeen;
+
+        public void Renew()
+        {
+            _lastSeen = DateTime.UtcNow;
         }
     }
 }

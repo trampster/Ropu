@@ -42,5 +42,15 @@ namespace Ropu.ServingNode
             }
             return snapshotSet.GetSnapShot();
         }
+
+        public bool UpdateRegistration(uint userId)
+        {
+            if(_registrationLookup.TryGetValue(userId, out var registration))
+            {
+                registration.Renew();
+                return true;
+            }
+            return false; //not registered
+        }
     }
 }
