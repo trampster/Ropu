@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Ropu.Shared.Concurrent
 {
-    public class IntDictionary<T>
+    public class IntDictionary<T> where T : class
     {
         const int _setSize = 256;
         int _count = 0;
@@ -76,26 +76,32 @@ namespace Ropu.Shared.Concurrent
             var first = _store[index1];
             if(first == null)
             { 
-                value = default(T);
+                value = null;
                 return false;
             }
             var second = first[index2];
             if(second == null) 
             {
-                value = default(T);
+                value = null;
                 return false;
             }
             value = second[index3];
-            if(value.Equals(default(T)))
+            if(value == null)
             {
                 //one of the short commings of this dictionary is it can't tell the difference between
-                //doesn't contain and default, so assumes default means doesn't contain
+                //doesn't contain and null, so assumes null means doesn't contain
                 return false;
             }
             return true;
         }
 
-        public void AddOrUpdate(uint index, T value)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="value"></param>
+        /// <returns>true if update else false</returns>
+        public bool AddOrUpdate(uint index, T value)
         {
             uint index1 = index >> 16;
             uint index2 = (index >> 8) & 0xFF;
@@ -116,11 +122,13 @@ namespace Ropu.Shared.Concurrent
             }
 
             var old = second[index3];
+            
             second[index3] = value;
             if(EqualityComparer<T>.Default.Equals(old, default(T)))
             {
                 _count++;
             }
+            return old != null;
         }
 
         public void Remove(uint index)

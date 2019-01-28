@@ -224,7 +224,6 @@ namespace Ropu.ServingNode
             // Bitrate (uint16)
             _sendBuffer.WriteUshort(8000, 8);
 
-            Console.WriteLine($"Sending registration response to {endPoint}");
             _socket.SendTo(_sendBuffer, 0, 10, SocketFlags.None, endPoint);
         }
 

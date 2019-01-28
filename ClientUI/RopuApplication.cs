@@ -14,6 +14,7 @@ namespace Ropu.ClientUI
 
         protected override async void OnInitialized(EventArgs e)
         {
+            base.OnInitialized(e);
             await _ropuClient.Run();
         }
     }

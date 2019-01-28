@@ -146,6 +146,7 @@ namespace Ropu.Client
                 }
                 if(heartbeatReceived == false)
                 {
+                    Console.WriteLine("Heartbeat failed");
                     _stateManager.HandleEvent(EventId.HeartbeatFailed);
                     return;
                 }

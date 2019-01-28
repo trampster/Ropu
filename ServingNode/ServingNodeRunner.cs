@@ -37,11 +37,12 @@ namespace Ropu.ServingNode
         {
             Task callManagementTask = _loadBalancerProtocol.Run();
             Task mediaTask = _ropuProtocol.Run();
+            Task regisrationExpiryTask = _registra.CheckExpiries();
 
             Task registerTask = Register();
 
 
-            await TaskCordinator.WaitAll(callManagementTask, mediaTask, registerTask);
+            await TaskCordinator.WaitAll(callManagementTask, mediaTask, registerTask, regisrationExpiryTask);
         }
 
         public void Registration(uint userId, IPEndPoint endPoint)
