@@ -91,6 +91,9 @@ namespace Ropu.Client
                 case RopuPacketType.HeartbeatResponse:
                     _controlPacketParser?.ParseHeartbeatResponse(data);
                     break;
+                case RopuPacketType.NotRegistered:
+                    _controlPacketParser?.ParseNotRegistered(data);
+                    break;
                 //floor
                 case RopuPacketType.FloorDenied:
                     throw new NotImplementedException();

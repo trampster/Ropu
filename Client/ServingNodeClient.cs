@@ -74,6 +74,11 @@ namespace Ropu.Client
             _controllingFunctionHandler?.HandleHeartbeatResponseReceived();
         }
 
+        public void ParseNotRegistered(Span<byte> data)
+        {
+            _controllingFunctionHandler?.HandleNotRegisteredReceived();
+        }
+
         public void ParseCallEnded(Span<byte> data)
         {
             throw new NotImplementedException();

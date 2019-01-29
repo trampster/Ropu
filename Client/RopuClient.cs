@@ -90,6 +90,7 @@ namespace Ropu.Client
             _stateManager.StateChanged += (sender, args) => StateChanged?.Invoke(this, args);
             
             _stateManager.AddTransitionToAll(EventId.HeartbeatFailed, () => _unregistered, stateId => stateId != StateId.Unregistered);
+            _stateManager.AddTransitionToAll(EventId.NotRegistered, () => _unregistered, stateId => stateId != StateId.Unregistered);
 
             _ipAddress = address;
         }
@@ -212,6 +213,11 @@ namespace Ropu.Client
         public void HandleHeartbeatResponseReceived()
         {
             _heartbeatResetEvent.Set();
+        }
+
+        public void HandleNotRegisteredReceived()
+        {
+            _stateManager.HandleEvent(EventId.NotRegistered);
         }
     }
 }

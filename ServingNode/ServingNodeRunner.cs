@@ -134,10 +134,12 @@ namespace Ropu.ServingNode
 
         public void Heartbeat(uint userId, IPEndPoint endPoint)
         {
-            if(_registra.UpdateRegistration(userId))
+            if(!_registra.UpdateRegistration(userId))
             {
-                _ropuProtocol.SendHeartbeatResponse(endPoint);
+                _ropuProtocol.SendNotRegistered(endPoint);
+                return;
             }
+            _ropuProtocol.SendHeartbeatResponse(endPoint);
         }
     }
 }

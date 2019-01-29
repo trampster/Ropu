@@ -179,6 +179,13 @@ namespace Ropu.ServingNode
             }
         }
 
+        internal void SendNotRegistered(IPEndPoint endPoint)
+        {
+            // Packet Type
+            _sendBuffer[0] = (byte)RopuPacketType.NotRegistered;
+            _socket.SendTo(_sendBuffer, 0, 1, SocketFlags.None, endPoint);
+        }
+
         public void SendHeartbeatResponse(IPEndPoint endPoint)
         {
              // Packet Type

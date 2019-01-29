@@ -105,3 +105,7 @@ Likewise when starting a call, the client should start streaming the media to th
 
 ### Heartbeat Resposne
 * Packet Type 12
+
+### Not Registered
+Send when the serving node receives a packet from a client that isn't registered
+* Packet Type 13

@@ -17,6 +17,7 @@ namespace Ropu.Shared.ControlProtocol
         MediaPacketIndivdualCall = 9,
         MediaPacketGroupCall = 10,
         Heartbeat = 11,
-        HeartbeatResponse = 12
+        HeartbeatResponse = 12,
+        NotRegistered = 13,
     }
 }

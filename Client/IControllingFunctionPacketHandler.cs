@@ -10,5 +10,6 @@ namespace Ropu.Client
         void HandleCallStarted(ushort groupId, uint userId);
         void HandleCallStartFailed(CallFailedReason reason);
         void HandleHeartbeatResponseReceived();
+        void HandleNotRegisteredReceived();
     }
 }

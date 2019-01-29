@@ -17,7 +17,8 @@ namespace Ropu.Client
         CallRequest,
         CallStarted,
         CallStartFailed,
-        HeartbeatFailed
+        HeartbeatFailed,
+        NotRegistered
     }
 
     public class RopuState : State<StateId, EventId>
