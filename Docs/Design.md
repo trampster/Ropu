@@ -86,13 +86,13 @@ Clients should play out everything they receive on the Media Plane, regardless o
 Likewise when starting a call, the client should start streaming the media to the server as soon as they have received the Start Call Response before receiving floor granted. The call initiator is implicitly granted the floor.
 
 #### Media Packet Individual Call
-* Packet Type 9
+* Packet Type 9 (byte)
 * Call ID (uint16)
 * Key ID (uint16) - 0 means no encryption
 * Payload
 
 ### Media Packet Group Call
-* Packet Type 10
+* Packet Type 10 (byte)
 * Group Id (uint16)
 * Sequence Number (uint16)
 * User ID (uint32)
@@ -100,12 +100,16 @@ Likewise when starting a call, the client should start streaming the media to th
 * Payload
 
 ### Heartbeat
-* Packet Type 11
+* Packet Type 11 (byte)
 * User ID (uint32)
 
 ### Heartbeat Resposne
-* Packet Type 12
+* Packet Type 12 (byte)
 
 ### Not Registered
-Send when the serving node receives a packet from a client that isn't registered
-* Packet Type 13
+Sent when the serving node receives a packet from a client that isn't registered
+* Packet Type 13 (byte)
+
+### Deregister
+* Packet Type 14 (byte)
+* User ID (uint32)
