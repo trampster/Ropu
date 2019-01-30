@@ -44,6 +44,7 @@ namespace Ropu.Client
             IClientSettings clientSettings)
         {
             _clientSettings = clientSettings;
+            _clientSettings.UserIdChanged += (sender, args) => _stateManager.HandleEvent(EventId.UserIdChanged);
             _loadBalancerEndPoint = loadBalancerEndPoint;
             _loadBalancerProtocol = loadBalancerProtocol;
             _protocolSwitch = protocolSwitch;
@@ -91,6 +92,7 @@ namespace Ropu.Client
             
             _stateManager.AddTransitionToAll(EventId.HeartbeatFailed, () => _unregistered, stateId => stateId != StateId.Unregistered);
             _stateManager.AddTransitionToAll(EventId.NotRegistered, () => _unregistered, stateId => stateId != StateId.Unregistered);
+            _stateManager.AddTransitionToAll(EventId.UserIdChanged, () => _unregistered, stateId => true);
 
             _ipAddress = address;
         }
@@ -156,6 +158,10 @@ namespace Ropu.Client
 
         async void Register()
         {
+            if(_clientSettings.UserId == 0)
+            {
+                return;
+            }
             while(_servingNodeEndpoint == null)
             {
                 Console.WriteLine($"Requesting Serving Node from LoadBalancer {_loadBalancerEndPoint}");

@@ -26,7 +26,6 @@ namespace Ropu.ClientUI
                 Application.Instance.Invoke(() => State = _ropuClient.State.ToString());
             };
             State = _ropuClient.State.ToString();
-            UserId = _clientSettings.UserId.ToString();
         }
 
         string _state = "";
@@ -43,11 +42,27 @@ namespace Ropu.ClientUI
             set => SetProperty(ref _pttState, value);
         }
 
-        string _userId = "";
         public string UserId
         {
-            get => _userId;
-            set => SetProperty(ref _userId, value);
+            get => _clientSettings.UserId.ToString();
+            set
+            {
+                bool valid = uint.TryParse(value, out uint userId);
+                UserIdError =  valid ? "" : "Invalid";
+                if(!valid) return;
+                if(_clientSettings.UserId != userId)
+                {
+                    _clientSettings.UserId = userId;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        string _userIdError = "";
+        public string UserIdError
+        {
+            get => _userIdError;
+            set => SetProperty(ref _userIdError, value);
         }
 
         public ICommand PttDownCommand => new ActionCommand(() => PttState = "PTT Down");
@@ -77,6 +92,8 @@ namespace Ropu.ClientUI
 
             var textBox = new TextBox();
             textBox.TextBinding.BindDataContext<MainViewModel>(m => m.UserId);
+            var userIdErrorLabel = new Label();
+            userIdErrorLabel.TextBinding.BindDataContext<MainViewModel>(m => m.UserIdError);
 
             Content = new TableLayout
             {
@@ -85,7 +102,7 @@ namespace Ropu.ClientUI
                 Rows = 
                 {
                     new TableLayout(){ Rows = { new TableRow(new TableCell(new Label { Text = "State: "}), stateLabel)}},
-                    new TableLayout(){ Rows = { new TableRow(new TableCell(new Label { Text = "User ID: ", VerticalAlignment = VerticalAlignment.Center}), textBox)}},
+                    new TableLayout(){ Rows = { new TableRow(new TableCell(new Label { Text = "User ID: ", VerticalAlignment = VerticalAlignment.Center}), textBox, userIdErrorLabel)}},
                     pttStateLabel, 
                     new TableRow(button),
                 }

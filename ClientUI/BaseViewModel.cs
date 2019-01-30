@@ -15,6 +15,11 @@ namespace Ropu.ClientUI
             }
         }
 
+        protected void RaisePropertyChanged([CallerMemberName] string memberName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(memberName));
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
     }
 }

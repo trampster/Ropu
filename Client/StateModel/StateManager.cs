@@ -53,6 +53,8 @@ namespace Ropu.Client.StateModel
             {
                 expected.Exit();
                 newState.Entry();
+                StateChanged?.Invoke(this, EventArgs.Empty);
+                Console.WriteLine($"State Transition {original} -> {newState}");
             }
             return original;
         }
@@ -72,10 +74,9 @@ namespace Ropu.Client.StateModel
                 var original = SetState(newState, current);
                 if(original == current)
                 {
-                    StateChanged?.Invoke(this, EventArgs.Empty);
-                    Console.WriteLine($"State Transition {current} -> {newState}");
                     break;
                 }
+
                 //state changed while we where trying to transition, try the event against the new state.
             }
         }

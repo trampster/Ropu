@@ -40,6 +40,10 @@ namespace Ropu.ServingNode
                     }
                 }
             }
+            else
+            {
+                _registrations.Add(registration);
+            }
             foreach(var groupId in _groupsClient.GetUsersGroups(registration.UserId))
             {
                 if(_registeredGroupMembersLookup[groupId] == null)

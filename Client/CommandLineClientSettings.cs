@@ -7,6 +7,8 @@ namespace Ropu.Client
     {
         uint _userId = 1234;
 
+        public event EventHandler UserIdChanged;
+
         public bool ParseArgs(string[] args)
         {
             bool showHelp = false;
@@ -42,6 +44,14 @@ namespace Ropu.Client
             Console.WriteLine ("Options:");
             optionaSet.WriteOptionDescriptions (Console.Out);
         }
-        public uint UserId => _userId;
+        public uint UserId
+        {
+            get => _userId;
+            set
+            {
+                _userId = value;
+                UserIdChanged?.Invoke(this, EventArgs.Empty);
+            }
+        }
     }
 }
