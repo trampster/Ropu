@@ -8,7 +8,8 @@ namespace Ropu.Client
         Unregistered,
         Registered,
         StartingCall,
-        CallInProgress
+        CallInProgress,
+        Deregistering
     }
 
     public enum EventId
@@ -19,7 +20,8 @@ namespace Ropu.Client
         CallStartFailed,
         HeartbeatFailed,
         NotRegistered,
-        UserIdChanged
+        UserIdChanged,
+        DeregistrationResponseReceived
     }
 
     public class RopuState : State<StateId, EventId>

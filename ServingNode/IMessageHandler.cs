@@ -9,5 +9,6 @@ namespace Ropu.ServingNode
         void Heartbeat(uint userId, IPEndPoint endPoint);
         void HandleCallControllerMessage(ushort groupId, byte[] packetData, int length);
         void HandleMediaPacket(ushort groupId, byte[] packetData, int length, IPEndPoint from);
+        void Deregister(uint userId, IPEndPoint endPoint);
     }
 }

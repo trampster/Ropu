@@ -11,5 +11,6 @@ namespace Ropu.Client
         void HandleCallStartFailed(CallFailedReason reason);
         void HandleHeartbeatResponseReceived();
         void HandleNotRegisteredReceived();
+        void HandleRegisterResponse();
     }
 }

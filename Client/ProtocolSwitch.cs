@@ -94,6 +94,9 @@ namespace Ropu.Client
                 case RopuPacketType.NotRegistered:
                     _controlPacketParser?.ParseNotRegistered(data);
                     break;
+                case RopuPacketType.DeregisterResponse:
+                    _controlPacketParser?.ParseDeregisterResponse(data);
+                    break;
                 //floor
                 case RopuPacketType.FloorDenied:
                     throw new NotImplementedException();

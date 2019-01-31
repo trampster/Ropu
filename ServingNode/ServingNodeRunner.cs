@@ -141,5 +141,11 @@ namespace Ropu.ServingNode
             }
             _ropuProtocol.SendHeartbeatResponse(endPoint);
         }
+
+        public void Deregister(uint userId, IPEndPoint endPoint)
+        {
+            _registra.Deregister(userId);
+            _ropuProtocol.SendDeregisterResponse(endPoint);
+        }
     }
 }

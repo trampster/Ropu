@@ -103,5 +103,21 @@ namespace Ropu.Client
 
             _controllingFunctionHandler?.HandleCallStartFailed(reason);
         }
+
+        public void Deregister(uint userId, IPEndPoint servingNodeEndpoint)
+        {
+            var sendBuffer = _protocolSwitch.SendBuffer();
+            //packet type (byte)
+            sendBuffer[0] = (byte)RopuPacketType.Deregister;
+            // User ID (uint32)
+            sendBuffer.WriteUint(userId, 1);
+
+            _protocolSwitch.Send(5, servingNodeEndpoint);
+        }
+
+        public void ParseDeregisterResponse(Span<byte> data)
+        {
+            _controllingFunctionHandler?.HandleRegisterResponse();
+        }
     }
 }

@@ -99,5 +99,16 @@ namespace Ropu.ServingNode
             }
             return false; //not registered
         }
+
+        public void Deregister(uint userId)
+        {
+            if(_registrationLookup.TryGetValue(userId, out var registration))
+            {
+                Console.WriteLine($"Deregister registration for User ID: {userId} at {registration.EndPoint}");
+
+                _registrationLookup.Remove(userId);
+                _registrations.Remove(registration);
+            }
+        }
     }
 }

@@ -113,3 +113,6 @@ Sent when the serving node receives a packet from a client that isn't registered
 ### Deregister
 * Packet Type 14 (byte)
 * User ID (uint32)
+
+### Deregister Rsponse
+* Packet Type 15 (byte)

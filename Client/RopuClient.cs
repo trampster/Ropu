@@ -24,6 +24,7 @@ namespace Ropu.Client
         RopuState _start;
         RopuState _registered;
         RopuState _unregistered;
+        RopuState _deregistering;
         RopuState _startingCall;
         RopuState _callInProgress;
         StateManager<StateId, EventId> _stateManager;
@@ -32,8 +33,10 @@ namespace Ropu.Client
         readonly Ropu.Shared.Timer _retryTimer;
         readonly IPAddress _ipAddress;
         readonly IPEndPoint _loadBalancerEndPoint;
+        uint _registeredUserId = 0;
 
         public event EventHandler<EventArgs> StateChanged;
+
 
         public RopuClient(
             ProtocolSwitch protocolSwitch, 
@@ -60,7 +63,11 @@ namespace Ropu.Client
             //registered
             _registered = new RopuState(StateId.Registered)
             {
-                Entry = () => Heartbeat()
+                Entry = () => 
+                { 
+                    _registeredUserId = _clientSettings.UserId;
+                    Heartbeat();
+                }
             };
             _stateManager.AddState(_registered);
             _registered.AddTransition(EventId.CallRequest, () => _startingCall);
@@ -73,7 +80,17 @@ namespace Ropu.Client
                 Exit = () => _retryTimer.Cancel(),
             };
             _unregistered.AddTransition(EventId.RegistrationResponseReceived, () => _registered);
+            _unregistered.AddTransition(EventId.UserIdChanged, () => _unregistered);
             _stateManager.AddState(_unregistered);
+
+            //deregistering
+            _deregistering = new RopuState(StateId.Deregistering)
+            {
+                Entry = () => Deregister(),
+                Exit = () => _retryTimer.Cancel(),
+            };
+            _deregistering.AddTransition(EventId.DeregistrationResponseReceived, () => _unregistered);
+            _stateManager.AddState(_deregistering);
 
             //starting call
             _startingCall = new RopuState(StateId.StartingCall)
@@ -92,7 +109,7 @@ namespace Ropu.Client
             
             _stateManager.AddTransitionToAll(EventId.HeartbeatFailed, () => _unregistered, stateId => stateId != StateId.Unregistered);
             _stateManager.AddTransitionToAll(EventId.NotRegistered, () => _unregistered, stateId => stateId != StateId.Unregistered);
-            _stateManager.AddTransitionToAll(EventId.UserIdChanged, () => _unregistered, stateId => true);
+            _stateManager.AddTransitionToAll(EventId.UserIdChanged, () => _deregistering, stateId => stateId != StateId.Unregistered);
 
             _ipAddress = address;
         }
@@ -181,6 +198,20 @@ namespace Ropu.Client
             _retryTimer.Start();
         }
 
+        void Deregister()
+        {
+            if(_registeredUserId == 0)
+            {
+                _stateManager.SetState(_unregistered, _deregistering);
+                return;
+            }
+
+            _servingNodeClient.Deregister(_registeredUserId, _servingNodeEndpoint);
+            _retryTimer.Duration = 2000;
+            _retryTimer.Callback = Deregister;
+            _retryTimer.Start();
+        }
+
         public void StartCall(ushort groupId)
         {
             Console.WriteLine($"sending StartGroupCall to {_servingNodeEndpoint}");
@@ -213,7 +244,6 @@ namespace Ropu.Client
         {
             Console.WriteLine($"CallStartFailed with reason {reason}");
             _stateManager.HandleEvent(EventId.CallStartFailed);
-
         }
 
         public void HandleHeartbeatResponseReceived()
@@ -224,6 +254,11 @@ namespace Ropu.Client
         public void HandleNotRegisteredReceived()
         {
             _stateManager.HandleEvent(EventId.NotRegistered);
+        }
+
+        public void HandleRegisterResponse()
+        {
+            _stateManager.HandleEvent(EventId.DeregistrationResponseReceived);
         }
     }
 }

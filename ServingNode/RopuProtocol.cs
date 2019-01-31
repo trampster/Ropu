@@ -92,6 +92,12 @@ namespace Ropu.ServingNode
                     _messageHandler?.Registration(userId, endPoint);
                     break;
                 }
+                case RopuPacketType.Deregister:
+                {
+                    uint userId = data.Slice(1).ParseUint();
+                    _messageHandler?.Deregister(userId, endPoint);
+                    break;
+                }
                 case RopuPacketType.Heartbeat:
                 {
                     uint userId = data.Slice(1).ParseUint();
@@ -179,7 +185,14 @@ namespace Ropu.ServingNode
             }
         }
 
-        internal void SendNotRegistered(IPEndPoint endPoint)
+        public void SendDeregisterResponse(IPEndPoint endPoint)
+        {
+            // Packet Type
+            _sendBuffer[0] = (byte)RopuPacketType.DeregisterResponse;
+            _socket.SendTo(_sendBuffer, 0, 1, SocketFlags.None, endPoint);
+        }
+
+        public void SendNotRegistered(IPEndPoint endPoint)
         {
             // Packet Type
             _sendBuffer[0] = (byte)RopuPacketType.NotRegistered;

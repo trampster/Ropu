@@ -11,5 +11,6 @@ namespace Ropu.Client
         void ParseCallStartFailed(Span<byte> data);
         void ParseHeartbeatResponse(Span<byte> data);
         void ParseNotRegistered(Span<byte> data);
+        void ParseDeregisterResponse(Span<byte> data);
     }
 }
