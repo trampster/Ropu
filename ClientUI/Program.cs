@@ -65,6 +65,29 @@ namespace Ropu.ClientUI
             set => SetProperty(ref _userIdError, value);
         }
 
+        public string GroupId
+        {
+            get => _ropuClient.IdleGroup.ToString();
+            set
+            {
+
+                if(!ushort.TryParse(value, out ushort groupId))
+                {
+                    GroupIdError = "Error";
+                }
+                GroupIdError = "";
+                _ropuClient.IdleGroup = groupId;
+                RaisePropertyChanged();
+            }
+        }
+
+        string _groupIdError = "";
+        public string GroupIdError
+        {
+            get => _groupIdError;
+            set => SetProperty(ref _groupIdError, value);
+        }
+
         public ICommand PttDownCommand => new ActionCommand(() => PttState = "PTT Down");
         public ICommand PttUpCommand => new ActionCommand(() => PttState = "PTT Up");
     }
@@ -95,6 +118,11 @@ namespace Ropu.ClientUI
             var userIdErrorLabel = new Label();
             userIdErrorLabel.TextBinding.BindDataContext<MainViewModel>(m => m.UserIdError);
 
+            var grouptextBox = new TextBox();
+            textBox.TextBinding.BindDataContext<MainViewModel>(m => m.GroupId);
+            var groupErrorLabel = new Label();
+            groupErrorLabel.TextBinding.BindDataContext<MainViewModel>(m => m.GroupIdError);
+
             Content = new TableLayout
             {
                 Padding = new Padding(10,10,10,10),
@@ -103,6 +131,7 @@ namespace Ropu.ClientUI
                 {
                     new TableLayout(){ Rows = { new TableRow(new TableCell(new Label { Text = "State: "}), stateLabel)}},
                     new TableLayout(){ Rows = { new TableRow(new TableCell(new Label { Text = "User ID: ", VerticalAlignment = VerticalAlignment.Center}), textBox, userIdErrorLabel)}},
+                    new TableLayout(){ Rows = { new TableRow(new TableCell(new Label { Text = "Group ID: ", VerticalAlignment = VerticalAlignment.Center}), grouptextBox, groupErrorLabel)}},
                     pttStateLabel, 
                     new TableRow(button),
                 }

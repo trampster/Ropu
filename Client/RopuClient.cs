@@ -36,7 +36,15 @@ namespace Ropu.Client
         uint _registeredUserId = 0;
 
         public event EventHandler<EventArgs> StateChanged;
-
+        /// <summary>
+        /// this is the group the user has selected, it is the group to be called when they PTT and 
+        /// the group to return to after the call
+        /// </summary>
+        ushort _idleGroup;
+        /// <summary>
+        /// The group of the current call, or the call we are trying to start
+        /// </summary>
+        ushort _callGroup;
 
         public RopuClient(
             ProtocolSwitch protocolSwitch, 
@@ -47,7 +55,10 @@ namespace Ropu.Client
             IClientSettings clientSettings)
         {
             _clientSettings = clientSettings;
-            _clientSettings.UserIdChanged += (sender, args) => _stateManager.HandleEvent(EventId.UserIdChanged);
+            _clientSettings.UserIdChanged += (sender, args) =>
+            { 
+                _stateManager.HandleEvent(EventId.UserIdChanged);
+            };
             _loadBalancerEndPoint = loadBalancerEndPoint;
             _loadBalancerProtocol = loadBalancerProtocol;
             _protocolSwitch = protocolSwitch;
@@ -63,31 +74,30 @@ namespace Ropu.Client
             //registered
             _registered = new RopuState(StateId.Registered)
             {
-                Entry = () => 
+                Entry = async token => 
                 { 
                     _registeredUserId = _clientSettings.UserId;
-                    Heartbeat();
+                    await Heartbeat(token);
                 }
             };
             _stateManager.AddState(_registered);
             _registered.AddTransition(EventId.CallRequest, () => _startingCall);
             _registered.AddTransition(EventId.CallStarted, () => _callInProgress);
+            _registered.AddTransition(EventId.PttDown, () => _startingCall);
 
             //unregistered
             _unregistered = new RopuState(StateId.Unregistered)
             {
-                Entry = () => Register(),
-                Exit = () => _retryTimer.Cancel(),
+                Entry = async token => await Register(token),
+                Exit = () => _waiter.Set(),
             };
             _unregistered.AddTransition(EventId.RegistrationResponseReceived, () => _registered);
-            _unregistered.AddTransition(EventId.UserIdChanged, () => _unregistered);
             _stateManager.AddState(_unregistered);
 
             //deregistering
             _deregistering = new RopuState(StateId.Deregistering)
             {
-                Entry = () => Deregister(),
-                Exit = () => _retryTimer.Cancel(),
+                Entry = async token => await Deregister(token),
             };
             _deregistering.AddTransition(EventId.DeregistrationResponseReceived, () => _unregistered);
             _stateManager.AddState(_deregistering);
@@ -95,7 +105,7 @@ namespace Ropu.Client
             //starting call
             _startingCall = new RopuState(StateId.StartingCall)
             {
-                Exit = () => _retryTimer.Cancel()
+                Entry = async token => await StartCall(token),
             };
             _startingCall.AddTransition(EventId.CallStartFailed, () => _registered);
             _startingCall.AddTransition(EventId.CallStarted, () => _callInProgress);
@@ -136,29 +146,37 @@ namespace Ropu.Client
             await TaskCordinator.WaitAll(protocolSwitchTask, loadBalancerTask);
         }
 
-        void RegistrationAttemptTimerExpired()
-        {
-            Register();
-        }
-
-        void StartCallTimerExpired()
-        {
-            Register();
-        }
-
         readonly ManualResetEvent _heartbeatResetEvent = new ManualResetEvent(false);
 
-        async void Heartbeat()
+        async Task<bool> WaitForEvent(CancellationToken token, ManualResetEvent resetEvent, int milliseconds)
         {
-            while(true)
+            return await Task.Run(() => 
             {
-                await Task.Delay(25000);
+                var waitResult = WaitHandle.WaitAny(new []{token.WaitHandle, resetEvent}, milliseconds);
+                return waitResult == 1;
+            });
+        }
+
+        async Task<bool> WaitForCancel(CancellationToken token, int milliseconds)
+        {
+            return await Task.Run(() => 
+            {
+                return token.WaitHandle.WaitOne(milliseconds);
+            });
+        }
+
+        async Task Heartbeat(CancellationToken token)
+        {
+            while(!token.IsCancellationRequested)
+            {
+                await Task.Delay(25000, token);
                 _heartbeatResetEvent.Reset();
                 bool heartbeatReceived = false;
                 for(int attemptNumber = 0; attemptNumber < 3; attemptNumber++)
                 {
                     _servingNodeClient.SendHeartbeat(_clientSettings.UserId, _servingNodeEndpoint);
-                    heartbeatReceived = await Task.Run(() => _heartbeatResetEvent.WaitOne(1000));
+                    heartbeatReceived = await WaitForEvent(token, _heartbeatResetEvent, 1000);
+                    if(token.IsCancellationRequested) return;
                     if(heartbeatReceived)
                     {
                         break;
@@ -167,60 +185,97 @@ namespace Ropu.Client
                 if(heartbeatReceived == false)
                 {
                     Console.WriteLine("Heartbeat failed");
-                    _stateManager.HandleEvent(EventId.HeartbeatFailed);
+                    _stateManager.HandleEventNonBlocking(EventId.HeartbeatFailed);
                     return;
                 }
             }
         }
 
-        async void Register()
+        ManualResetEvent _waiter = new ManualResetEvent(false);
+
+        async Task Register(CancellationToken token)
         {
-            if(_clientSettings.UserId == 0)
+            Console.WriteLine("Register Called");
+            while(!token.IsCancellationRequested)
             {
-                return;
-            }
-            while(_servingNodeEndpoint == null)
-            {
-                Console.WriteLine($"Requesting Serving Node from LoadBalancer {_loadBalancerEndPoint}");
-                _servingNodeEndpoint = await _loadBalancerProtocol.RequestServingNode(_loadBalancerEndPoint);
+                if(_clientSettings.UserId == 0)
+                {
+                    if(await WaitForCancel(token, 2000))
+                    {
+                        return;
+                    }
+                    continue;
+                }
                 if(_servingNodeEndpoint == null)
                 {
-                    Console.WriteLine("Failed to get a serving node");
-                    await Task.Delay(500);
+                    Console.WriteLine($"Requesting Serving Node from LoadBalancer {_loadBalancerEndPoint}");
+                    _servingNodeEndpoint = await _loadBalancerProtocol.RequestServingNode(_loadBalancerEndPoint);
+                    if(_servingNodeEndpoint == null)
+                    {
+                        Console.WriteLine("Failed to get a serving node");
+                        if(await WaitForCancel(token, 2000)) 
+                        {
+                            return;
+                        }
+                        continue;
+                    }
+                }
+
+                Console.WriteLine($"Got serving node at {_servingNodeEndpoint}");
+
+                _servingNodeClient.Register(_clientSettings.UserId, _servingNodeEndpoint);
+                if(await WaitForCancel(token, 2000))
+                {
+                    return;
                 }
             }
-
-            Console.WriteLine($"Got serving node at {_servingNodeEndpoint}");
-
-            _servingNodeClient.Register(_clientSettings.UserId, _servingNodeEndpoint);
-            _retryTimer.Duration = 2000;
-            _retryTimer.Callback = Register;
-            _retryTimer.Start();
         }
 
-        void Deregister()
+        async Task Deregister(CancellationToken token)
         {
             if(_registeredUserId == 0)
             {
                 _stateManager.SetState(_unregistered, _deregistering);
                 return;
             }
-
-            _servingNodeClient.Deregister(_registeredUserId, _servingNodeEndpoint);
-            _retryTimer.Duration = 2000;
-            _retryTimer.Callback = Deregister;
-            _retryTimer.Start();
+            
+            while(!token.IsCancellationRequested)
+            {
+                _servingNodeClient.Deregister(_registeredUserId, _servingNodeEndpoint);
+                await WaitForCancel(token, 2000);
+            }
         }
 
         public void StartCall(ushort groupId)
         {
+            _callGroup = groupId;
+            _stateManager.HandleEvent(EventId.CallRequest);
+        }
+
+        async Task StartCall(CancellationToken token)
+        {
             Console.WriteLine($"sending StartGroupCall to {_servingNodeEndpoint}");
-            _servingNodeClient.StartGroupCall(_clientSettings.UserId, groupId, _servingNodeEndpoint);
-            StartRetryTimer(1000, () => StartCall(groupId));
-            if(_stateManager.CurrentState != _startingCall)
+            while(!token.IsCancellationRequested)
             {
-                _stateManager.HandleEvent(EventId.CallRequest);
+                _servingNodeClient.StartGroupCall(_clientSettings.UserId, _callGroup, _servingNodeEndpoint);
+                await WaitForCancel(token, 1000);
             }
+        }
+
+        public ushort IdleGroup
+        {
+            get => _idleGroup;
+            set => _idleGroup = value;
+        }
+
+        public void PttUp()
+        {
+
+        }
+
+        public void PttDown()
+        {
+            _stateManager.HandleEvent(EventId.PttDown);
         }
 
         void StartRetryTimer(int duration, Action callback)

@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Ropu.Client.StateModel
 {
@@ -11,12 +13,12 @@ namespace Ropu.Client.StateModel
         {
             _transitions = new List<Transition<EventT, IState<Id, EventT>>>();
             Identifier = identifier;
-            Entry = () => {};
+            Entry = _ => Task.Run(()=>{});
             Exit = () => {};
         }
 
         public Id Identifier {get;}
-        public  Action Entry {get;set;}
+        public Func<CancellationToken, Task> Entry {get;set;}
         public Action Exit {get;set;}
 
         public void AddTransition(EventT eventId, Func<IState<Id, EventT>> getState)
@@ -39,6 +41,26 @@ namespace Ropu.Client.StateModel
         public override string ToString()
         {
             return Identifier.ToString();
+        }
+
+        public void RunEntry()
+        {
+            _entryTaskCancellationTokenSource = new CancellationTokenSource();
+            _entryTask = Entry(_entryTaskCancellationTokenSource.Token);
+        }
+
+        Task _entryTask;
+        CancellationTokenSource _entryTaskCancellationTokenSource;
+
+        public void RunExit()
+        {
+            _entryTaskCancellationTokenSource?.Cancel();
+            _entryTask?.Wait();
+
+            _entryTaskCancellationTokenSource = null;
+            _entryTask = null;
+
+            Exit();
         }
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Ropu.Client.StateModel
 {
@@ -51,12 +52,17 @@ namespace Ropu.Client.StateModel
             IState<Id, EventT> original = Interlocked.CompareExchange(ref _current, newState, expected);
             if(original == expected)
             {
-                expected.Exit();
-                newState.Entry();
+                expected.RunExit();
+                newState.RunEntry();
                 StateChanged?.Invoke(this, EventArgs.Empty);
                 Console.WriteLine($"State Transition {original} -> {newState}");
             }
             return original;
+        }
+
+        public void HandleEventNonBlocking(EventT eventType)
+        {
+            Task.Run(() => HandleEvent(eventType));
         }
 
         public void HandleEvent(EventT eventType)

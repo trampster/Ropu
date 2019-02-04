@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Ropu.Client.StateModel
 {
     public interface IState<Id, EventT>
     {
-        Action Entry {get;}
+        Func<CancellationToken, Task> Entry {get;}
         Action Exit {get;}
 
         Id Identifier {get;}
@@ -13,5 +15,9 @@ namespace Ropu.Client.StateModel
         IState<Id, EventT> Transition(EventT eventType);
 
         void AddTransition(EventT eventId, Func<IState<Id, EventT>> getState);
+
+        void RunEntry();
+
+        void RunExit();
     }
 }

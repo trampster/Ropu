@@ -21,7 +21,9 @@ namespace Ropu.Client
         HeartbeatFailed,
         NotRegistered,
         UserIdChanged,
-        DeregistrationResponseReceived
+        DeregistrationResponseReceived,
+        PttDown,
+        PttUp
     }
 
     public class RopuState : State<StateId, EventId>
