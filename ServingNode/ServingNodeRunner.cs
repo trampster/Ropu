@@ -56,6 +56,11 @@ namespace Ropu.ServingNode
         public void HandleCallControllerMessage(ushort groupId, byte[] packetData, int length)
         {
             var endPoint = _groupCallControllerLookup.LookupEndPoint(groupId);
+            if(endPoint == null)
+            {
+                Console.Error.WriteLine($"No Call controller avaialable for group {groupId}");
+                return;
+            }
             _ropuProtocol.SendPacket(packetData, length, endPoint);
         }
 
@@ -67,6 +72,11 @@ namespace Ropu.ServingNode
 
             //forward to clients that have registered with us and belong to that group
             var clientEndPoints = _registra.GetUserEndPoints(groupId);
+            if(clientEndPoints == null)
+            {
+                Console.WriteLine($"No members for group {groupId}");
+                return;
+            }
             _ropuProtocol.BulkSendAsync(packetData, length, clientEndPoints.GetSpan(), () => clientEndPoints.Release(), from);
         }
 

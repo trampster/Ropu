@@ -20,6 +20,8 @@ namespace Ropu.Client
         {
             _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             LocalPort = (ushort)portFinder.BindToAvailablePort(_socket, IPAddress.Any, startingPort);
+
+            Console.WriteLine($"ProtocolSwitch bound to port {LocalPort}");
         }
 
         public void SetControlPacketParser(IControlPacketParser controlPacketParser)
@@ -73,7 +75,8 @@ namespace Ropu.Client
         void HandlePacket(Span<byte> data, IPAddress ipaddress)
         {
             var packetType = (RopuPacketType)data[0];
-            switch((RopuPacketType)data[0])
+            Console.WriteLine($"Received Pakcet {packetType}");
+            switch(packetType)
             {
                 //Control
                 case RopuPacketType.RegistrationResponse:

@@ -46,6 +46,10 @@ namespace Ropu.Client
         /// </summary>
         ushort _callGroup;
 
+        Task _heartbeatTask;
+        CancellationTokenSource _heartbeatCancellationTokenSource = new CancellationTokenSource();
+        ManualResetEvent _heartbeatOnEvent = new ManualResetEvent(false);
+
         public RopuClient(
             ProtocolSwitch protocolSwitch, 
             ServingNodeClient servingNodeClient, 
@@ -77,8 +81,13 @@ namespace Ropu.Client
                 Entry = async token => 
                 { 
                     _registeredUserId = _clientSettings.UserId;
-                    await Heartbeat(token);
-                }
+                    if(_heartbeatTask == null)
+                    {
+                        _heartbeatTask = Heartbeat(_heartbeatCancellationTokenSource.Token);
+                    }
+                    _heartbeatOnEvent.Set(); //allows the heartbeat to continue
+                    await Task.Run(() => {});
+                },
             };
             _stateManager.AddState(_registered);
             _registered.AddTransition(EventId.CallRequest, () => _startingCall);
@@ -88,8 +97,11 @@ namespace Ropu.Client
             //unregistered
             _unregistered = new RopuState(StateId.Unregistered)
             {
-                Entry = async token => await Register(token),
-                Exit = () => _waiter.Set(),
+                Entry = async token => 
+                {
+                    _heartbeatOnEvent.Reset(); //stops the heartbeat
+                    await Register(token);
+                }
             };
             _unregistered.AddTransition(EventId.RegistrationResponseReceived, () => _registered);
             _stateManager.AddState(_unregistered);
@@ -157,6 +169,14 @@ namespace Ropu.Client
             });
         }
 
+        async Task WaitForEvent(ManualResetEvent resetEvent)
+        {
+            await Task.Run(() => 
+            {
+                resetEvent.WaitOne();
+            });
+        }
+
         async Task<bool> WaitForCancel(CancellationToken token, int milliseconds)
         {
             return await Task.Run(() => 
@@ -165,15 +185,23 @@ namespace Ropu.Client
             });
         }
 
+        bool _heartbeatRequired = false;
+
         async Task Heartbeat(CancellationToken token)
         {
             while(!token.IsCancellationRequested)
             {
+                await WaitForEvent(_heartbeatOnEvent);
                 await Task.Delay(25000, token);
+                if(!_heartbeatRequired)
+                {
+                    continue;
+                }
                 _heartbeatResetEvent.Reset();
                 bool heartbeatReceived = false;
                 for(int attemptNumber = 0; attemptNumber < 3; attemptNumber++)
                 {
+                    Console.WriteLine("Sending Heartbeat");
                     _servingNodeClient.SendHeartbeat(_clientSettings.UserId, _servingNodeEndpoint);
                     heartbeatReceived = await WaitForEvent(token, _heartbeatResetEvent, 1000);
                     if(token.IsCancellationRequested) return;
@@ -190,8 +218,6 @@ namespace Ropu.Client
                 }
             }
         }
-
-        ManualResetEvent _waiter = new ManualResetEvent(false);
 
         async Task Register(CancellationToken token)
         {
@@ -254,7 +280,11 @@ namespace Ropu.Client
 
         async Task StartCall(CancellationToken token)
         {
-            Console.WriteLine($"sending StartGroupCall to {_servingNodeEndpoint}");
+            if(_callGroup == 0)
+            {
+                _callGroup = IdleGroup;
+            }
+            Console.WriteLine($"sending StartGroupCall for group {_callGroup} {_servingNodeEndpoint}");
             while(!token.IsCancellationRequested)
             {
                 _servingNodeClient.StartGroupCall(_clientSettings.UserId, _callGroup, _servingNodeEndpoint);

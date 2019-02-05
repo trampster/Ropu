@@ -52,10 +52,13 @@ namespace Ropu.Client.StateModel
         Task _entryTask;
         CancellationTokenSource _entryTaskCancellationTokenSource;
 
-        public void RunExit()
+        public async void RunExit()
         {
             _entryTaskCancellationTokenSource?.Cancel();
-            _entryTask?.Wait();
+            if(_entryTask != null)
+            {
+                await _entryTask;
+            }
 
             _entryTaskCancellationTokenSource = null;
             _entryTask = null;

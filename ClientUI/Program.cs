@@ -88,8 +88,16 @@ namespace Ropu.ClientUI
             set => SetProperty(ref _groupIdError, value);
         }
 
-        public ICommand PttDownCommand => new ActionCommand(() => PttState = "PTT Down");
-        public ICommand PttUpCommand => new ActionCommand(() => PttState = "PTT Up");
+        public ICommand PttDownCommand => new ActionCommand(() => 
+        {
+            PttState = "PTT Down";
+            _ropuClient.PttDown();
+        });
+        public ICommand PttUpCommand => new ActionCommand(() => 
+        {
+            PttState = "PTT Up";
+            _ropuClient.PttUp();
+        });
     }
 
     public class MainForm : Form
@@ -119,7 +127,7 @@ namespace Ropu.ClientUI
             userIdErrorLabel.TextBinding.BindDataContext<MainViewModel>(m => m.UserIdError);
 
             var grouptextBox = new TextBox();
-            textBox.TextBinding.BindDataContext<MainViewModel>(m => m.GroupId);
+            grouptextBox.TextBinding.BindDataContext<MainViewModel>(m => m.GroupId);
             var groupErrorLabel = new Label();
             groupErrorLabel.TextBinding.BindDataContext<MainViewModel>(m => m.GroupIdError);
 
