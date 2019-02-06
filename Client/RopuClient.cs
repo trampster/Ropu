@@ -132,6 +132,7 @@ namespace Ropu.Client
             _stateManager.AddTransitionToAll(EventId.HeartbeatFailed, () => _unregistered, stateId => stateId != StateId.Unregistered);
             _stateManager.AddTransitionToAll(EventId.NotRegistered, () => _unregistered, stateId => stateId != StateId.Unregistered);
             _stateManager.AddTransitionToAll(EventId.UserIdChanged, () => _deregistering, stateId => stateId != StateId.Unregistered);
+            _stateManager.AddTransitionToAll(EventId.CallEnded, () => _registered, stateId => stateId != StateId.Unregistered && stateId != StateId.Start && stateId != StateId.Deregistering);
 
             _ipAddress = address;
         }
@@ -344,6 +345,11 @@ namespace Ropu.Client
         public void HandleRegisterResponse()
         {
             _stateManager.HandleEvent(EventId.DeregistrationResponseReceived);
+        }
+
+        public void HandleCallEnded(ushort groupId)
+        {
+            _stateManager.HandleEvent(EventId.CallEnded);
         }
     }
 }

@@ -12,5 +12,6 @@ namespace Ropu.Client
         void HandleHeartbeatResponseReceived();
         void HandleNotRegisteredReceived();
         void HandleRegisterResponse();
+        void HandleCallEnded(ushort groupId);
     }
 }

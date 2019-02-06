@@ -48,7 +48,6 @@ The client will share a port for the control, media and floor packets. This is s
 units receiving this packet should not stop playing out media they receive, this should only be used to update the UI)
 * Packet Type 2
 * Group ID (uint16)
-* Call ID (uint16)
 
 #### Start Group Call
 * Packet Type 3
@@ -74,12 +73,10 @@ units receiving this packet should not stop playing out media they receive, this
 * Packet Type 7
 * User ID (uint32) 
 * Group ID (uint16)
-* Call ID (uint16)
 
 #### Floor Released
 * Packet Type 8
 * Group ID (uint16)
-* Call ID (uint16)
 
 ### Media Plane Protocol
 Clients should play out everything they receive on the Media Plane, regardless of the call state. This way if the control messages and media packets arrive unsynchronized the client won't miss audio.
@@ -87,7 +84,7 @@ Likewise when starting a call, the client should start streaming the media to th
 
 #### Media Packet Individual Call
 * Packet Type 9 (byte)
-* Call ID (uint16)
+* Group ID (uint16)
 * Key ID (uint16) - 0 means no encryption
 * Payload
 

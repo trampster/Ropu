@@ -81,7 +81,8 @@ namespace Ropu.Client
 
         public void ParseCallEnded(Span<byte> data)
         {
-            throw new NotImplementedException();
+            ushort groupId = data.Slice(1).ParseUshort();
+            _controllingFunctionHandler?.HandleCallEnded(groupId);
         }
 
         public void ParseCallStarted(Span<byte> data)

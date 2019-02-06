@@ -23,7 +23,8 @@ namespace Ropu.Client
         UserIdChanged,
         DeregistrationResponseReceived,
         PttDown,
-        PttUp
+        PttUp,
+        CallEnded
     }
 
     public class RopuState : State<StateId, EventId>

@@ -17,7 +17,7 @@ Sent to the Controlling Function to register as a Serving Node
 Sent to the Controlling Function to register as a floor controller
 * Packet Type 1 (byte)
 * Request ID (uint16)
-* Call Control Endpoint (4 bytes IP, 2 bytes port) - this needs to be the externally facing endpoint that clients can use
+* Call Control Endpoint (4 bytes IP, 2 bytes port)
 
 ### Controller Registration Info
 Sent to Controllers after they registered

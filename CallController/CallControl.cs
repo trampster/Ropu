@@ -17,6 +17,8 @@ namespace Ropu.CallController
 
         readonly ServiceDiscovery _serviceDiscovery;
 
+        readonly GroupCallManager[] _groupCallManagers = new GroupCallManager[ushort.MaxValue];
+
         public CallControl(
             LoadBalancerProtocol loadBalancerProtocol, 
             ServiceDiscovery serviceDiscovery,
@@ -119,12 +121,23 @@ namespace Ropu.CallController
             _loadBalancerProtocol.SendAck(requestId, endPoint);
         }
 
+        GroupCallManager GetCallManager(ushort groupId)
+        {
+            var callManager = _groupCallManagers[groupId];
+            if(callManager == null)
+            {
+                callManager = new GroupCallManager(groupId, _ropuProtocol, _servingNodes);
+                _groupCallManagers[groupId] = callManager;
+            }
+            return callManager;
+        }
+
         public void HandleStartGroupCall(ushort groupId, uint userId)
         {
+            var callManager = GetCallManager(groupId);
             //Send Call Started to all Serving Nodes
-            var endPointsReader = _servingNodes.EndPoints;
-            _ropuProtocol.SendCallStarted(userId, groupId, endPointsReader.GetSpan());
-            endPointsReader.Release();
+            callManager.StartCall(userId);
+            
         }
     }
 }

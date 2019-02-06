@@ -202,6 +202,17 @@ namespace Ropu.CallController
             BulkSendAsync(buffer, 7, endPoints, () => _sendBufferPool.Add(buffer));
         }
 
+        public void SendCallEnded(ushort groupId, Span<IPEndPoint> endPoints)
+        {
+            var buffer = _sendBufferPool.Get();
+            // Packet Type
+            buffer[0] = (byte)RopuPacketType.CallEnded;
+            // Group ID (uint16)
+            buffer.WriteUshort(groupId, 1);
+
+            BulkSendAsync(buffer, 3, endPoints, () => _sendBufferPool.Add(buffer));
+        }
+
         public void SendCallStartFailed(CallFailedReason reason, uint userId, IPEndPoint endPoint)
         {
             var buffer = _sendBufferPool.Get();
