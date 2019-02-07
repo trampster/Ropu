@@ -103,8 +103,12 @@ namespace Ropu.Client
                 //floor
                 case RopuPacketType.FloorDenied:
                     throw new NotImplementedException();
-                case RopuPacketType.FloorGranted:
-                    throw new NotImplementedException();
+                case RopuPacketType.FloorTaken:
+                    _controlPacketParser?.ParseFloorTaken(data);
+                    break;
+                case RopuPacketType.FloorIdle:
+                    _controlPacketParser?.ParseFloorIdle(data);
+                    break;
                 case RopuPacketType.FloorReleased:
                     throw new NotImplementedException();
                 //media

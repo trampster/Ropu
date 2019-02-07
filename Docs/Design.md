@@ -26,9 +26,9 @@ No variable length fields for messages that will be sent to all participants  (f
 No unique identifiers, (the same packet can be sent to all participants without modification)
 Media and ports will be negotiated at registration time, not all call setup.
 Presence will be keeped up to date via control plane messages so that we already know who can receive a call when it starts.
-When group call starts, media will immediately be streamed to all participant, control plane messages identifying the group and talker will be sent concurrently but clients should not wait for them to unmute.
+When group call starts, media will immediately be streamed to all participants. The initiator will implicately granted the floor (no floor taken message sent). Call start will be sent concurrently with media but clients should not wait for them to unmute.
 The floor will be requested by sending media.
-The exact same floor granted message will be sent to all participants including the requester.
+The exact same floor taken message will be sent to all participants including the requester.
 Floor denied will be sent only to the requester.
 
 The client will share a port for the control, media and floor packets. This is so we only need to keep one mapping alive through the NAT rather than three. For this reason the packet type field needs to be unique accross all three protocols.
@@ -69,13 +69,17 @@ units receiving this packet should not stop playing out media they receive, this
 * Packet Type 6
 * User ID (uint32)
 
-#### Floor Granted
+#### Floor Taken
 * Packet Type 7
+* Group ID (uint16)
 * User ID (uint32) 
+
+#### Floor Idle
+* Packet Type 8
 * Group ID (uint16)
 
 #### Floor Released
-* Packet Type 8
+* Packet Type 9
 * Group ID (uint16)
 
 ### Media Plane Protocol
@@ -83,13 +87,13 @@ Clients should play out everything they receive on the Media Plane, regardless o
 Likewise when starting a call, the client should start streaming the media to the server as soon as they have received the Start Call Response before receiving floor granted. The call initiator is implicitly granted the floor.
 
 #### Media Packet Individual Call
-* Packet Type 9 (byte)
+* Packet Type 10 (byte)
 * Group ID (uint16)
 * Key ID (uint16) - 0 means no encryption
 * Payload
 
 ### Media Packet Group Call
-* Packet Type 10 (byte)
+* Packet Type 11 (byte)
 * Group Id (uint16)
 * Sequence Number (uint16)
 * User ID (uint32)
@@ -97,19 +101,19 @@ Likewise when starting a call, the client should start streaming the media to th
 * Payload
 
 ### Heartbeat
-* Packet Type 11 (byte)
+* Packet Type 12 (byte)
 * User ID (uint32)
 
 ### Heartbeat Resposne
-* Packet Type 12 (byte)
+* Packet Type 13 (byte)
 
 ### Not Registered
 Sent when the serving node receives a packet from a client that isn't registered
-* Packet Type 13 (byte)
+* Packet Type 14 (byte)
 
 ### Deregister
-* Packet Type 14 (byte)
+* Packet Type 15 (byte)
 * User ID (uint32)
 
 ### Deregister Rsponse
-* Packet Type 15 (byte)
+* Packet Type 16 (byte)

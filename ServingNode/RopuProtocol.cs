@@ -112,6 +112,8 @@ namespace Ropu.ServingNode
                 }
                 case RopuPacketType.GroupCallStarted:
                 case RopuPacketType.CallEnded:
+                case RopuPacketType.FloorTaken:
+                case RopuPacketType.FloorIdle:
                 {
                     ushort groupId = data.Slice(1).ParseUshort();
                     _messageHandler?.HandleMediaPacket(groupId, buffer, ammountRead, endPoint);

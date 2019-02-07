@@ -11,8 +11,9 @@ namespace Ropu.Shared.ControlProtocol
         CallStartFailed = 5,
         //Floor Control
         FloorDenied = 6,
-        FloorGranted = 7,
-        FloorReleased = 8,
+        FloorTaken = 7,
+        FloorIdle = 8,
+        FloorReleased = 9,
         //Media 
         MediaPacketIndivdualCall = 9,
         MediaPacketGroupCall = 10,

@@ -1,5 +1,6 @@
 using System;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using Ropu.Shared;
 using Ropu.Shared.Concurrent;
@@ -25,6 +26,7 @@ namespace Ropu.CallController
         }
 
         DateTime _lastActivity;
+        CancellationTokenSource _callCancellationTokenSource;
         
         public void StartCall(uint userId)
         {
@@ -37,21 +39,39 @@ namespace Ropu.CallController
             _talker = userId;
             _callInitiator = userId;
 
-            _servingNodesReader?.Release();
 
+            _servingNodesReader?.Release();
             _servingNodesReader = _servingNodes.EndPoints;
-            _ropuProtocol.SendCallStarted(userId, _groupId, _servingNodesReader.GetSpan());
+            _ropuProtocol.SendCallStarted(_talker.Value, _groupId, _servingNodesReader.GetSpan());
 
             Console.WriteLine($"Called started with group {_groupId} initiator {userId}");
 
-            RunIdleTimer();
+            _callCancellationTokenSource = new CancellationTokenSource();
+
+            var cancellationToken = _callCancellationTokenSource.Token;
+            RunIdleTimer(cancellationToken);
+            RunPeriodicUpdates(cancellationToken);
         }
 
-        async void RunIdleTimer()
+        async void RunPeriodicUpdates(CancellationToken token)
+        {
+            while(!token.IsCancellationRequested)
+            {
+                await Task.Delay(2000, token);
+                if(_talker == null)
+                {
+                    _ropuProtocol.SendFloorIdle(_groupId, _servingNodesReader.GetSpan());
+                    continue;
+                }
+                _ropuProtocol.SendFloorTaken(_talker.Value, _groupId, _servingNodesReader.GetSpan());
+            }
+        }
+
+        async void RunIdleTimer(CancellationToken token)
         {
             _lastActivity = DateTime.UtcNow;
             const int callHangTime = 30000;
-            while(true)
+            while(!token.IsCancellationRequested)
             {
                 var now = DateTime.UtcNow;
                 var expiryTime = _lastActivity.AddMilliseconds(callHangTime);
@@ -61,11 +81,11 @@ namespace Ropu.CallController
                     _ropuProtocol.SendCallEnded(_groupId, _servingNodesReader.GetSpan());
                     _callInProgress = false;
                     Console.WriteLine($"Call ended because idle timer expired after {callHangTime/1000} seconds.");
-
+                    _callCancellationTokenSource.Cancel();
                     return;
                 }
                 int timeToWait = (int)expiryTime.Subtract(now).TotalMilliseconds;
-                await Task.Delay(timeToWait);
+                await Task.Delay(timeToWait, token);
             }
         }
     }

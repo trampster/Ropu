@@ -227,5 +227,30 @@ namespace Ropu.CallController
 
             _sendBufferPool.Add(buffer);
         }
+
+        public void SendFloorTaken(uint userId, ushort groupId, Span<IPEndPoint> endPoints)
+        {
+            var buffer = _sendBufferPool.Get();
+            // Packet Type
+            buffer[0] = (byte)RopuPacketType.FloorTaken;
+            // Group ID (ushort) 
+            buffer.WriteUshort(groupId, 1);
+            // User ID (uint32) 
+            buffer.WriteUint(userId, 3);
+            
+
+            BulkSendAsync(buffer, 7, endPoints, () => _sendBufferPool.Add(buffer));
+        }
+
+        public void SendFloorIdle(ushort groupId, Span<IPEndPoint> endPoints)
+        {
+            var buffer = _sendBufferPool.Get();
+            // Packet Type
+            buffer[0] = (byte)RopuPacketType.FloorIdle;
+            // Group ID (ushort) 
+            buffer.WriteUshort(groupId, 1);
+
+            BulkSendAsync(buffer, 3, endPoints, () => _sendBufferPool.Add(buffer));
+        }
     }
 }

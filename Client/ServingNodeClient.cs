@@ -120,5 +120,15 @@ namespace Ropu.Client
         {
             _controllingFunctionHandler?.HandleRegisterResponse();
         }
+
+        public void ParseFloorTaken(Span<byte> data)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ParseFloorIdle(Span<byte> data)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
