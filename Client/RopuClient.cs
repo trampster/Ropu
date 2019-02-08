@@ -26,7 +26,11 @@ namespace Ropu.Client
         RopuState _unregistered;
         RopuState _deregistering;
         RopuState _startingCall;
-        RopuState _callInProgress;
+        RopuState _inCallIdle;
+        RopuState _inCallReceiveing;
+        RopuState _inCallTransmitting;
+        RopuState _inCallReleasingFloor;
+
         StateManager<StateId, EventId> _stateManager;
         LoadBalancerProtocol _loadBalancerProtocol;
 
@@ -91,7 +95,6 @@ namespace Ropu.Client
             };
             _stateManager.AddState(_registered);
             _registered.AddTransition(EventId.CallRequest, () => _startingCall);
-            _registered.AddTransition(EventId.CallStarted, () => _callInProgress);
             _registered.AddTransition(EventId.PttDown, () => _startingCall);
 
             //unregistered
@@ -120,12 +123,37 @@ namespace Ropu.Client
                 Entry = async token => await StartCall(token),
             };
             _startingCall.AddTransition(EventId.CallStartFailed, () => _registered);
-            _startingCall.AddTransition(EventId.CallStarted, () => _callInProgress);
             _stateManager.AddState(_startingCall);
 
-            //call in progress
-            _callInProgress = new RopuState(StateId.CallInProgress);
-            _stateManager.AddState(_callInProgress);
+            //in call idle
+            _inCallIdle = new RopuState(StateId.InCallIdle);
+            _stateManager.AddState(_inCallIdle);
+
+            //in call receiving
+            _inCallReceiveing = new RopuState(StateId.InCallReceiving);
+            _stateManager.AddState(_inCallReceiveing);
+
+            //in call transmitting
+            _inCallTransmitting = new RopuState(StateId.InCallTransmitting);
+            _inCallTransmitting.AddTransition(EventId.PttUp, () => _inCallReleasingFloor);
+            _stateManager.AddState(_inCallTransmitting);
+
+
+            //in call releasing floor
+            _inCallReleasingFloor = new RopuState(StateId.InCallReleasingFloor)
+            {
+                Entry = token => 
+                {
+                    _servingNodeClient.SendFloorReleased(_callGroup, _servingNodeEndpoint);
+                    return new Task(() => {});
+                }
+            };
+            _inCallReleasingFloor.AddTransition(EventId.FloorGranted, () => _inCallReleasingFloor);
+            _stateManager.AddState(_inCallReleasingFloor);
+
+
+            _inCallReleasingFloor.AddTransition(EventId.FloorGranted, () => _inCallReleasingFloor);
+
 
             _stateManager.StateChanged += (sender, args) => StateChanged?.Invoke(this, args);
             
@@ -133,6 +161,9 @@ namespace Ropu.Client
             _stateManager.AddTransitionToAll(EventId.NotRegistered, () => _unregistered, stateId => stateId != StateId.Unregistered);
             _stateManager.AddTransitionToAll(EventId.UserIdChanged, () => _deregistering, stateId => stateId != StateId.Unregistered);
             _stateManager.AddTransitionToAll(EventId.CallEnded, () => _registered, stateId => stateId != StateId.Unregistered && stateId != StateId.Start && stateId != StateId.Deregistering);
+            _stateManager.AddTransitionToAll(EventId.FloorIdle, () => _inCallIdle, stateId => true);
+            _stateManager.AddTransitionToAll(EventId.FloorTaken, () => _inCallReceiveing, stateId => true);
+            _stateManager.AddTransitionToAll(EventId.FloorGranted, () => _inCallTransmitting, stateId => stateId != StateId.InCallReleasingFloor);
 
             _ipAddress = address;
         }
@@ -299,13 +330,21 @@ namespace Ropu.Client
             set => _idleGroup = value;
         }
 
+        bool IsPttDown
+        {
+            get;
+            set;
+        }
+
         public void PttUp()
         {
-
+            IsPttDown = false;
+            _stateManager.HandleEvent(EventId.PttUp);
         }
 
         public void PttDown()
         {
+            IsPttDown = true;
             _stateManager.HandleEvent(EventId.PttDown);
         }
 
@@ -319,11 +358,6 @@ namespace Ropu.Client
         public void HandleRegistrationResponseReceived(Codec codec, ushort bitrate)
         {
             _stateManager.HandleEvent(EventId.RegistrationResponseReceived);
-        }
-
-        public void HandleCallStarted(ushort groupId, uint userId)
-        {
-            _stateManager.HandleEvent(EventId.CallStarted);
         }
 
         public void HandleCallStartFailed(CallFailedReason reason)
@@ -350,6 +384,32 @@ namespace Ropu.Client
         public void HandleCallEnded(ushort groupId)
         {
             _stateManager.HandleEvent(EventId.CallEnded);
+        }
+
+        public uint? Talker
+        {
+            get;
+            set;
+        }
+
+        public void HandleFloorTaken(ushort groupId, uint userId)
+        {
+            _callGroup = groupId;
+            Talker = userId;
+            
+            if(_clientSettings.UserId == userId)
+            {
+                _stateManager.HandleEvent(EventId.FloorGranted);
+                return;
+            }
+            _stateManager.HandleEvent(EventId.FloorTaken);
+        }
+
+        public void HandleFloorIdle(ushort groupId)
+        {
+            _callGroup = groupId;
+            Talker = null;
+            _stateManager.HandleEvent(EventId.FloorIdle);
         }
     }
 }

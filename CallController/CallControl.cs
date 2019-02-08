@@ -135,9 +135,14 @@ namespace Ropu.CallController
         public void HandleStartGroupCall(ushort groupId, uint userId)
         {
             var callManager = GetCallManager(groupId);
-            //Send Call Started to all Serving Nodes
             callManager.StartCall(userId);
             
+        }
+
+        public void HandleFloorReleased(ushort groupId)
+        {
+            var callManager = GetCallManager(groupId);
+            callManager.FloorReleased();
         }
     }
 }

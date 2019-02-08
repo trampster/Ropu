@@ -54,11 +54,6 @@ units receiving this packet should not stop playing out media they receive, this
 * Group ID ((uint16))
 * User ID (uint32)
 
-#### Group Call Started (IPv4)
-* Packet Type 4
-* Group ID (uint16)
-* User Id (uint32)
-
 ### Call Start Failed
 * Packet Type 5
 * User ID (uint32)

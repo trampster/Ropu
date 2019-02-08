@@ -93,6 +93,12 @@ namespace Ropu.CallController
                     _messageHandler?.HandleStartGroupCall(groupId, userId);
                     break;
                 }
+                case RopuPacketType.FloorReleased:
+                {
+                    ushort groupId = data.Slice(1).ParseUshort();
+                    _messageHandler?.HandleFloorReleased(groupId);
+                    break;
+                }
             }
         }
 
@@ -185,21 +191,6 @@ namespace Ropu.CallController
                 }
                 _onBulkAsyncFinished = onComplete;
             }
-        }
-
-        public void SendCallStarted(
-            uint userId, ushort groupId,
-            Span<IPEndPoint> endPoints)
-        {
-            var buffer = _sendBufferPool.Get();
-            // Packet Type
-            buffer[0] = (byte)RopuPacketType.GroupCallStarted;
-            // Group ID (uint16)
-            buffer.WriteUshort(groupId, 1);
-            // User Id (uint32)
-            buffer.WriteUint(userId, 3);
-
-            BulkSendAsync(buffer, 7, endPoints, () => _sendBufferPool.Add(buffer));
         }
 
         public void SendCallEnded(ushort groupId, Span<IPEndPoint> endPoints)

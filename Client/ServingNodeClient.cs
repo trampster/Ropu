@@ -85,16 +85,6 @@ namespace Ropu.Client
             _controllingFunctionHandler?.HandleCallEnded(groupId);
         }
 
-        public void ParseCallStarted(Span<byte> data)
-        {
-            // Group ID (uint16)
-            ushort groupId = data.Slice(1).ParseUshort();
-            // User Id (uint32), skip
-            uint userId = data.Slice(3).ParseUint();
-            
-            _controllingFunctionHandler?.HandleCallStarted(groupId, userId);
-        }
-
         public void ParseCallStartFailed(Span<byte> data)
         {
             //User Id (uint) don't parse this is it should only arrive if it's for us, it will just waste cpu cycles
@@ -116,6 +106,17 @@ namespace Ropu.Client
             _protocolSwitch.Send(5, servingNodeEndpoint);
         }
 
+        public void SendFloorReleased(ushort callGroup, IPEndPoint servingNodeEndpoint)
+        {
+            var sendBuffer = _protocolSwitch.SendBuffer();
+            //packet type (byte)
+            sendBuffer[0] = (byte)RopuPacketType.FloorReleased;
+            // User ID (uint32)
+            sendBuffer.WriteUshort(callGroup, 1);
+
+            _protocolSwitch.Send(3, servingNodeEndpoint);
+        }
+
         public void ParseDeregisterResponse(Span<byte> data)
         {
             _controllingFunctionHandler?.HandleRegisterResponse();
@@ -123,12 +124,20 @@ namespace Ropu.Client
 
         public void ParseFloorTaken(Span<byte> data)
         {
-            throw new NotImplementedException();
+            // Group ID (uint16)
+            ushort groupId = data.Slice(1).ParseUshort();
+            // User Id (uint32), skip
+            uint userId = data.Slice(3).ParseUint();
+            
+            _controllingFunctionHandler?.HandleFloorTaken(groupId, userId);
         }
 
         public void ParseFloorIdle(Span<byte> data)
         {
-            throw new NotImplementedException();
+            // Group ID (uint16)
+            ushort groupId = data.Slice(1).ParseUshort();
+            
+            _controllingFunctionHandler?.HandleFloorIdle(groupId);
         }
     }
 }

@@ -105,12 +105,12 @@ namespace Ropu.ServingNode
                     break;
                 }
                 case RopuPacketType.StartGroupCall:
+                case RopuPacketType.FloorReleased:
                 {
                     ushort groupId = data.Slice(1).ParseUshort();
                     _messageHandler?.HandleCallControllerMessage(groupId, buffer, ammountRead);
                     break;
                 }
-                case RopuPacketType.GroupCallStarted:
                 case RopuPacketType.CallEnded:
                 case RopuPacketType.FloorTaken:
                 case RopuPacketType.FloorIdle:
@@ -247,24 +247,6 @@ namespace Ropu.ServingNode
             _sendBuffer.WriteUshort(8000, 8);
 
             _socket.SendTo(_sendBuffer, 0, 10, SocketFlags.None, endPoint);
-        }
-
-        public void SendCallStarted(
-            uint userId, ushort groupId, ushort callId, 
-            IPEndPoint mediaEndpoint, IPEndPoint floorControlEndpoint, 
-            IEnumerable<IPEndPoint> endPoints)
-        {
-            // Packet Type
-            _sendBuffer[0] = (byte)RopuPacketType.GroupCallStarted;
-            // Group ID (uint16)
-            _sendBuffer.WriteUshort(groupId, 1);
-            // User Id (uint32)
-            _sendBuffer.WriteUint(userId, 3);
-
-            foreach(var endpoint in endPoints)
-            {
-                _socket.SendTo(_sendBuffer, 0, 7, SocketFlags.None, endpoint);
-            }
         }
 
         public void SendCallStartFailed(CallFailedReason reason, uint userId, IPEndPoint endPoint)

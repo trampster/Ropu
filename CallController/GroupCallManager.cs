@@ -42,7 +42,7 @@ namespace Ropu.CallController
 
             _servingNodesReader?.Release();
             _servingNodesReader = _servingNodes.EndPoints;
-            _ropuProtocol.SendCallStarted(_talker.Value, _groupId, _servingNodesReader.GetSpan());
+            _ropuProtocol.SendFloorTaken(_talker.Value, _groupId, _servingNodesReader.GetSpan());
 
             Console.WriteLine($"Called started with group {_groupId} initiator {userId}");
 
@@ -55,38 +55,58 @@ namespace Ropu.CallController
 
         async void RunPeriodicUpdates(CancellationToken token)
         {
-            while(!token.IsCancellationRequested)
+            try
             {
-                await Task.Delay(2000, token);
-                if(_talker == null)
+                while(!token.IsCancellationRequested)
                 {
-                    _ropuProtocol.SendFloorIdle(_groupId, _servingNodesReader.GetSpan());
-                    continue;
+                    await Task.Delay(2000, token);
+                    if(_talker == null)
+                    {
+                        _ropuProtocol.SendFloorIdle(_groupId, _servingNodesReader.GetSpan());
+                        continue;
+                    }
+                    _ropuProtocol.SendFloorTaken(_talker.Value, _groupId, _servingNodesReader.GetSpan());
                 }
-                _ropuProtocol.SendFloorTaken(_talker.Value, _groupId, _servingNodesReader.GetSpan());
+            }
+            catch(TaskCanceledException)
+            {
             }
         }
 
         async void RunIdleTimer(CancellationToken token)
         {
-            _lastActivity = DateTime.UtcNow;
-            const int callHangTime = 30000;
-            while(!token.IsCancellationRequested)
+            try
             {
-                var now = DateTime.UtcNow;
-                var expiryTime = _lastActivity.AddMilliseconds(callHangTime);
-                if(now > expiryTime)
+                _lastActivity = DateTime.UtcNow;
+                const int callHangTime = 30000;
+                while(!token.IsCancellationRequested)
                 {
-                    //end the call
-                    _ropuProtocol.SendCallEnded(_groupId, _servingNodesReader.GetSpan());
-                    _callInProgress = false;
-                    Console.WriteLine($"Call ended because idle timer expired after {callHangTime/1000} seconds.");
-                    _callCancellationTokenSource.Cancel();
-                    return;
+                    var now = DateTime.UtcNow;
+                    var expiryTime = _lastActivity.AddMilliseconds(callHangTime);
+                    if(now > expiryTime)
+                    {
+                        //end the call
+                        _ropuProtocol.SendCallEnded(_groupId, _servingNodesReader.GetSpan());
+                        _callInProgress = false;
+                        Console.WriteLine($"Call ended because idle timer expired after {callHangTime/1000} seconds.");
+                        _callCancellationTokenSource.Cancel();
+                        return;
+                    }
+                    int timeToWait = (int)expiryTime.Subtract(now).TotalMilliseconds;
+                    await Task.Delay(timeToWait, token);
                 }
-                int timeToWait = (int)expiryTime.Subtract(now).TotalMilliseconds;
-                await Task.Delay(timeToWait, token);
             }
+            catch(TaskCanceledException)
+            {
+            }
+        }
+
+        public void FloorReleased()
+        {
+            Console.WriteLine("Releasing Floor");
+            //TODO: we need to know the talk, otherwise we could be releasing someone elses floor.
+            _talker = null;
+            _ropuProtocol.SendFloorIdle(_groupId, _servingNodesReader.GetSpan());
         }
     }
 }
