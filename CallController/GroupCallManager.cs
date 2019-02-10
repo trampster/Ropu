@@ -101,12 +101,42 @@ namespace Ropu.CallController
             }
         }
 
-        public void FloorReleased()
+        public void FloorReleased(uint userId)
         {
+            if(_talker == null)
+            {
+                Console.WriteLine($"Got floor released from {userId} but the floor is idle");
+                return;
+            }
+
+            if(_talker != userId)
+            {
+                Console.WriteLine($"Got floor released from {userId} but {_talker} has the floor");
+                return;
+            }
             Console.WriteLine("Releasing Floor");
-            //TODO: we need to know the talk, otherwise we could be releasing someone elses floor.
             _talker = null;
             _ropuProtocol.SendFloorIdle(_groupId, _servingNodesReader.GetSpan());
+        }
+
+        public void FloorRequest(uint userId)
+        {
+            if(_talker == userId)
+            {
+                Console.WriteLine($"Got floor request from {userId} but they already have the floor");
+                //send another floor taken so they figure it out
+                _ropuProtocol.SendFloorTaken(_talker.Value, _groupId, _servingNodesReader.GetSpan());
+                return;
+            }
+            if(_talker != null)
+            {
+                Console.WriteLine($"Got floor request from {userId} but {_talker.Value} has the floor");
+                _ropuProtocol.SendFloorDenied(_groupId, userId);
+            }
+            Console.WriteLine($"Floor granted to {userId} for group {_groupId}");
+            _talker = userId;
+            _ropuProtocol.SendFloorTaken(userId, _groupId, _servingNodesReader.GetSpan());
+
         }
     }
 }

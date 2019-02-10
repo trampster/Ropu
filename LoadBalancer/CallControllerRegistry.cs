@@ -151,7 +151,7 @@ namespace Ropu.LoadBalancer
                         return;
                     }
                     var group = enumerator.Current;
-                    controller.AddGroup(_unassignedGroups.Dequeue());
+                    controller.AddGroup(group);
                     list.Add(new GroupCallController(){EndPoint = controller.CallEndPoint, GroupId = group});
                 }
             }

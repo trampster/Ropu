@@ -106,8 +106,6 @@ namespace Ropu.Client
                 case RopuPacketType.FloorIdle:
                     _controlPacketParser?.ParseFloorIdle(data);
                     break;
-                case RopuPacketType.FloorReleased:
-                    throw new NotImplementedException();
                 //media
                 case RopuPacketType.MediaPacketGroupCall:
                     _mediaPacketParser?.ParseMediaPacketGroupCall(data);

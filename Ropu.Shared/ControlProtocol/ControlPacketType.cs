@@ -13,15 +13,16 @@ namespace Ropu.Shared.ControlProtocol
         FloorTaken = 7,
         FloorIdle = 8,
         FloorReleased = 9,
+        FloorRequest = 10,
         //Media 
-        MediaPacketIndivdualCall = 9,
-        MediaPacketGroupCall = 10,
-        Heartbeat = 11,
+        MediaPacketIndivdualCall = 11,
+        MediaPacketGroupCall = 12,
+        Heartbeat = 13,
 
         //more control
-        HeartbeatResponse = 12,
-        NotRegistered = 13,
-        Deregister = 14,
-        DeregisterResponse = 15
+        HeartbeatResponse = 14,
+        NotRegistered = 15,
+        Deregister = 16,
+        DeregisterResponse = 17
     }
 }

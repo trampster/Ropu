@@ -139,10 +139,16 @@ namespace Ropu.CallController
             
         }
 
-        public void HandleFloorReleased(ushort groupId)
+        public void HandleFloorReleased(ushort groupId, uint userId)
         {
             var callManager = GetCallManager(groupId);
-            callManager.FloorReleased();
+            callManager.FloorReleased(userId);
+        }
+
+        public void HandleFloorRequest(ushort groupId, uint userId)
+        {
+            var callManager = GetCallManager(groupId);
+            callManager.FloorRequest(userId);
         }
     }
 }

@@ -12,7 +12,8 @@ namespace Ropu.Client
         InCallTransmitting,
         InCallReceiving,
         Deregistering,
-        InCallReleasingFloor
+        InCallReleasingFloor,
+        InCallRequestingFloor
     }
 
     public enum EventId

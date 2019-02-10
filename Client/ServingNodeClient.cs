@@ -106,15 +106,31 @@ namespace Ropu.Client
             _protocolSwitch.Send(5, servingNodeEndpoint);
         }
 
-        public void SendFloorReleased(ushort callGroup, IPEndPoint servingNodeEndpoint)
+        public void SendFloorReleased(ushort callGroup, uint userId, IPEndPoint servingNodeEndpoint)
         {
             var sendBuffer = _protocolSwitch.SendBuffer();
             //packet type (byte)
             sendBuffer[0] = (byte)RopuPacketType.FloorReleased;
-            // User ID (uint32)
+            // Group ID (ushort)
             sendBuffer.WriteUshort(callGroup, 1);
+            // User ID (uint)
+            sendBuffer.WriteUint(userId, 3);
 
-            _protocolSwitch.Send(3, servingNodeEndpoint);
+
+            _protocolSwitch.Send(7, servingNodeEndpoint);
+        }
+
+        public void SendFloorRequest(ushort callGroup, uint userId, IPEndPoint servingNodeEndpoint)
+        {
+            var sendBuffer = _protocolSwitch.SendBuffer();
+            //packet type (byte)
+            sendBuffer[0] = (byte)RopuPacketType.FloorRequest;
+             // Group ID (ushort)
+            sendBuffer.WriteUshort(callGroup, 1);
+            // User ID (uint)
+            sendBuffer.WriteUint(userId, 3);
+
+            _protocolSwitch.Send(7, servingNodeEndpoint);
         }
 
         public void ParseDeregisterResponse(Span<byte> data)

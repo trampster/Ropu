@@ -27,7 +27,6 @@ No unique identifiers, (the same packet can be sent to all participants without 
 Media and ports will be negotiated at registration time, not all call setup.
 Presence will be keeped up to date via control plane messages so that we already know who can receive a call when it starts.
 When group call starts, media will immediately be streamed to all participants. The initiator will implicately granted the floor (no floor taken message sent). Call start will be sent concurrently with media but clients should not wait for them to unmute.
-The floor will be requested by sending media.
 The exact same floor taken message will be sent to all participants including the requester.
 Floor denied will be sent only to the requester.
 
@@ -62,6 +61,7 @@ units receiving this packet should not stop playing out media they receive, this
 ### Floor Control Protocol
 #### Floor Denied
 * Packet Type 6
+* Group ID (uint16)
 * User ID (uint32)
 
 #### Floor Taken
@@ -76,19 +76,25 @@ units receiving this packet should not stop playing out media they receive, this
 #### Floor Released
 * Packet Type 9
 * Group ID (uint16)
+* User ID (uint32) 
+
+#### Floor Request
+* Packet Type 10
+* Group ID (uint16)
+* User ID (uint32) 
 
 ### Media Plane Protocol
 Clients should play out everything they receive on the Media Plane, regardless of the call state. This way if the control messages and media packets arrive unsynchronized the client won't miss audio.
 Likewise when starting a call, the client should start streaming the media to the server as soon as they have received the Start Call Response before receiving floor granted. The call initiator is implicitly granted the floor.
 
 #### Media Packet Individual Call
-* Packet Type 10 (byte)
+* Packet Type 11 (byte)
 * Group ID (uint16)
 * Key ID (uint16) - 0 means no encryption
 * Payload
 
 ### Media Packet Group Call
-* Packet Type 11 (byte)
+* Packet Type 12 (byte)
 * Group Id (uint16)
 * Sequence Number (uint16)
 * User ID (uint32)
@@ -96,19 +102,19 @@ Likewise when starting a call, the client should start streaming the media to th
 * Payload
 
 ### Heartbeat
-* Packet Type 12 (byte)
+* Packet Type 13 (byte)
 * User ID (uint32)
 
 ### Heartbeat Resposne
-* Packet Type 13 (byte)
+* Packet Type 14 (byte)
 
 ### Not Registered
 Sent when the serving node receives a packet from a client that isn't registered
-* Packet Type 14 (byte)
+* Packet Type 15 (byte)
 
 ### Deregister
-* Packet Type 15 (byte)
+* Packet Type 16 (byte)
 * User ID (uint32)
 
 ### Deregister Rsponse
-* Packet Type 16 (byte)
+* Packet Type 17 (byte)

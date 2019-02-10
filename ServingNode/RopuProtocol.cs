@@ -111,6 +111,12 @@ namespace Ropu.ServingNode
                     _messageHandler?.HandleCallControllerMessage(groupId, buffer, ammountRead);
                     break;
                 }
+                case RopuPacketType.FloorRequest:
+                {
+                    ushort groupId = data.Slice(1).ParseUshort();
+                    _messageHandler?.HandleCallControllerMessage(groupId, buffer, ammountRead);
+                    break;
+                }
                 case RopuPacketType.CallEnded:
                 case RopuPacketType.FloorTaken:
                 case RopuPacketType.FloorIdle:

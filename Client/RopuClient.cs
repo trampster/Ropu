@@ -30,6 +30,7 @@ namespace Ropu.Client
         RopuState _inCallReceiveing;
         RopuState _inCallTransmitting;
         RopuState _inCallReleasingFloor;
+        RopuState _inCallRequestingFloor;
 
         StateManager<StateId, EventId> _stateManager;
         LoadBalancerProtocol _loadBalancerProtocol;
@@ -127,6 +128,7 @@ namespace Ropu.Client
 
             //in call idle
             _inCallIdle = new RopuState(StateId.InCallIdle);
+            _inCallIdle.AddTransition(EventId.PttDown, () => _inCallRequestingFloor);
             _stateManager.AddState(_inCallIdle);
 
             //in call receiving
@@ -138,13 +140,23 @@ namespace Ropu.Client
             _inCallTransmitting.AddTransition(EventId.PttUp, () => _inCallReleasingFloor);
             _stateManager.AddState(_inCallTransmitting);
 
+            //in call requesting floor
+            _inCallRequestingFloor = new RopuState(StateId.InCallRequestingFloor)
+            {
+                Entry = token => 
+                {
+                    _servingNodeClient.SendFloorRequest(_callGroup, _clientSettings.UserId, _servingNodeEndpoint);
+                    return new Task(() => {});
+                }
+            };
+            _stateManager.AddState(_inCallRequestingFloor);
 
             //in call releasing floor
             _inCallReleasingFloor = new RopuState(StateId.InCallReleasingFloor)
             {
                 Entry = token => 
                 {
-                    _servingNodeClient.SendFloorReleased(_callGroup, _servingNodeEndpoint);
+                    _servingNodeClient.SendFloorReleased(_callGroup, _clientSettings.UserId, _servingNodeEndpoint);
                     return new Task(() => {});
                 }
             };

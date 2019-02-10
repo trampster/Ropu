@@ -96,7 +96,15 @@ namespace Ropu.CallController
                 case RopuPacketType.FloorReleased:
                 {
                     ushort groupId = data.Slice(1).ParseUshort();
-                    _messageHandler?.HandleFloorReleased(groupId);
+                    uint userId = data.Slice(3).ParseUint();
+                    _messageHandler?.HandleFloorReleased(groupId, userId);
+                    break;
+                }
+                case RopuPacketType.FloorRequest:
+                {
+                    ushort groupId = data.Slice(1).ParseUshort();
+                    uint userId = data.Slice(3).ParseUint();
+                    _messageHandler?.HandleFloorRequest(groupId, userId);
                     break;
                 }
             }
@@ -134,6 +142,11 @@ namespace Ropu.CallController
                 }
 
             }
+        }
+
+        internal void SendFloorDenied(ushort groupId, uint userId)
+        {
+            throw new NotImplementedException();
         }
 
         public void BulkSendAsync(byte[] buffer, int length, Span<IPEndPoint> endPoints, Action onComplete, IPEndPoint except)
