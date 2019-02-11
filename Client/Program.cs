@@ -26,7 +26,8 @@ namespace Ropu.Client
 
             var protocolSwitch = new ProtocolSwitch(_controlPortStarting, new PortFinder());
             var servingNodeClient = new ServingNodeClient(protocolSwitch);
-            _mediaClient = new MediaClient(protocolSwitch);
+            var audioSource = new AlsaAudioSource();
+            _mediaClient = new MediaClient(protocolSwitch, audioSource, settings);
             var callManagementProtocol = new LoadBalancerProtocol(new PortFinder(), 5079);
 
             var ipAddress = IPAddress.Parse(MyAddress);
@@ -75,27 +76,12 @@ namespace Ropu.Client
                     }
                     _ropuClient.StartCall(group);
                     break;
-                case 'm':
-                    SendMedia();
-                    break;
                 default:
                     Console.WriteLine("I'm not sure what you mean.");
                     break;
-
             }
         }
 
-        static void SendMedia()
-        {
-            var ipAddress = IPAddress.Parse(LoadBalancerIP);
-            var endPoint = new IPEndPoint(ipAddress, 5065);
-            var payload = new byte[] {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20};
-            while(true)
-            {
-                _mediaClient.SendMediaPacket(13, payload, endPoint);
-                System.Threading.Thread.Sleep(200);
-            }
-        }
 
 
     }

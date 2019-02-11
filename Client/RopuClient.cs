@@ -19,8 +19,6 @@ namespace Ropu.Client
         readonly ProtocolSwitch _protocolSwitch;
         readonly IClientSettings _clientSettings;
 
-        IPEndPoint _servingNodeEndpoint;
-
         RopuState _start;
         RopuState _registered;
         RopuState _unregistered;
@@ -145,7 +143,7 @@ namespace Ropu.Client
             {
                 Entry = token => 
                 {
-                    _servingNodeClient.SendFloorRequest(_callGroup, _clientSettings.UserId, _servingNodeEndpoint);
+                    _servingNodeClient.SendFloorRequest(_callGroup, _clientSettings.UserId);
                     return new Task(() => {});
                 }
             };
@@ -156,7 +154,7 @@ namespace Ropu.Client
             {
                 Entry = token => 
                 {
-                    _servingNodeClient.SendFloorReleased(_callGroup, _clientSettings.UserId, _servingNodeEndpoint);
+                    _servingNodeClient.SendFloorReleased(_callGroup, _clientSettings.UserId);
                     return new Task(() => {});
                 }
             };
@@ -246,7 +244,7 @@ namespace Ropu.Client
                 for(int attemptNumber = 0; attemptNumber < 3; attemptNumber++)
                 {
                     Console.WriteLine("Sending Heartbeat");
-                    _servingNodeClient.SendHeartbeat(_clientSettings.UserId, _servingNodeEndpoint);
+                    _servingNodeClient.SendHeartbeat(_clientSettings.UserId);
                     heartbeatReceived = await WaitForEvent(token, _heartbeatResetEvent, 1000);
                     if(token.IsCancellationRequested) return;
                     if(heartbeatReceived)
@@ -276,11 +274,11 @@ namespace Ropu.Client
                     }
                     continue;
                 }
-                if(_servingNodeEndpoint == null)
+                if(_protocolSwitch.ServingNodeEndpoint == null)
                 {
                     Console.WriteLine($"Requesting Serving Node from LoadBalancer {_loadBalancerEndPoint}");
-                    _servingNodeEndpoint = await _loadBalancerProtocol.RequestServingNode(_loadBalancerEndPoint);
-                    if(_servingNodeEndpoint == null)
+                    var servingNodeEndpoint = await _loadBalancerProtocol.RequestServingNode(_loadBalancerEndPoint);
+                    if(servingNodeEndpoint == null)
                     {
                         Console.WriteLine("Failed to get a serving node");
                         if(await WaitForCancel(token, 2000)) 
@@ -289,11 +287,12 @@ namespace Ropu.Client
                         }
                         continue;
                     }
+                    _protocolSwitch.ServingNodeEndpoint = servingNodeEndpoint;
                 }
 
-                Console.WriteLine($"Got serving node at {_servingNodeEndpoint}");
+                Console.WriteLine($"Got serving node at {_protocolSwitch.ServingNodeEndpoint}");
 
-                _servingNodeClient.Register(_clientSettings.UserId, _servingNodeEndpoint);
+                _servingNodeClient.Register(_clientSettings.UserId);
                 if(await WaitForCancel(token, 2000))
                 {
                     return;
@@ -311,7 +310,7 @@ namespace Ropu.Client
             
             while(!token.IsCancellationRequested)
             {
-                _servingNodeClient.Deregister(_registeredUserId, _servingNodeEndpoint);
+                _servingNodeClient.Deregister(_registeredUserId);
                 await WaitForCancel(token, 2000);
             }
         }
@@ -328,10 +327,10 @@ namespace Ropu.Client
             {
                 _callGroup = IdleGroup;
             }
-            Console.WriteLine($"sending StartGroupCall for group {_callGroup} {_servingNodeEndpoint}");
+            Console.WriteLine($"sending StartGroupCall for group {_callGroup} {_protocolSwitch.ServingNodeEndpoint}");
             while(!token.IsCancellationRequested)
             {
-                _servingNodeClient.StartGroupCall(_clientSettings.UserId, _callGroup, _servingNodeEndpoint);
+                _servingNodeClient.StartGroupCall(_clientSettings.UserId, _callGroup);
                 await WaitForCancel(token, 1000);
             }
         }

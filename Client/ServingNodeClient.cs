@@ -23,7 +23,7 @@ namespace Ropu.Client
             _controllingFunctionHandler = controllingFunctionHandler;
         }
 
-        public void Register(uint userId, IPEndPoint remoteEndPoint)
+        public void Register(uint userId)
         {
             var sendBuffer = _protocolSwitch.SendBuffer();
             //packet type (byte)
@@ -31,10 +31,10 @@ namespace Ropu.Client
             // User ID (uint32)
             sendBuffer.WriteUint(userId, 1);
 
-            _protocolSwitch.Send(5, remoteEndPoint);
+            _protocolSwitch.Send(5);
         }
 
-        public void SendHeartbeat(uint userId, IPEndPoint remoteEndPoint)
+        public void SendHeartbeat(uint userId)
         {
             var sendBuffer = _protocolSwitch.SendBuffer();
             //packet type (byte)
@@ -42,10 +42,10 @@ namespace Ropu.Client
             // User ID (uint32)
             sendBuffer.WriteUint(userId, 1);
 
-            _protocolSwitch.Send(5, remoteEndPoint);
+            _protocolSwitch.Send(5);
         }
 
-        public void StartGroupCall(uint userId, ushort groupId, IPEndPoint remoteEndPoint)
+        public void StartGroupCall(uint userId, ushort groupId)
         {
             var sendBuffer = _protocolSwitch.SendBuffer();
             //packet type (byte)
@@ -56,7 +56,7 @@ namespace Ropu.Client
             sendBuffer.WriteUint(userId, 3);
             
 
-            _protocolSwitch.Send(7, remoteEndPoint);
+            _protocolSwitch.Send(7);
         }
 
         public void ParseRegistrationResponse(Span<byte> data)
@@ -95,7 +95,7 @@ namespace Ropu.Client
             _controllingFunctionHandler?.HandleCallStartFailed(reason);
         }
 
-        public void Deregister(uint userId, IPEndPoint servingNodeEndpoint)
+        public void Deregister(uint userId)
         {
             var sendBuffer = _protocolSwitch.SendBuffer();
             //packet type (byte)
@@ -103,10 +103,10 @@ namespace Ropu.Client
             // User ID (uint32)
             sendBuffer.WriteUint(userId, 1);
 
-            _protocolSwitch.Send(5, servingNodeEndpoint);
+            _protocolSwitch.Send(5);
         }
 
-        public void SendFloorReleased(ushort callGroup, uint userId, IPEndPoint servingNodeEndpoint)
+        public void SendFloorReleased(ushort callGroup, uint userId)
         {
             var sendBuffer = _protocolSwitch.SendBuffer();
             //packet type (byte)
@@ -117,10 +117,10 @@ namespace Ropu.Client
             sendBuffer.WriteUint(userId, 3);
 
 
-            _protocolSwitch.Send(7, servingNodeEndpoint);
+            _protocolSwitch.Send(7);
         }
 
-        public void SendFloorRequest(ushort callGroup, uint userId, IPEndPoint servingNodeEndpoint)
+        public void SendFloorRequest(ushort callGroup, uint userId)
         {
             var sendBuffer = _protocolSwitch.SendBuffer();
             //packet type (byte)
@@ -130,7 +130,7 @@ namespace Ropu.Client
             // User ID (uint)
             sendBuffer.WriteUint(userId, 3);
 
-            _protocolSwitch.Send(7, servingNodeEndpoint);
+            _protocolSwitch.Send(7);
         }
 
         public void ParseDeregisterResponse(Span<byte> data)

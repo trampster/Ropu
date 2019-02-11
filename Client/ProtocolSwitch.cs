@@ -42,6 +42,12 @@ namespace Ropu.Client
         [ThreadStatic]
         static byte[] _sendBuffer;
 
+        public IPEndPoint ServingNodeEndpoint
+        {
+            get;
+            set;
+        }
+
         public byte[] SendBuffer()
         {
             if(_sendBuffer == null)
@@ -115,9 +121,9 @@ namespace Ropu.Client
             }
         }
 
-        public void Send(int length, IPEndPoint endpoint)
+        public void Send(int length)
         {
-            _socket.SendTo(SendBuffer(), 0, length, SocketFlags.None, endpoint);
+            _socket.SendTo(SendBuffer(), 0, length, SocketFlags.None, ServingNodeEndpoint);
         }
     }
 }
