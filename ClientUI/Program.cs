@@ -25,7 +25,7 @@ namespace Ropu.ClientUI
             {
                 Application.Instance.Invoke(() => State = _ropuClient.State.ToString());
             };
-            State = _ropuClient.State.ToString();
+            _state = _ropuClient.State.ToString();
         }
 
         string _state = "";
@@ -42,20 +42,11 @@ namespace Ropu.ClientUI
             set => SetProperty(ref _pttState, value);
         }
 
+        string _userId = "";
         public string UserId
         {
-            get => _clientSettings.UserId.ToString();
-            set
-            {
-                bool valid = uint.TryParse(value, out uint userId);
-                UserIdError =  valid ? "" : "Invalid";
-                if(!valid) return;
-                if(_clientSettings.UserId != userId)
-                {
-                    _clientSettings.UserId = userId;
-                    RaisePropertyChanged();
-                }
-            }
+            get => _userId;
+            set => SetProperty(ref _userId, value);
         }
 
         string _userIdError = "";
@@ -98,6 +89,15 @@ namespace Ropu.ClientUI
             PttState = "PTT Up";
             _ropuClient.PttUp();
         });
+
+        public ICommand UserIdCommand => new ActionCommand(() => 
+        {
+            bool valid = uint.TryParse(UserId, out uint userId);
+            UserIdError =  valid ? "" : "Invalid";
+            if(!valid) return;
+            UserIdError = "";
+            _clientSettings.UserId = userId;
+        });
     }
 
     public class MainForm : Form
@@ -105,7 +105,7 @@ namespace Ropu.ClientUI
         public MainForm (MainViewModel mainViewModel)
         {
             Title = "Ropu Client";
-            ClientSize = new Size(250, 200);
+            ClientSize = new Size(400, 200);
 
             var pttStateLabel = new Label();
             pttStateLabel.TextBinding.BindDataContext<MainViewModel>(m => m.PttState);
@@ -125,6 +125,9 @@ namespace Ropu.ClientUI
             textBox.TextBinding.BindDataContext<MainViewModel>(m => m.UserId);
             var userIdErrorLabel = new Label();
             userIdErrorLabel.TextBinding.BindDataContext<MainViewModel>(m => m.UserIdError);
+            var userButton = new Button(){Text="Set"};
+            userButton.BindDataContext(c => c.Command, (MainViewModel model) => model.UserIdCommand);
+
 
             var grouptextBox = new TextBox();
             grouptextBox.TextBinding.BindDataContext<MainViewModel>(m => m.GroupId);
@@ -138,7 +141,12 @@ namespace Ropu.ClientUI
                 Rows = 
                 {
                     new TableLayout(){ Rows = { new TableRow(new TableCell(new Label { Text = "State: "}), stateLabel)}},
-                    new TableLayout(){ Rows = { new TableRow(new TableCell(new Label { Text = "User ID: ", VerticalAlignment = VerticalAlignment.Center}), textBox, userIdErrorLabel)}},
+                    new TableLayout(){ Rows = { new TableRow(new TableCell(
+                        new Label { Text = "User ID: ", VerticalAlignment = VerticalAlignment.Center}), 
+                        textBox, 
+                        userButton,
+                        userIdErrorLabel
+                        )}},
                     new TableLayout(){ Rows = { new TableRow(new TableCell(new Label { Text = "Group ID: ", VerticalAlignment = VerticalAlignment.Center}), grouptextBox, groupErrorLabel)}},
                     pttStateLabel, 
                     new TableRow(button),
