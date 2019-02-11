@@ -114,6 +114,8 @@ namespace Ropu.CallController
                 Console.WriteLine($"Got floor released from {userId} but {_talker} has the floor");
                 return;
             }
+            _lastActivity = DateTime.UtcNow;
+
             Console.WriteLine("Releasing Floor");
             _talker = null;
             _ropuProtocol.SendFloorIdle(_groupId, _servingNodesReader.GetSpan());
@@ -121,6 +123,8 @@ namespace Ropu.CallController
 
         public void FloorRequest(uint userId)
         {
+            _lastActivity = DateTime.UtcNow;
+
             if(_talker == userId)
             {
                 Console.WriteLine($"Got floor request from {userId} but they already have the floor");
