@@ -67,6 +67,12 @@ namespace Ropu.Client.Alsa
                 throw new AlsaNativeError(error, nameof(AlsaNativeMethods.snd_pcm_hw_params_set_period_size));
             }
 
+            // error = AlsaNativeMethods.snd_pcm_hw_params_set_periods(pcmPtr, hardwareParamsPtr, 2, 0);
+            // if(error < 0)
+            // {
+            //     throw new AlsaNativeError(error, nameof(AlsaNativeMethods.snd_pcm_hw_params_set_periods));
+            // }
+
             error = AlsaNativeMethods.snd_pcm_hw_params(pcmPtr, hardwareParamsPtr);
             if(error < 0)
             {
@@ -82,16 +88,19 @@ namespace Ropu.Client.Alsa
             }
             short[] buffer = new short[160];
             Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+            long lastMilliseconds = stopwatch.ElapsedMilliseconds;
+
             while(true)
             {
-                stopwatch.Reset();
-                stopwatch.Start();
                 
                 int ammountRead = AlsaNativeMethods.snd_pcm_readi(pcmPtr, buffer, (uint)buffer.Length);
-                stopwatch.Stop();
+                var time = stopwatch.ElapsedMilliseconds;
                 if(ammountRead == 160)
                 {
-                    Console.WriteLine($"Success Read 160 frames after {stopwatch.ElapsedMilliseconds} ms");
+                    var ellapsed = time - lastMilliseconds;
+                    lastMilliseconds = time;
+                    Console.WriteLine($"Success Read 160 frames after {ellapsed} ms");
                 }
                 else
                 {
