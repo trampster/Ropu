@@ -8,59 +8,44 @@ using Ropu.Shared.ControlProtocol;
 
 namespace Ropu.Client
 {
-    public interface IAudioSource
-    {
-        void Start();
-
-        void Stop();
-
-        /// <summary>
-        /// Read 20 ms of audio at 8000 samples/s (160 samples or 320 bytes)
-        /// Should block until buffer is filled or source is stopped
-        /// </summary>
-        /// <param name="buffer"></param>
-        /// <returns></returns>
-        void ReadAudio(byte[] buffer);
-
-    }
-
     public class MediaClient : IMediaPacketParser
     {
         readonly ProtocolSwitch _protocolSwitch;
         readonly IAudioSource _audioSource;
+        readonly IAudioCodec _audioCodec;
         readonly IClientSettings _clientSettings;
         ushort _sequenceNumber = 0;
 
-        public MediaClient(ProtocolSwitch protocolSwitch, IAudioSource audioSource, IClientSettings clientSettings)
+        public MediaClient(ProtocolSwitch protocolSwitch, IAudioSource audioSource, IAudioCodec audioCodec, IClientSettings clientSettings)
         {
             _protocolSwitch = protocolSwitch;
             _protocolSwitch.SetMediaPacketParser(this);
             _audioSource = audioSource;
+            _audioCodec = audioCodec;
             _clientSettings = clientSettings;
         }
 
-        bool _sendingAudio = false;
+        volatile bool _sendingAudio = false;
 
         async Task StartSendingAudio(ushort groupId)
         {
-            byte[] buffer = new byte[320];
+            short[] audio = new short[160];
             while(_sendingAudio)
             {
-                await Task.Run(() => _audioSource.ReadAudio(buffer));
+                await Task.Run(() => _audioSource.ReadAudio(audio));
                 if(!_sendingAudio)
                 {
                     return; //nothing available
                 }
-                SendMediaPacket(groupId, _sequenceNumber, _clientSettings.UserId, buffer);
+                SendMediaPacket(groupId, _sequenceNumber, _clientSettings.UserId, audio);
                 _sequenceNumber++;
             }
         }
 
         void StopSendingAudio()
         {
-            _audioSource.Stop();
+            _sendingAudio = false;
         }
-
 
 
         public void ParseMediaPacketGroupCall(Span<byte> data)
@@ -68,7 +53,7 @@ namespace Ropu.Client
             throw new NotImplementedException();
         }
 
-        void SendMediaPacket(ushort groupId, ushort sequenceNumber, uint userId, byte[] payload)
+        void SendMediaPacket(ushort groupId, ushort sequenceNumber, uint userId, short[] audio)
         {
             var buffer = _protocolSwitch.SendBuffer();
 
@@ -83,9 +68,9 @@ namespace Ropu.Client
             // Key ID (uint16) - 0 means no encryption
             buffer.WriteUshort(0, 9);
             // Payload
-            buffer.AsSpan(11).WriteArray(payload);
+            int ammountEncoded = _audioCodec.Encode(audio, buffer.AsSpan(11));
 
-            _protocolSwitch.Send(11 + buffer.Length);
+            _protocolSwitch.Send(11 + ammountEncoded);
         }
     }
 }

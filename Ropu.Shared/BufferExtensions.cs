@@ -19,6 +19,13 @@ namespace Ropu.Shared
             buffer[start + 1] = (byte) (value & 0x000000FF);
         }
 
+        public static void WriteShort(this byte[] buffer, short value, int start)
+        {
+            buffer[start]     = (byte)((value & 0x0000FF00) >> 8);
+            buffer[start + 1] = (byte) (value & 0x000000FF);
+        }
+
+
         public static void WriteEndPoint(this byte[] buffer, IPEndPoint endPoint, int start)
         {
             endPoint.Address.TryWriteBytes(buffer.AsSpan(start), out int bytesWritten);

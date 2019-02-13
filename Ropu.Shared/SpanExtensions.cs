@@ -59,5 +59,11 @@ namespace Ropu.Shared
                 span[index] = array[index];
             }
         }
+
+        public static void WriteShort(this Span<byte> span, short value, int start)
+        {
+            span[start]     = (byte)((value & 0x0000FF00) >> 8);
+            span[start + 1] = (byte) (value & 0x000000FF);
+        }
     }
 }

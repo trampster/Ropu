@@ -156,6 +156,8 @@ namespace Ropu.Client.Alsa
         [DllImport("asound.so.2")]
         public static extern int snd_pcm_open(out IntPtr pcm, string name, snd_pcm_stream_t stream, int mode);
 
+        [DllImport("asound.so.2")]
+        public static extern int snd_pcm_close (IntPtr pcm);
         /// <summary>
         /// 
         /// </summary>
