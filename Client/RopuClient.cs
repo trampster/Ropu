@@ -124,6 +124,13 @@ namespace Ropu.Client
             _startingCall = new RopuState(StateId.StartingCall)
             {
                 Entry = async token => await StartCall(token),
+                Exit = newState =>
+                {
+                    if(newState != _inCallTransmitting && newState != _inCallRequestingFloor)
+                    {
+                        _mediaClient.StopSendingAudio();
+                    }
+                }
             };
             _startingCall.AddTransition(EventId.CallStartFailed, () => _registered);
             _stateManager.AddState(_startingCall);
@@ -140,9 +147,12 @@ namespace Ropu.Client
             //in call transmitting
             _inCallTransmitting = new RopuState(StateId.InCallTransmitting)
             {
-                Exit = _ =>
+                Exit = newState =>
                 {
-                    _mediaClient.StopSendingAudio();
+                    if(newState != _inCallTransmitting && newState != _inCallRequestingFloor)
+                    {
+                        _mediaClient.StopSendingAudio();
+                    }
                 }
             };
             _inCallTransmitting.AddTransition(EventId.PttUp, () => _inCallReleasingFloor);
@@ -159,7 +169,7 @@ namespace Ropu.Client
                 },
                 Exit = newState =>
                 {
-                    if(newState != _inCallTransmitting)
+                    if(newState != _inCallTransmitting && newState != _inCallRequestingFloor)
                     {
                         _mediaClient.StopSendingAudio();
                     }
@@ -341,6 +351,8 @@ namespace Ropu.Client
 
         async Task StartCall(CancellationToken token)
         {
+            var ignore = _mediaClient.StartSendingAudio(_callGroup);
+
             if(_callGroup == 0)
             {
                 _callGroup = IdleGroup;

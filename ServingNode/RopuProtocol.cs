@@ -125,6 +125,11 @@ namespace Ropu.ServingNode
                     _messageHandler?.HandleMediaPacket(groupId, buffer, ammountRead, endPoint);
                     break;
                 }
+                case RopuPacketType.MediaPacketGroupCall:
+                {
+                    Console.WriteLine("Media Packet received");
+                    break;
+                }
             }
         }
 

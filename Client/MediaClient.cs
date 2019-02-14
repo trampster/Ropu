@@ -29,6 +29,7 @@ namespace Ropu.Client
 
         public async Task StartSendingAudio(ushort groupId)
         {
+            _sendingAudio = true;
             short[] audio = new short[160];
             while(_sendingAudio)
             {
@@ -70,6 +71,7 @@ namespace Ropu.Client
             // Payload
             int ammountEncoded = _audioCodec.Encode(audio, buffer.AsSpan(11));
 
+            Console.WriteLine("Sending Media Packet");
             _protocolSwitch.Send(11 + ammountEncoded);
         }
     }
