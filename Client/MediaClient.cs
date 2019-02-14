@@ -27,7 +27,7 @@ namespace Ropu.Client
 
         volatile bool _sendingAudio = false;
 
-        async Task StartSendingAudio(ushort groupId)
+        public async Task StartSendingAudio(ushort groupId)
         {
             short[] audio = new short[160];
             while(_sendingAudio)
@@ -42,7 +42,7 @@ namespace Ropu.Client
             }
         }
 
-        void StopSendingAudio()
+        public void StopSendingAudio()
         {
             _sendingAudio = false;
         }

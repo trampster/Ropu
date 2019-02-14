@@ -17,6 +17,8 @@ namespace Ropu.Client
 
         readonly ServingNodeClient _servingNodeClient;
         readonly ProtocolSwitch _protocolSwitch;
+        readonly MediaClient _mediaClient;
+
         readonly IClientSettings _clientSettings;
 
         RopuState _start;
@@ -56,6 +58,7 @@ namespace Ropu.Client
         public RopuClient(
             ProtocolSwitch protocolSwitch, 
             ServingNodeClient servingNodeClient, 
+            MediaClient mediaClient,
             IPAddress address,
             LoadBalancerProtocol loadBalancerProtocol,
             IPEndPoint loadBalancerEndPoint,
@@ -70,6 +73,7 @@ namespace Ropu.Client
             _loadBalancerProtocol = loadBalancerProtocol;
             _protocolSwitch = protocolSwitch;
             _servingNodeClient = servingNodeClient;
+            _mediaClient = mediaClient;
             _servingNodeClient.SetControllingFunctionHandler(this);
             _retryTimer = new Ropu.Shared.Timer();
 
@@ -134,7 +138,13 @@ namespace Ropu.Client
             _stateManager.AddState(_inCallReceiveing);
 
             //in call transmitting
-            _inCallTransmitting = new RopuState(StateId.InCallTransmitting);
+            _inCallTransmitting = new RopuState(StateId.InCallTransmitting)
+            {
+                Exit = _ =>
+                {
+                    _mediaClient.StopSendingAudio();
+                }
+            };
             _inCallTransmitting.AddTransition(EventId.PttUp, () => _inCallReleasingFloor);
             _stateManager.AddState(_inCallTransmitting);
 
@@ -144,7 +154,15 @@ namespace Ropu.Client
                 Entry = token => 
                 {
                     _servingNodeClient.SendFloorRequest(_callGroup, _clientSettings.UserId);
+                    var ignore = _mediaClient.StartSendingAudio(_callGroup);
                     return new Task(() => {});
+                },
+                Exit = newState =>
+                {
+                    if(newState != _inCallTransmitting)
+                    {
+                        _mediaClient.StopSendingAudio();
+                    }
                 }
             };
             _stateManager.AddState(_inCallRequestingFloor);

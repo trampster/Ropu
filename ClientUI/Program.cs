@@ -8,6 +8,7 @@ using Ropu.Client;
 using System.Net;
 using Ropu.Shared;
 using Ropu.Shared.LoadBalancing;
+using Ropu.Client.Alsa;
 
 namespace Ropu.ClientUI
 {
@@ -170,13 +171,14 @@ namespace Ropu.ClientUI
             var protocolSwitch = new ProtocolSwitch(controlPortStarting, new PortFinder());
             var servingNodeClient = new ServingNodeClient(protocolSwitch);
             var audioSource = new AlsaAudioSource();
-            var mediaClient = new MediaClient(protocolSwitch, audioSource, settings);
+            var audioCodec = new RawCodec();
+            var mediaClient = new MediaClient(protocolSwitch, audioSource, audioCodec, settings);
             var callManagementProtocol = new LoadBalancerProtocol(new PortFinder(), 5079);
 
             var ipAddress = IPAddress.Parse(myAddress);
 
             IPEndPoint loadBalancerEndpoint = new IPEndPoint(IPAddress.Parse(loadBalancerIP), loadBalancerPort);
-            var ropuClient = new RopuClient(protocolSwitch, servingNodeClient, ipAddress, callManagementProtocol, loadBalancerEndpoint, settings);
+            var ropuClient = new RopuClient(protocolSwitch, servingNodeClient, mediaClient, ipAddress, callManagementProtocol, loadBalancerEndpoint, settings);
 
             var application = new RopuApplication(ropuClient);
             application.Run(new MainForm(new MainViewModel(ropuClient, settings)));

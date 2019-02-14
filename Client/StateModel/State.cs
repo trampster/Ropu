@@ -14,12 +14,12 @@ namespace Ropu.Client.StateModel
             _transitions = new List<Transition<EventT, IState<Id, EventT>>>();
             Identifier = identifier;
             Entry = _ => Task.Run(()=>{});
-            Exit = () => {};
+            Exit = _ => {};
         }
 
         public Id Identifier {get;}
         public Func<CancellationToken, Task> Entry {get;set;}
-        public Action Exit {get;set;}
+        public Action<IState<Id, EventT>> Exit {get;set;}
 
         public void AddTransition(EventT eventId, Func<IState<Id, EventT>> getState)
         {
@@ -52,7 +52,7 @@ namespace Ropu.Client.StateModel
         Task _entryTask;
         CancellationTokenSource _entryTaskCancellationTokenSource;
 
-        public async void RunExit()
+        public async void RunExit(IState<Id, EventT> newState)
         {
             _entryTaskCancellationTokenSource?.Cancel();
             if(_entryTask != null)
@@ -63,7 +63,7 @@ namespace Ropu.Client.StateModel
             _entryTaskCancellationTokenSource = null;
             _entryTask = null;
 
-            Exit();
+            Exit(newState);
         }
     }
 }

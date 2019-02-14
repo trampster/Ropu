@@ -52,7 +52,7 @@ namespace Ropu.Client.StateModel
             IState<Id, EventT> original = Interlocked.CompareExchange(ref _current, newState, expected);
             if(original == expected)
             {
-                expected.RunExit();
+                expected.RunExit(newState);
                 newState.RunEntry();
                 StateChanged?.Invoke(this, EventArgs.Empty);
                 Console.WriteLine($"State Transition {original} -> {newState}");

@@ -8,7 +8,7 @@ namespace Ropu.Client.StateModel
     public interface IState<Id, EventT>
     {
         Func<CancellationToken, Task> Entry {get;}
-        Action Exit {get;}
+        Action<IState<Id, EventT>> Exit {get;}
 
         Id Identifier {get;}
 
@@ -18,6 +18,6 @@ namespace Ropu.Client.StateModel
 
         void RunEntry();
 
-        void RunExit();
+        void RunExit(IState<Id, EventT> newState);
     }
 }
