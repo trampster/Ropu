@@ -113,7 +113,7 @@ namespace Ropu.Client
                     _controlPacketParser?.ParseFloorIdle(data);
                     break;
                 //media
-                case RopuPacketType.MediaPacketGroupCall:
+                case RopuPacketType.MediaPacketGroupCallServingNode:
                     _mediaPacketParser?.ParseMediaPacketGroupCall(data);
                     break;
                 default:

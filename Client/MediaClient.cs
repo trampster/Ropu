@@ -59,7 +59,7 @@ namespace Ropu.Client
             var buffer = _protocolSwitch.SendBuffer();
 
             // Packet Type 12 (byte)
-            buffer[0] = (byte)RopuPacketType.MediaPacketGroupCall;
+            buffer[0] = (byte)RopuPacketType.MediaPacketGroupCallClient;
             // Group Id (uint16)
             buffer.WriteUshort(groupId, 1);
             // Sequence Number (uint16)

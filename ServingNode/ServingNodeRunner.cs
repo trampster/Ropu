@@ -2,6 +2,7 @@ using System;
 using System.Net;
 using System.Threading.Tasks;
 using Ropu.Shared;
+using Ropu.Shared.ControlProtocol;
 using Ropu.Shared.LoadBalancing;
 
 namespace Ropu.ServingNode
@@ -14,6 +15,8 @@ namespace Ropu.ServingNode
         readonly Registra _registra;
         readonly ServingNodes _servingNodes;
         readonly GroupCallControllerLookup _groupCallControllerLookup;
+
+        uint[] _groupFloorLookup = new uint[ushort.MaxValue];
 
         public ServingNodeRunner(
             RopuProtocol mediaProtocol, 
@@ -64,12 +67,40 @@ namespace Ropu.ServingNode
             _ropuProtocol.SendPacket(packetData, length, endPoint);
         }
 
-        public void HandleMediaPacket(ushort groupId, byte[] packetData, int length, IPEndPoint from)
+        public void ForwardPacketToClients(ushort groupId, byte[] packetData, int length, IPEndPoint from)
         {
             //forward to all serving nodes
             var servingNodeEndPoints = _servingNodes.EndPoints;
             _ropuProtocol.BulkSendAsync(packetData, length, servingNodeEndPoints.GetSpan(), () => servingNodeEndPoints.Release());
 
+            //forward to clients that have registered with us and belong to that group
+            var clientEndPoints = _registra.GetUserEndPoints(groupId);
+            if(clientEndPoints == null)
+            {
+                Console.WriteLine($"No members for group {groupId}");
+                return;
+            }
+            _ropuProtocol.BulkSendAsync(packetData, length, clientEndPoints.GetSpan(), () => clientEndPoints.Release(), from);
+        }
+
+        public void ForwardClientMediaPacket(ushort groupId, byte[] packetData, int length, IPEndPoint from)
+        {
+            //check if it has floor
+            uint userId = packetData.AsSpan(5).ParseUint();
+            if(_groupFloorLookup[groupId] != userId)
+            {
+                return;//doesn't have floor
+            }
+
+            //forward to all serving nodes
+            var servingNodeEndPoints = _servingNodes.EndPoints;
+            packetData[0] = (byte)RopuPacketType.MediaPacketGroupCallServingNode;
+            _ropuProtocol.BulkSendAsync(packetData, length, servingNodeEndPoints.GetSpan(), () => servingNodeEndPoints.Release());
+
+        }
+
+        public void ForwardServingNodeMediaPacket(ushort groupId, byte[] packetData, int length, IPEndPoint from)
+        {
             //forward to clients that have registered with us and belong to that group
             var clientEndPoints = _registra.GetUserEndPoints(groupId);
             if(clientEndPoints == null)
@@ -156,6 +187,25 @@ namespace Ropu.ServingNode
         {
             _registra.Deregister(userId);
             _ropuProtocol.SendDeregisterResponse(endPoint);
+        }
+
+        public void HandleCallEnded(ushort groupId, byte[] buffer, int length, IPEndPoint endPoint)
+        {
+            _groupFloorLookup[groupId] = 0;
+            ForwardPacketToClients(groupId, buffer, length, endPoint);
+        }
+
+        public void ForwardFloorTaken(ushort groupId, byte[] buffer, int length, IPEndPoint endPoint)
+        {
+            var userId = buffer.AsSpan(3).ParseUint();
+            _groupFloorLookup[groupId] = userId;
+            ForwardPacketToClients(groupId, buffer, length, endPoint);
+        }
+
+        public void ForwardFloorIdle(ushort groupId, byte[] buffer, int length, IPEndPoint endPoint)
+        {
+            _groupFloorLookup[groupId] = 0;
+            ForwardPacketToClients(groupId, buffer, length, endPoint);
         }
     }
 }

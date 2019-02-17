@@ -94,7 +94,7 @@ Likewise when starting a call, the client should start streaming the media to th
 * Payload
 
 ### Media Packet Group Call
-* Packet Type 12 (byte)
+* Packet Type (12 from Client, 13 from Serving Node) (byte)
 * Group Id (uint16)
 * Sequence Number (uint16)
 * User ID (uint32)
@@ -102,19 +102,19 @@ Likewise when starting a call, the client should start streaming the media to th
 * Payload
 
 ### Heartbeat
-* Packet Type 13 (byte)
+* Packet Type 14 (byte)
 * User ID (uint32)
 
 ### Heartbeat Resposne
-* Packet Type 14 (byte)
+* Packet Type 15 (byte)
 
 ### Not Registered
 Sent when the serving node receives a packet from a client that isn't registered
-* Packet Type 15 (byte)
+* Packet Type 16 (byte)
 
 ### Deregister
-* Packet Type 16 (byte)
+* Packet Type 17 (byte)
 * User ID (uint32)
 
 ### Deregister Rsponse
-* Packet Type 17 (byte)
+* Packet Type 18 (byte)

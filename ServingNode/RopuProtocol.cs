@@ -118,16 +118,38 @@ namespace Ropu.ServingNode
                     break;
                 }
                 case RopuPacketType.CallEnded:
+                {
+                    ushort groupId = data.Slice(1).ParseUshort();
+                    _messageHandler?.HandleCallEnded(groupId, buffer, ammountRead, endPoint);
+                    break;
+                }
                 case RopuPacketType.FloorTaken:
+                {
+                    ushort groupId = data.Slice(1).ParseUshort();
+                    _messageHandler?.ForwardFloorTaken(groupId, buffer, ammountRead, endPoint);
+                    break;
+                }
                 case RopuPacketType.FloorIdle:
                 {
                     ushort groupId = data.Slice(1).ParseUshort();
-                    _messageHandler?.HandleMediaPacket(groupId, buffer, ammountRead, endPoint);
+                    _messageHandler?.ForwardFloorIdle(groupId, buffer, ammountRead, endPoint);
                     break;
                 }
-                case RopuPacketType.MediaPacketGroupCall:
+                case RopuPacketType.MediaPacketGroupCallClient:
                 {
-                    Console.WriteLine("Media Packet received");
+                    ushort groupId = data.Slice(1).ParseUshort();
+                    _messageHandler?.ForwardClientMediaPacket(groupId, buffer, ammountRead, endPoint);
+                    break;
+                }
+                case RopuPacketType.MediaPacketGroupCallServingNode:
+                {
+                    ushort groupId = data.Slice(1).ParseUshort();
+                    _messageHandler?.ForwardPacketToClients(groupId, buffer, ammountRead, endPoint);
+                    break;
+                }
+                default:
+                {
+                    Console.Error.WriteLine("Received unknown packet");
                     break;
                 }
             }
