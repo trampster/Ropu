@@ -81,7 +81,6 @@ namespace Ropu.Client
         void HandlePacket(Span<byte> data, IPAddress ipaddress)
         {
             var packetType = (RopuPacketType)data[0];
-            Console.WriteLine($"Received Pakcet {packetType}");
             switch(packetType)
             {
                 //Control

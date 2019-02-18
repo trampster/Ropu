@@ -51,7 +51,7 @@ namespace Ropu.Client
 
         public void ParseMediaPacketGroupCall(Span<byte> data)
         {
-            throw new NotImplementedException();
+            Console.WriteLine("Received media packet");
         }
 
         void SendMediaPacket(ushort groupId, ushort sequenceNumber, uint userId, short[] audio)
@@ -65,7 +65,7 @@ namespace Ropu.Client
             // Sequence Number (uint16)
             buffer.WriteUshort(sequenceNumber, 3);
             // User ID (uint32)
-            buffer.WriteUint(sequenceNumber, 5);
+            buffer.WriteUint(userId, 5);
             // Key ID (uint16) - 0 means no encryption
             buffer.WriteUshort(0, 9);
             // Payload

@@ -69,10 +69,6 @@ namespace Ropu.ServingNode
 
         public void ForwardPacketToClients(ushort groupId, byte[] packetData, int length, IPEndPoint from)
         {
-            //forward to all serving nodes
-            var servingNodeEndPoints = _servingNodes.EndPoints;
-            _ropuProtocol.BulkSendAsync(packetData, length, servingNodeEndPoints.GetSpan(), () => servingNodeEndPoints.Release());
-
             //forward to clients that have registered with us and belong to that group
             var clientEndPoints = _registra.GetUserEndPoints(groupId);
             if(clientEndPoints == null)
@@ -85,10 +81,12 @@ namespace Ropu.ServingNode
 
         public void ForwardClientMediaPacket(ushort groupId, byte[] packetData, int length, IPEndPoint from)
         {
+            //Console.WriteLine("Received media packet");
             //check if it has floor
             uint userId = packetData.AsSpan(5).ParseUint();
             if(_groupFloorLookup[groupId] != userId)
             {
+                //Console.WriteLine($"Ignoring media packet because {userId} doesn't have floor");
                 return;//doesn't have floor
             }
 
@@ -97,18 +95,9 @@ namespace Ropu.ServingNode
             packetData[0] = (byte)RopuPacketType.MediaPacketGroupCallServingNode;
             _ropuProtocol.BulkSendAsync(packetData, length, servingNodeEndPoints.GetSpan(), () => servingNodeEndPoints.Release());
 
-        }
+            //forward to clients
+            ForwardPacketToClients(groupId, packetData, length, from);
 
-        public void ForwardServingNodeMediaPacket(ushort groupId, byte[] packetData, int length, IPEndPoint from)
-        {
-            //forward to clients that have registered with us and belong to that group
-            var clientEndPoints = _registra.GetUserEndPoints(groupId);
-            if(clientEndPoints == null)
-            {
-                Console.WriteLine($"No members for group {groupId}");
-                return;
-            }
-            _ropuProtocol.BulkSendAsync(packetData, length, clientEndPoints.GetSpan(), () => clientEndPoints.Release(), from);
         }
 
         async Task Register()
