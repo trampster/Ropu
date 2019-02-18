@@ -87,10 +87,6 @@ namespace Ropu.LoadBalancer
 
         async Task UpdateServingNodes(IPEndPoint from, IPEndPoint servingNodeEndpoint)
         {
-            if(_servingNodes.Count == 1)
-            {
-                return;
-            }
             var existingServingNodeEndPoints = 
                 from node in _servingNodes.GetControllers()
                 where node.ServingEndPoint != servingNodeEndpoint
