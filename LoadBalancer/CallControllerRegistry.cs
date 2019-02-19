@@ -141,6 +141,7 @@ namespace Ropu.LoadBalancer
             var list = new List<GroupCallController>();
 
             var enumerator = groups.GetEnumerator();
+            bool noMore = false;
 
             foreach(var controller in Controllers)
             {
@@ -148,11 +149,16 @@ namespace Ropu.LoadBalancer
                 {
                     if(!enumerator.MoveNext())
                     {
-                        return;
+                        noMore = true;
+                        break;
                     }
                     var group = enumerator.Current;
                     controller.AddGroup(group);
                     list.Add(new GroupCallController(){EndPoint = controller.CallEndPoint, GroupId = group});
+                }
+                if(noMore)
+                {
+                    break;
                 }
             }
 
