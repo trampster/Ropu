@@ -32,7 +32,7 @@ namespace Ropu.LoadBalancer
 
         void SetupExpiryTime()
         {
-            _expirtyTime = DateTime.UtcNow.AddSeconds(120);
+            _expirtyTime = DateTime.UtcNow.AddSeconds(15); //10 seconds + 3 for three retires plus 2 for margin.
         }
 
         public void RefreshExpiry()

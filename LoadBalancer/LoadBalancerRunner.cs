@@ -49,7 +49,7 @@ namespace Ropu.LoadBalancer
         {
             while(!_closing)
             {   
-                await Task.Delay(30000);
+                await Task.Delay(5000); //todo: find the time till the next controller expires and wait that long
                 _servingNodes.RemoveExpired(removedNode => 
                 {
                     var servingNodeEndpoint = removedNode.ServingEndPoint;
@@ -131,7 +131,7 @@ namespace Ropu.LoadBalancer
                 return;
             }
 
-            await TaskCordinator.Retry(() => _loadBalancerProtocol.SendControllerRegistrationInfo(controllerId.Value, 30, from));
+            await TaskCordinator.Retry(() => _loadBalancerProtocol.SendControllerRegistrationInfo(controllerId.Value, 10, from));
 
             //inform Call Controller of exiting Serving Nodes
             var existingServingNodeEndPoints = 

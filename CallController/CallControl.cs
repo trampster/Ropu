@@ -64,8 +64,11 @@ namespace Ropu.CallController
                             //need to resend our registration
                             break;
                         }
-                        await TaskCordinator.Retry(() => _loadBalancerProtocol.SendControllerRefreshCallController(_controllerId.Value, callManagementServerEndpoint));
-                        continue;
+                        if(!await TaskCordinator.Retry(() => _loadBalancerProtocol.SendControllerRefreshCallController(_controllerId.Value, callManagementServerEndpoint)))
+                        {
+                            registered = false;
+                            break;
+                        }
                     }
                 }
                 else
@@ -77,7 +80,7 @@ namespace Ropu.CallController
 
         ushort GetRefreshIntervalMilliseconds()
         {
-            if(_refreshInterval == null)
+            if(_refreshInterval != null)
             {
                 return (ushort)(_refreshInterval.Value * 1000);
             }
