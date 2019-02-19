@@ -351,12 +351,12 @@ namespace Ropu.Client
 
         async Task StartCall(CancellationToken token)
         {
-            var ignore = _mediaClient.StartSendingAudio(_callGroup);
-
             if(_callGroup == 0)
             {
                 _callGroup = IdleGroup;
             }
+            var ignore = _mediaClient.StartSendingAudio(_callGroup);
+
             Console.WriteLine($"sending StartGroupCall for group {_callGroup} {_protocolSwitch.ServingNodeEndpoint}");
             while(!token.IsCancellationRequested)
             {

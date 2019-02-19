@@ -86,7 +86,6 @@ namespace Ropu.ServingNode
             uint userId = packetData.AsSpan(5).ParseUint();
             if(_groupFloorLookup[groupId] != userId)
             {
-                //Console.WriteLine($"Ignoring media packet because {userId} doesn't have floor");
                 return;//doesn't have floor
             }
 

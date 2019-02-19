@@ -191,7 +191,6 @@ namespace Ropu.ServingNode
 
         public void BulkSendAsync(byte[] buffer, int length, Span<IPEndPoint> endPoints, Action onComplete, IPEndPoint except)
         {
-            Console.WriteLine($"BulkSendAsync except {except}");
             for(int endpointIndex = 0; endpointIndex < endPoints.Length; endpointIndex++)
             {
                 var args = _socketEventArgsPool.Get();
