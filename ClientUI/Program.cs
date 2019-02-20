@@ -171,8 +171,9 @@ namespace Ropu.ClientUI
             var protocolSwitch = new ProtocolSwitch(controlPortStarting, new PortFinder());
             var servingNodeClient = new ServingNodeClient(protocolSwitch);
             var audioSource = new AlsaAudioSource();
+            var audioPlayer = new AlsaAudioPlayer();
             var audioCodec = new RawCodec();
-            var mediaClient = new MediaClient(protocolSwitch, audioSource, audioCodec, settings);
+            var mediaClient = new MediaClient(protocolSwitch, audioSource, audioPlayer, audioCodec, settings);
             var callManagementProtocol = new LoadBalancerProtocol(new PortFinder(), 5079);
 
             var ipAddress = IPAddress.Parse(myAddress);

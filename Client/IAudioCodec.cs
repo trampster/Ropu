@@ -11,5 +11,7 @@ namespace Ropu.Client
         /// <param name="output">span to put encoded output into</param>
         /// <returns>the number of bytes writen to output</returns>
         int Encode(short[] raw, Span<byte> output);
+
+        int Decode(AudioData audioData, short[] output);
     }
 }

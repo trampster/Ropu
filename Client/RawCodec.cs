@@ -13,5 +13,20 @@ namespace Ropu.Client
             }
             return raw.Length*2;
         }
+
+        public int Decode(AudioData encodedData, short[] output)
+        {
+            var encoded = encodedData.Data;
+            int outputIndex = 0;
+            for(int encodedIndex = 0; encodedIndex < encoded.Length; encodedIndex += 2)
+            {
+                var value = 
+                    (encoded[encodedIndex] << 8) + 
+                    encoded[encodedIndex+1];
+                output[outputIndex] = (short)value;
+                outputIndex++;
+            }
+            return encoded.Length/2;
+        }
     }
 }

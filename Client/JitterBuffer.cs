@@ -1,7 +1,33 @@
 using System;
+using Ropu.Shared;
 
 namespace Ropu.Client
 {
+
+    public class AudioData
+    {
+        byte[] _data = new byte[320];
+
+        public Span<byte> Data
+        {
+            get => _data.AsSpan(0, Length);
+            set
+            {
+                for(int index = 0; index < value.Length; index++)
+                {
+                    _data[index] = value[index];
+                }
+                Length = value.Length;
+            }
+        }
+
+        public int Length
+        {
+            get;
+            private set;
+        }
+    }
+
     public class BufferEntry
     {
         readonly object _lock = new object();
@@ -18,11 +44,11 @@ namespace Ropu.Client
             private set;
         }
 
-        public Memory<ushort> AudioData
+        public AudioData AudioData
         {
             get;
             private set;
-        }
+        } 
 
         public bool IsSet
         {
@@ -35,7 +61,7 @@ namespace Ropu.Client
             IsSet = false;
         }
 
-        public void Fill(uint userId, ushort sequenceNumber, Memory<ushort> audioData)
+        public void Fill(uint userId, ushort sequenceNumber, AudioData audioData)
         {
             lock(_lock)
             {
@@ -48,14 +74,15 @@ namespace Ropu.Client
     }
     public class JitterBuffer
     {
-
+        MemoryPool<AudioData> _bufferPool = new MemoryPool<AudioData>(() => new AudioData());
         BufferEntry[] _buffer;
         int _readIndex = 0;
         int _writeIndex;
         ushort _nextExpectedSequenceNumber = 0;
         uint _currentUserId = 0;
-        Memory<ushort>? _lastAudioData;
-        readonly Memory<ushort> _silence = new Memory<ushort>(new ushort[160]);
+        AudioData _lastAudioData;
+        //This is empty because the details of silence depends on the codec
+        readonly AudioData _silence = new AudioData();
         const float _packetSuccessRequired = 0.95f;
         int _bufferSize;
         readonly int _min;
@@ -96,7 +123,7 @@ namespace Ropu.Client
 
         }
 
-        public void AddAudio(uint userId, ushort sequenceNumber, Memory<ushort> audioData)
+        public void AddAudio(uint userId, ushort sequenceNumber, Span<byte> audioData)
         {
             if(userId != _currentUserId)
             {
@@ -118,8 +145,9 @@ namespace Ropu.Client
             {
                 return;
             }
-
-            _buffer[index].Fill(userId, sequenceNumber, audioData);
+            var data = _bufferPool.Get();
+            data.Data = audioData;
+            _buffer[index].Fill(userId, sequenceNumber, data);
         }
 
         int distanceAheadOfReadIndex(int index)
@@ -198,7 +226,7 @@ namespace Ropu.Client
             _bufferSize--;
         }
 
-        public Memory<ushort> GetNext()
+        public AudioData GetNext()
         {
             //This should get called every 20 milliseconds, so we use this to increment the _writeIndex
             IncrementWithWrap(ref _writeIndex);
@@ -212,6 +240,7 @@ namespace Ropu.Client
             {
                 //success, the packet is available
                 var audioData = entry.AudioData;
+                _bufferPool.Add(_lastAudioData); //release back to pool
                 _lastAudioData = audioData;
                 entry.Empty();
                 return audioData;
@@ -219,7 +248,8 @@ namespace Ropu.Client
             // Was a miss (either late or lost)
             if(_lastAudioData != null)
             {
-                var last = _lastAudioData.Value;
+                var last = _lastAudioData;
+                _bufferPool.Add(_lastAudioData); //release back to pool
                 _lastAudioData = null; //only use this once, after that silence
                 return last;
             }

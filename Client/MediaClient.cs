@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -12,15 +13,24 @@ namespace Ropu.Client
     {
         readonly ProtocolSwitch _protocolSwitch;
         readonly IAudioSource _audioSource;
+        readonly IAudioPlayer _audioPlayer;
         readonly IAudioCodec _audioCodec;
         readonly IClientSettings _clientSettings;
+        readonly JitterBuffer _jitterBuffer = new JitterBuffer(2, 50);
+
         ushort _sequenceNumber = 0;
 
-        public MediaClient(ProtocolSwitch protocolSwitch, IAudioSource audioSource, IAudioCodec audioCodec, IClientSettings clientSettings)
+        public MediaClient(
+            ProtocolSwitch protocolSwitch, 
+            IAudioSource audioSource,
+            IAudioPlayer audioPlayer,
+            IAudioCodec audioCodec, 
+            IClientSettings clientSettings)
         {
             _protocolSwitch = protocolSwitch;
             _protocolSwitch.SetMediaPacketParser(this);
             _audioSource = audioSource;
+            _audioPlayer = audioPlayer;
             _audioCodec = audioCodec;
             _clientSettings = clientSettings;
         }
@@ -51,7 +61,34 @@ namespace Ropu.Client
 
         public void ParseMediaPacketGroupCall(Span<byte> data)
         {
-            Console.WriteLine("Received media packet");
+            var sequenceNumber = data.Slice(3).ParseUshort();
+            var userId = data.Slice(5).ParseUint();
+            var audioData = data.Slice(11);
+            _jitterBuffer.AddAudio(userId, sequenceNumber, audioData);
+        }
+
+        async Task PlayAudio()
+        {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+            int nextWakeTime = 20;
+            short[] outputBuffer = new short[160];
+            while(true)
+            {
+                var data = _jitterBuffer.GetNext();
+                 
+                //decode 
+                _audioCodec.Decode(data, outputBuffer);
+
+                //play
+                _audioPlayer.PlayAudio(outputBuffer);
+
+                //sleep until next
+                var sleepTime = (int)(20 - stopwatch.ElapsedMilliseconds);
+                sleepTime = Math.Min(0, sleepTime);
+                await Task.Delay(sleepTime);
+                nextWakeTime += 20;
+            }
         }
 
         void SendMediaPacket(ushort groupId, ushort sequenceNumber, uint userId, short[] audio)
