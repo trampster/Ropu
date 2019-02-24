@@ -43,7 +43,7 @@ namespace Ropu.Shared
                     _availableItems.Add(item);
                     return;
                 }
-                 _availableItems[_nextAvailable] = item;
+                _availableItems[_nextAvailable] = item;
             }
         }
     }

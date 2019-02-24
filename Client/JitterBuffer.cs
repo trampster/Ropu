@@ -1,4 +1,7 @@
 using System;
+using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
 using Ropu.Shared;
 
 namespace Ropu.Client
@@ -30,7 +33,14 @@ namespace Ropu.Client
 
     public class BufferEntry
     {
-        readonly object _lock = new object();
+        readonly object _bufferLock = new object();
+        readonly int _index;
+        public BufferEntry(int index)
+        {
+            _index = index;
+        }
+
+        public int Index => _index;
 
         public uint UserId
         {
@@ -48,27 +58,31 @@ namespace Ropu.Client
         {
             get;
             private set;
-        } 
+        }
+
+        volatile bool _isSet = false;
 
         public bool IsSet
         {
-            get;
-            private set;
+            get => _isSet;
         }
 
         public void Empty()
         {
-            IsSet = false;
+            lock(_bufferLock)
+            {
+                _isSet = false;
+            }
         }
 
         public void Fill(uint userId, ushort sequenceNumber, AudioData audioData)
         {
-            lock(_lock)
+            lock(_bufferLock)
             {
                 UserId = userId;
                 SequenceNumber = sequenceNumber;
                 AudioData = audioData;
-                IsSet = true;
+                _isSet = true;
             }
         }
     }
@@ -95,12 +109,15 @@ namespace Ropu.Client
 
         const int _packetsToAverageOver = 5*50;
 
+        int _packetsInBuffer = 0;
+
         public JitterBuffer(int min, int max)
         {
+            Console.WriteLine("JitterBuffer Constructor");
             _buffer = new BufferEntry[max];
             for(int index = 0; index < _buffer.Length; index++)
             {
-                _buffer[index] = new BufferEntry();
+                _buffer[index] = new BufferEntry(index);
             }
             _bufferSize = min;
             _min = min;
@@ -123,60 +140,89 @@ namespace Ropu.Client
 
         }
 
+        int GetIndexFromOffset(int offset)
+        {
+            int newIndex = _writeIndex + offset;
+            if(newIndex >= 0)
+            {
+                return newIndex % _buffer.Length;
+            }
+            while(newIndex < 0)
+            {
+                newIndex += _buffer.Length;
+            }
+            return newIndex;
+        }
+
+        Stopwatch _stopwatch = new Stopwatch();
         public void AddAudio(uint userId, ushort sequenceNumber, Span<byte> audioData)
         {
-            if(userId != _currentUserId)
+            if(!_stopwatch.IsRunning)
             {
-                //receiving from a different user so reset the sequenceNumber
-                _nextExpectedSequenceNumber = sequenceNumber;
-                _currentUserId = userId;
+                _stopwatch.Start();
             }
-
-            int offset = sequenceNumber - _nextExpectedSequenceNumber;
-
-            int index = (_writeIndex + offset) % _buffer.Length;
-            RecordRequiredBufferSize(_bufferSize - distanceAheadOfReadIndex(index));
-
-
-            int maxNegitiveOffset = GetMaxNegativeOffset();
-            int maxPostiveOffset = maxNegitiveOffset + _buffer.Length;
-            if(offset < maxNegitiveOffset || //packet is to late and we already played out it's spot
-               offset > maxPostiveOffset) // buffer is not large enough to store this one...
+            lock(_lock)
             {
-                return;
+                if(userId != _currentUserId)
+                {
+                    //receiving from a different user so reset the sequenceNumber
+                    _nextExpectedSequenceNumber = sequenceNumber;
+                    _currentUserId = userId;
+                }
+
+                int offset = sequenceNumber - _nextExpectedSequenceNumber;
+
+                int index = GetIndexFromOffset(offset);
+                RecordRequiredBufferSize(-1 *offset);
+
+
+                int maxNegitiveOffset = GetMaxNegativeOffset();
+                int maxPostiveOffset = maxNegitiveOffset + _buffer.Length;
+                if(offset < maxNegitiveOffset || //packet is to late and we already played out it's spot
+                    offset > maxPostiveOffset) // buffer is not large enough to store this one...
+                {
+                    Console.WriteLine($"Packet is to late or to early offset {offset}");
+                    return;
+                }
+                var data = _bufferPool.Get();
+                data.Data = audioData;
+                if(_buffer[index].IsSet)
+                {
+                    Console.WriteLine($"Attempted to write packet to index that is still set {index} seq {sequenceNumber}");
+                    throw new Exception($"Attempted to write packet to index that is still set {index} seq {sequenceNumber}");
+                }
+
+                _buffer[index].Fill(userId, sequenceNumber, data);
+                if(Interlocked.Increment(ref _packetsInBuffer) == 1)
+                {
+                    _dataInBuffer.Set();
+                }
             }
-            var data = _bufferPool.Get();
-            data.Data = audioData;
-            _buffer[index].Fill(userId, sequenceNumber, data);
         }
 
-        int distanceAheadOfReadIndex(int index)
-        {
-            var diff = index - _readIndex;
-            if(diff >= 0)
-            {
-                return diff;
-            }
-            return _buffer.Length - (diff*-1);
-        }
+        readonly ManualResetEvent _dataInBuffer = new ManualResetEvent(false);
 
         void RecordRequiredBufferSize(int requiredBufferSize)
         {
+            if(requiredBufferSize > _requiredBufferSizeCounts.Length -1)
+            {
+                requiredBufferSize = _requiredBufferSizeCounts.Length -1;
+            }
+            if(requiredBufferSize < 0)
+            {
+                requiredBufferSize = 0;
+            }
+
             //expire the oldest stat
             var index = _expireStats[_expireIndex];
             _requiredBufferSizeCounts[index]--;
 
-            //record out entry so we can expire it later
+            //record our entry so we can expire it later
             _expireStats[_expireIndex] = requiredBufferSize;
 
             //increment with wrap
             _expireIndex = (_expireIndex + 1) % _expireStats.Length;
             
-
-            if(requiredBufferSize > _requiredBufferSizeCounts.Length -1)
-            {
-                requiredBufferSize = _requiredBufferSizeCounts.Length -1;
-            }
             _requiredBufferSizeCounts[requiredBufferSize] += 1;
 
             _packetsAveraged++;
@@ -221,39 +267,85 @@ namespace Ropu.Client
                 return;
             }
             //buffer is to large, need to skip a packet
-            _buffer[_readIndex].Empty();
+            if(_buffer[_readIndex].IsSet)
+            {
+                Console.WriteLine($"Empting buffer index {_readIndex} to skip due to need to increase buffer size.");
+                _buffer[_readIndex].Empty();
+                DecrementPacketsInBuffer();
+            }
             IncrementWithWrap(ref _readIndex);
             _bufferSize--;
         }
 
-        public AudioData GetNext()
+        static readonly object _lock = new object();
+        //when the buffer is empty allow the read to continue for another loop through the buffer
+        //incase the stream isn't finished just lost for a bit
+        int _emptyCount = int.MaxValue; 
+
+        public AudioData GetNext(Action waitFinished)
         {
-            //This should get called every 20 milliseconds, so we use this to increment the _writeIndex
-            IncrementWithWrap(ref _writeIndex);
-            _nextExpectedSequenceNumber++;
-
-            var entry = _buffer[_readIndex];
-            IncrementWithWrap(ref _readIndex);
-            UpdateBufferSize();
-
-            if(entry.IsSet)
+            if(_packetsInBuffer == 0)
             {
-                //success, the packet is available
-                var audioData = entry.AudioData;
-                _bufferPool.Add(_lastAudioData); //release back to pool
-                _lastAudioData = audioData;
-                entry.Empty();
-                return audioData;
+                if(_emptyCount >= _buffer.Length)
+                {
+                    Console.WriteLine("Giving up on stream, starting wait for new packet.");
+                    _currentUserId = 0;
+                    _nextExpectedSequenceNumber = 0;
+                    _dataInBuffer.WaitOne();
+                    _emptyCount = 0;
+                    waitFinished();
+                }
+
+                _emptyCount++;
+
             }
-            // Was a miss (either late or lost)
-            if(_lastAudioData != null)
+            else
             {
-                var last = _lastAudioData;
-                _bufferPool.Add(_lastAudioData); //release back to pool
-                _lastAudioData = null; //only use this once, after that silence
-                return last;
+                _emptyCount = 0;
             }
-            return _silence;
+            lock(_lock)
+            {
+                //This should get called every 20 milliseconds, so we use this to increment the _writeIndex
+                IncrementWithWrap(ref _writeIndex);
+                _nextExpectedSequenceNumber++;
+
+                var entry = _buffer[_readIndex];
+                IncrementWithWrap(ref _readIndex);
+                UpdateBufferSize();
+
+                if(entry.IsSet)
+                {
+                    //success, the packet is available
+                    var audioData = entry.AudioData;
+                    if(_lastAudioData != null)
+                    {
+                        _bufferPool.Add(_lastAudioData); //release back to pool
+                    }
+                    _lastAudioData = audioData;
+                    entry.Empty();
+                    DecrementPacketsInBuffer();
+                    return audioData;
+                }
+
+                // Was a miss (either late or lost)
+                if(_lastAudioData != null)
+                {
+                    var last = _lastAudioData;
+                    _bufferPool.Add(_lastAudioData); //release back to pool
+                    _lastAudioData = null; //only use this once, after that silence
+                    return last;
+                }
+                return _silence;
+            }
+        }
+
+        void DecrementPacketsInBuffer()
+        {
+            //Console.WriteLine("Decrement _packetsInBuffer");
+            if(Interlocked.Decrement(ref _packetsInBuffer) == 0)
+            {
+                _dataInBuffer.Reset();
+            }
         }
 
         void IncrementWithWrap(ref int index)
@@ -277,11 +369,7 @@ namespace Ropu.Client
 
         int GetMaxNegativeOffset()
         {
-            if(_writeIndex >= _readIndex)
-            {
-                return -1*(_writeIndex - _readIndex);
-            }
-            return -1*(_buffer.Length + _writeIndex - _readIndex);
+            return _bufferSize * -1;
         }
     }
 }

@@ -42,6 +42,61 @@ namespace Ropu.Client.Alsa
             return AlsaNativeMethods.snd_pcm_readi(_pcmPtr, buffer, length);
         }
 
+        public void Pause()
+        {
+            int error = AlsaNativeMethods.snd_pcm_pause(_pcmPtr, 1);
+            if(error < 0)
+            {
+                throw new AlsaNativeError(error, nameof(AlsaNativeMethods.snd_pcm_pause));
+            }
+        }
+
+        public void Resume()
+        {
+            int error = AlsaNativeMethods.snd_pcm_pause(_pcmPtr, 0);
+            if(error < 0)
+            {
+                throw new AlsaNativeError(error, nameof(AlsaNativeMethods.snd_pcm_pause));
+            }
+        }
+
+        public int Available()
+        {
+            int result = AlsaNativeMethods.snd_pcm_avail(_pcmPtr);
+            if(result < 0)
+            {
+                throw new AlsaNativeError(result, nameof(AlsaNativeMethods.snd_pcm_avail));
+            }
+            return result;
+        }
+
+        public void Reset()
+        {
+            int error = AlsaNativeMethods.snd_pcm_reset(_pcmPtr);
+            if(error < 0)
+            {
+                throw new AlsaNativeError(error, nameof(AlsaNativeMethods.snd_pcm_reset));
+            }
+        }
+
+        public void Drop()
+        {
+            int error = AlsaNativeMethods.snd_pcm_drop(_pcmPtr);
+            if(error < 0)
+            {
+                throw new AlsaNativeError(error, nameof(AlsaNativeMethods.snd_pcm_drop));
+            }
+        }
+
+        public void Start()
+        {
+            int error = AlsaNativeMethods.snd_pcm_start(_pcmPtr);
+            if(error < 0)
+            {
+                throw new AlsaNativeError(error, nameof(AlsaNativeMethods.snd_pcm_start));
+            }
+        }
+
         bool _disposedValue = false;
 
         protected virtual void Dispose(bool disposing)
@@ -56,6 +111,8 @@ namespace Ropu.Client.Alsa
                 _disposedValue = true;
             }
         }
+
+
 
         public void Dispose()
         {

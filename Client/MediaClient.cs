@@ -9,7 +9,7 @@ using Ropu.Shared.ControlProtocol;
 
 namespace Ropu.Client
 {
-    public class MediaClient : IMediaPacketParser
+    public class MediaClient : IMediaPacketParser, IDisposable
     {
         readonly ProtocolSwitch _protocolSwitch;
         readonly IAudioSource _audioSource;
@@ -41,6 +41,8 @@ namespace Ropu.Client
         {
             _sendingAudio = true;
             short[] audio = new short[160];
+
+            _audioSource.Start();
             while(_sendingAudio)
             {
                 await Task.Run(() => _audioSource.ReadAudio(audio));
@@ -51,6 +53,7 @@ namespace Ropu.Client
                 SendMediaPacket(groupId, _sequenceNumber, _clientSettings.UserId, audio);
                 _sequenceNumber++;
             }
+            _audioSource.Stop();
         }
 
         public void StopSendingAudio()
@@ -67,28 +70,41 @@ namespace Ropu.Client
             _jitterBuffer.AddAudio(userId, sequenceNumber, audioData);
         }
 
-        async Task PlayAudio()
+        public async Task PlayAudio()
         {
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
-            int nextWakeTime = 20;
-            short[] outputBuffer = new short[160];
-            while(true)
+            await Task.Run(() =>
             {
-                var data = _jitterBuffer.GetNext();
-                 
-                //decode 
-                _audioCodec.Decode(data, outputBuffer);
+                Stopwatch stopwatch = new Stopwatch();
+                stopwatch.Start();
+                int nextWakeTime = 20;
+                short[] outputBuffer = new short[160];
+                Action afterWait = () => 
+                {
+                    nextWakeTime = (int)stopwatch.ElapsedMilliseconds + 20;
+                };
 
-                //play
-                _audioPlayer.PlayAudio(outputBuffer);
+                while(!_disposing)
+                {
+                    var data = _jitterBuffer.GetNext(afterWait);
+                    
+                    //decode 
+                    _audioCodec.Decode(data, outputBuffer);
 
-                //sleep until next
-                var sleepTime = (int)(20 - stopwatch.ElapsedMilliseconds);
-                sleepTime = Math.Min(0, sleepTime);
-                await Task.Delay(sleepTime);
-                nextWakeTime += 20;
-            }
+                    //play
+                    _audioPlayer.PlayAudio(outputBuffer);
+
+                    //sleep until next
+                    var elapsed = stopwatch.ElapsedMilliseconds;
+                    var sleepTime = (int)(nextWakeTime - elapsed);
+                    if(sleepTime < 0) 
+                    {
+                        Console.WriteLine($"Sleep time less than zero {sleepTime}");
+                        sleepTime = 0;
+                    }
+                    System.Threading.Thread.Sleep(sleepTime);
+                    nextWakeTime += 20;
+                }
+            });
         }
 
         void SendMediaPacket(ushort groupId, ushort sequenceNumber, uint userId, short[] audio)
@@ -110,6 +126,24 @@ namespace Ropu.Client
 
             Console.WriteLine("Sending Media Packet");
             _protocolSwitch.Send(11 + ammountEncoded);
+        }
+
+        protected volatile bool _disposing = false;
+
+        protected void Dispose(bool disposing)
+        {
+            if(disposing)
+            {
+                _disposing = true;
+                _audioPlayer.Dispose();
+                _audioSource.Dispose();
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(true);
         }
     }
 }

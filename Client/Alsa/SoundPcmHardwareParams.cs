@@ -94,6 +94,15 @@ namespace Ropu.Client.Alsa
             }
         }
 
+        public void SetPeriodsNear(ref uint periods, ref int dir)
+        {
+            int error = AlsaNativeMethods.snd_pcm_hw_params_set_periods_near(_pcmPtr, _hardwareParamsPtr, ref periods, ref dir);
+            if(error < 0)
+            {
+                throw new AlsaNativeError(error, nameof(AlsaNativeMethods.snd_pcm_hw_params_set_periods_near));
+            }
+        }
+
         bool _disposedValue = false;
 
         protected virtual void Dispose(bool disposing)

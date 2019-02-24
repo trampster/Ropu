@@ -1,3 +1,5 @@
+using System;
+
 namespace Ropu.Client
 {
     public class AlsaAudioPlayer : IAudioPlayer

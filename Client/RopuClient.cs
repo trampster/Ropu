@@ -224,8 +224,9 @@ namespace Ropu.Client
         {
             var protocolSwitchTask = _protocolSwitch.Run();
             var loadBalancerTask = _loadBalancerProtocol.Run();
+            var playAudioTask = _mediaClient.PlayAudio();
             _stateManager.SetState(_unregistered, _start);
-            await TaskCordinator.WaitAll(protocolSwitchTask, loadBalancerTask);
+            await TaskCordinator.WaitAll(protocolSwitchTask, loadBalancerTask, playAudioTask);
         }
 
         readonly ManualResetEvent _heartbeatResetEvent = new ManualResetEvent(false);

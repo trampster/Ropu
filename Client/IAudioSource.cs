@@ -11,5 +11,9 @@ namespace Ropu.Client
         /// <param name="buffer"></param>
         /// <returns></returns>
         void ReadAudio(short[] buffer);
+
+        void Start();
+
+        void Stop();
     }
 }

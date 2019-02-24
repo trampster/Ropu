@@ -250,6 +250,12 @@ namespace Ropu.Client.Alsa
         [DllImport("asound.so.2")]
         public static extern int snd_pcm_prepare(IntPtr pcm);
 
+        [DllImport("asound.so.2")]
+        public static extern int snd_pcm_drop(IntPtr pcmPtr);
+
+        [DllImport("asound.so.2")]
+        public static extern int snd_pcm_start(IntPtr pcmPtr);
+
         /// <summary>
         /// 
         /// </summary>
@@ -259,6 +265,18 @@ namespace Ropu.Client.Alsa
         /// <returns>frames read</returns>
         [DllImport("asound.so.2")]
         public static extern int snd_pcm_readi(IntPtr pcm, short[] buffer, uint size);
+
+        [DllImport("asound.so.2")]
+        public static extern int snd_pcm_pause(IntPtr pcmPtr, int v);
+
+        [DllImport("asound.so.2")]
+        public static extern int snd_pcm_reset(IntPtr pcmPtr);
+
+        [DllImport("asound.so.2")]
+        public static extern int snd_pcm_avail(IntPtr pcmPtr);
+
+        [DllImport("asound.so.2")]
+        public static extern int snd_pcm_hw_params_set_periods_near(IntPtr pcmPtr, IntPtr hardwareParamsPtr, ref uint periods, ref int dir);
     }
 
     public class AlsaNativeError : Exception
