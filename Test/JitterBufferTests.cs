@@ -16,27 +16,35 @@ namespace Ropu.Tests.Client
         }
 
         [Test]
-        public void GetNext_BufferEmpty_ReturnsSilence()
+        public void GetNext_BufferEmpty_ReturnsEmptyData()
         {
             // arrange
+            var data = new byte[320];
+            data[0] = 42;
+            _jitterBuffer.AddAudio(12, 2, data.AsSpan());
+            _jitterBuffer.GetNext(() => {}); // an empty packet
+            _jitterBuffer.GetNext(() => {}); // the one we set, now buffer should be empty
+            _jitterBuffer.GetNext(() => {}); // will repeat last packet
+
+
             // act
-            var audio = _jitterBuffer.GetNext();
+            var audio = _jitterBuffer.GetNext(() => {});
 
             // assert
-            SpanAssert.AreEqual(new ushort[160].AsSpan(), audio.Span);
+            SpanAssert.AreEqual(new byte[0].AsSpan(), audio.Data);
         }
 
         int GetBufferDelay()
         {
-            var data = new ushort[160];
-            data[0] = 4242;
-            _jitterBuffer.AddAudio(12, 2, data.AsMemory());
+            var data = new byte[320];
+            data[0] = 42;
+            _jitterBuffer.AddAudio(12, 2, data.AsSpan());
             int size = 0;
             while(true)
             {
                 size++;
-                var audioOut = _jitterBuffer.GetNext().Span;
-                if(audioOut[0] == 4242)
+                var audioOut = _jitterBuffer.GetNext(() => {}).Data;
+                if(audioOut.Length > 0 && audioOut[0] == 42)
                 {
                     return size;
                 }
