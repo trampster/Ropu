@@ -42,6 +42,11 @@ namespace Ropu.Client.Alsa
             return AlsaNativeMethods.snd_pcm_readi(_pcmPtr, buffer, length);
         }
 
+        public int WriteInterleaved(short[] buffer, uint length)
+        {
+            return AlsaNativeMethods.snd_pcm_writei(_pcmPtr, buffer, length);
+        }
+
         public void Pause()
         {
             int error = AlsaNativeMethods.snd_pcm_pause(_pcmPtr, 1);

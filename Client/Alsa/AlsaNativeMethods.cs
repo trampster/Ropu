@@ -267,6 +267,9 @@ namespace Ropu.Client.Alsa
         public static extern int snd_pcm_readi(IntPtr pcm, short[] buffer, uint size);
 
         [DllImport("asound.so.2")]
+        public static extern int snd_pcm_writei(IntPtr pcm, short[] buffer, uint size);
+
+        [DllImport("asound.so.2")]
         public static extern int snd_pcm_pause(IntPtr pcmPtr, int v);
 
         [DllImport("asound.so.2")]
