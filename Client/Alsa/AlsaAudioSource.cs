@@ -74,6 +74,7 @@ namespace Ropu.Client.Alsa
                 _soundPcm.HardwareParams = hardwareParams;
 
                 _soundPcm.Prepare(); //this starts filling the buffer so need top Drop
+                _soundPcm.Start();
 
             }
         }
