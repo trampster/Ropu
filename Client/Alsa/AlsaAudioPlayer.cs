@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 
 namespace Ropu.Client.Alsa
 {
@@ -23,25 +24,28 @@ namespace Ropu.Client.Alsa
                 }
                 hardwareParams.Channels = 1;
 
-                uint periods = 2;
-                hardwareParams.SetPeriodsNear(ref periods, ref dir);
-                if(periods != 2)
-                {
-                    Console.WriteLine($"Requested Alsa Periods 2 but got {periods}");
-                }
-
                 _soundPcm.HardwareParams = hardwareParams;
             }
-
-            _soundPcm.Prepare();
-            _soundPcm.Start();
         }
 
         public void PlayAudio(short[] buffer)
         {
-            if(160 != _soundPcm.WriteInterleaved(buffer, 160))
+            while(true)
             {
-                Console.Error.WriteLine("failed to write 160 frames of audio");
+                int result = _soundPcm.WriteInterleaved(buffer, 160);
+                if(result == -32)
+                {
+                    Console.WriteLine($"Audio underrun calling prepare error {result}");
+                    _soundPcm.Prepare();
+                    _soundPcm.WriteInterleaved(buffer, 160);
+
+                    continue;
+                }
+                if(160 != result)
+                {
+                    Console.Error.WriteLine($"failed to write 160 frames of audio instead returned {result}");
+                }
+                return;
             }
         }
 
