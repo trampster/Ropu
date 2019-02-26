@@ -124,7 +124,6 @@ namespace Ropu.Client
             // Payload
             int ammountEncoded = _audioCodec.Encode(audio, buffer.AsSpan(11));
 
-            Console.WriteLine("Sending Media Packet");
             _protocolSwitch.Send(11 + ammountEncoded);
         }
 
