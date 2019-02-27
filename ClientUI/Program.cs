@@ -9,6 +9,7 @@ using System.Net;
 using Ropu.Shared;
 using Ropu.Shared.LoadBalancing;
 using Ropu.Client.Alsa;
+using Ropu.Client.FileAudio;
 
 namespace Ropu.ClientUI
 {
@@ -170,7 +171,8 @@ namespace Ropu.ClientUI
 
             var protocolSwitch = new ProtocolSwitch(controlPortStarting, new PortFinder());
             var servingNodeClient = new ServingNodeClient(protocolSwitch);
-            var audioSource = new AlsaAudioSource();
+            var audioSource = new FileAudioSource("/home/daniel/Music/oliver-twist-001.wav");
+            //var audioSource = new AlsaAudioSource();
             var audioPlayer = new AlsaAudioPlayer();
             var audioCodec = new RawCodec();
             var mediaClient = new MediaClient(protocolSwitch, audioSource, audioPlayer, audioCodec, settings);

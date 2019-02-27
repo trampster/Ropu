@@ -123,7 +123,7 @@ namespace Ropu.Client
             _min = min;
             _max = max;
 
-            _writeIndex = _min - 1;
+            _writeIndex = _min;
             IntializeStats();
         }
 
@@ -183,7 +183,14 @@ namespace Ropu.Client
                 data.Data = audioData;
                 if(_buffer[index].IsSet)
                 {
-                    Console.WriteLine($"Attempted to write packet to index that is still set {index} seq {sequenceNumber}");
+                    Console.WriteLine("Attempted to write packet to index that is still set");
+                    Console.WriteLine($"index {index}");
+                    Console.WriteLine($"sequenceNumber {sequenceNumber}");
+                    Console.WriteLine($"_nextExpectedSequenceNumber {_nextExpectedSequenceNumber}");
+                    Console.WriteLine($"offset {offset}");
+                    Console.WriteLine($"_readIndex {_readIndex}");
+                    Console.WriteLine($"_writeIndex {_writeIndex}");
+
                     throw new Exception($"Attempted to write packet to index that is still set {index} seq {sequenceNumber}");
                 }
 
