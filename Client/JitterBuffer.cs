@@ -154,13 +154,8 @@ namespace Ropu.Client
             return newIndex;
         }
 
-        Stopwatch _stopwatch = new Stopwatch();
         public void AddAudio(uint userId, ushort sequenceNumber, Span<byte> audioData)
         {
-            if(!_stopwatch.IsRunning)
-            {
-                _stopwatch.Start();
-            }
             lock(_lock)
             {
                 if(userId != _currentUserId)
@@ -264,17 +259,23 @@ namespace Ropu.Client
             {
                 DecrementWithWrap(ref _readIndex);
                 _bufferSize++;
+                Console.WriteLine($"Increasing buffersize to {_bufferSize}");
+
+                return;
+            }
+            if(_bufferSize == _min)
+            {
                 return;
             }
             //buffer is to large, need to skip a packet
             if(_buffer[_readIndex].IsSet)
             {
-                Console.WriteLine($"Empting buffer index {_readIndex} to skip due to need to increase buffer size.");
                 _buffer[_readIndex].Empty();
                 DecrementPacketsInBuffer();
             }
             IncrementWithWrap(ref _readIndex);
             _bufferSize--;
+            Console.WriteLine($"Decrease buffersize to {_bufferSize}.");
         }
 
         static readonly object _lock = new object();
@@ -330,11 +331,14 @@ namespace Ropu.Client
                 // Was a miss (either late or lost)
                 if(_lastAudioData != null)
                 {
+                    Console.WriteLine("Buffer Miss Repeating last packet");
+
                     var last = _lastAudioData;
                     _bufferPool.Add(_lastAudioData); //release back to pool
                     _lastAudioData = null; //only use this once, after that silence
                     return last;
                 }
+                Console.WriteLine("Buffer Miss returning silence");
                 return _silence;
             }
         }

@@ -292,7 +292,6 @@ namespace Ropu.Client
 
         async Task Register(CancellationToken token)
         {
-            Console.WriteLine("Register Called");
             while(!token.IsCancellationRequested)
             {
                 if(_clientSettings.UserId == 0)

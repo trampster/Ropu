@@ -9,7 +9,7 @@ namespace Ropu.Client
         {
             for(int rawIndex = 0; rawIndex < raw.Length; rawIndex++)
             {
-                output.WriteShort(raw[rawIndex], rawIndex*2);
+                BitConverter.TryWriteBytes(output.Slice(rawIndex*2), raw[rawIndex]);
             }
             return raw.Length*2;
         }
@@ -17,13 +17,20 @@ namespace Ropu.Client
         public int Decode(AudioData encodedData, short[] output)
         {
             var encoded = encodedData.Data;
+            if(encoded.Length == 0)
+            {
+                //silence
+                for(int index = 0; index < output.Length; index++)
+                {
+                    output[index] = 0;
+                }
+                return output.Length;
+            }
             int outputIndex = 0;
             for(int encodedIndex = 0; encodedIndex < encoded.Length; encodedIndex += 2)
             {
-                var value = 
-                    (encoded[encodedIndex] << 8) + 
-                    encoded[encodedIndex+1];
-                output[outputIndex] = (short)value;
+                var value = BitConverter.ToInt16(encoded.Slice(encodedIndex));
+                output[outputIndex] = value;
                 outputIndex++;
             }
             return encoded.Length/2;

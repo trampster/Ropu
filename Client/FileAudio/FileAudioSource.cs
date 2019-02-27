@@ -40,9 +40,7 @@ namespace Ropu.Client.FileAudio
             int outputIndex = 0;
             for(int index = 0; index < _buffer.Length; index += 2)
             {
-                var value = 
-                    (_buffer[index] ) + 
-                    (_buffer[index+1] << 8);
+                var value = BitConverter.ToInt16(_buffer, index);
                 output[outputIndex] = (short)value;
                 outputIndex++;
             }
