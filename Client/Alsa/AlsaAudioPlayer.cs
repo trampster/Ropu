@@ -22,31 +22,34 @@ namespace Ropu.Client.Alsa
                 {
                     throw new Exception($"Could not get required sample rate of {8000} instead got {rate}");
                 }
+                uint bufferSize = 320;
+                hardwareParams.SetBufferNear(ref bufferSize);
+                if(bufferSize != 320)
+                {
+                    Console.WriteLine("Could not get requested buffer size instead got {bufferSize}");
+                }
                 hardwareParams.Channels = 1;
 
                 _soundPcm.HardwareParams = hardwareParams;
+                _soundPcm.Start();
             }
         }
 
         public void PlayAudio(short[] buffer)
         {
-            while(true)
+            int result = _soundPcm.WriteInterleaved(buffer, 160);
+            if(result == -32)
             {
-                int result = _soundPcm.WriteInterleaved(buffer, 160);
-                if(result == -32)
-                {
-                    Console.WriteLine($"Audio underrun calling prepare error {result}");
-                    _soundPcm.Prepare();
-                    _soundPcm.WriteInterleaved(buffer, 160);
-
-                    continue;
-                }
-                if(160 != result)
-                {
-                    Console.Error.WriteLine($"failed to write 160 frames of audio instead returned {result}");
-                }
-                return;
+                Console.WriteLine($"Audio underrun calling prepare error {result}");
+                _soundPcm.Prepare();
+                result = _soundPcm.WriteInterleaved(buffer, 160);
+                result = _soundPcm.WriteInterleaved(buffer, 160);
             }
+            if(160 != result)
+            {
+                Console.Error.WriteLine($"failed to write 160 frames of audio instead returned {result}");
+            }
+            return;
         }
 
         protected void Dispose(bool disposing)

@@ -103,6 +103,15 @@ namespace Ropu.Client.Alsa
             }
         }
 
+        public void SetBufferNear(ref uint frames)
+        {
+            int error = AlsaNativeMethods.snd_pcm_hw_params_set_buffer_size_near(_pcmPtr, _hardwareParamsPtr, ref frames);
+            if(error < 0)
+            {
+                throw new AlsaNativeError(error, nameof(AlsaNativeMethods.snd_pcm_hw_params_set_buffer_size_near));
+            }
+        }
+
         bool _disposedValue = false;
 
         protected virtual void Dispose(bool disposing)

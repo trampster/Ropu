@@ -44,15 +44,17 @@ namespace Ropu.Client.FileAudio
                 output[outputIndex] = (short)value;
                 outputIndex++;
             }
-            
-            int waitTime = _nextPlayTime - (int)_stopwatch.ElapsedMilliseconds;
+            int ellapsed = (int)_stopwatch.ElapsedMilliseconds;
+            int waitTime = _nextPlayTime - ellapsed;
             if(waitTime < 0)
             {
                 Console.WriteLine($"Sleep time less than zero {waitTime}");
-                waitTime = 0;
+            }
+            else
+            {
+                System.Threading.Thread.Sleep(waitTime);
             }
 
-            System.Threading.Thread.Sleep(waitTime);
 
             _nextPlayTime += 20;
         }

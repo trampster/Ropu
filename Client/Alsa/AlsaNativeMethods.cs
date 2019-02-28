@@ -206,6 +206,9 @@ namespace Ropu.Client.Alsa
         [DllImport("asound.so.2")]
         public static extern int snd_pcm_hw_params_set_rate_near(IntPtr pcm, IntPtr hwParams, ref uint val, ref int dir);
 
+        [DllImport("asound.so.2")]
+        public static extern int snd_pcm_hw_params_set_buffer_size_near (IntPtr pcm, IntPtr hwParams, ref uint val);
+
         /// <summary>
         /// 
         /// </summary>
