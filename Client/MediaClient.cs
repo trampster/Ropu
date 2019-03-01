@@ -41,6 +41,9 @@ namespace Ropu.Client
         {
             _sendingAudio = true;
             short[] audio = new short[160];
+            //bump the sequence number by 1000, this allows the receivers to reset there jitter buffers on new overs.
+            //this is required because we don't have a over id in media packets
+            _sequenceNumber += 1000; 
 
             _audioSource.Start();
             while(_sendingAudio)

@@ -14,7 +14,6 @@ namespace Ropu.Client.FileAudio
         {
             _fileStream = File.OpenRead(path);
             SkipWavHeader();
-            _stopwatch.Start();
         }
 
         void SkipWavHeader()
@@ -61,6 +60,9 @@ namespace Ropu.Client.FileAudio
 
         public void Start()
         {
+            _stopwatch.Reset();
+            _stopwatch.Start();
+            _nextPlayTime = 20;
         }
 
         public void Stop()
