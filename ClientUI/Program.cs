@@ -25,9 +25,38 @@ namespace Ropu.ClientUI
             _ropuClient = ropuClient;
             _ropuClient.StateChanged += (sender, args) => 
             {
-                Application.Instance.Invoke(() => State = _ropuClient.State.ToString());
+                Application.Instance.Invoke(ChangeState);
             };
             _state = _ropuClient.State.ToString();
+        }
+
+        void ChangeState()
+        {
+            var state = _ropuClient.State;
+            State = state.ToString();
+            switch (state)
+            {
+                case StateId.Start:
+                case StateId.Unregistered:
+                case StateId.Deregistering:
+                    PttColor = Gray;
+                    break;
+                case StateId.Registered:
+                case StateId.InCallIdle:
+                case StateId.StartingCall:
+                case StateId.InCallRequestingFloor:
+                    PttColor = Blue;
+                    break;
+                case StateId.InCallReceiving:
+                    PttColor = Red;
+                    break;
+                case StateId.InCallTransmitting:
+                case StateId.InCallReleasingFloor:
+                    PttColor = Green;
+                    break;
+                default:
+                    throw new Exception("Unhandled Call State");
+            }
         }
 
         string _state = "";
@@ -74,6 +103,19 @@ namespace Ropu.ClientUI
             }
         }
 
+        readonly static Color Blue = Color.FromRgb(0x3193e3);
+        readonly static Color Green = Color.FromRgb(0x31e393);
+        readonly static Color Gray = Color.FromRgb(0x999999);
+        readonly static Color Red = Color.FromRgb(0xFF6961);
+
+
+        Color _pttColor = Blue;
+        public Color PttColor
+        {
+            get => _pttColor;
+            set => SetProperty(ref _pttColor, value);
+        }
+
         string _groupIdError = "";
         public string GroupIdError
         {
@@ -115,13 +157,13 @@ namespace Ropu.ClientUI
             var stateLabel = new Label();
             stateLabel.TextBinding.BindDataContext<MainViewModel>(m => m.State);
 
-            var button = new PttButton()
+            var button = new PttCircle()
             {
-                Text = "Push To Talk"
+               //Text = "Push To Talk"
             };
             button.BindDataContext(c => c.ButtonDownCommand, (MainViewModel model) => model.PttDownCommand);
             button.BindDataContext(c => c.ButtonUpCommand, (MainViewModel model) => model.PttUpCommand);
-
+            button.PttColorBinding.BindDataContext<MainViewModel>(m => m.PttColor);
 
             var textBox = new TextBox();
             textBox.TextBinding.BindDataContext<MainViewModel>(m => m.UserId);
@@ -142,16 +184,22 @@ namespace Ropu.ClientUI
                 Spacing = new Size(5,5),
                 Rows = 
                 {
+                    //state row
                     new TableLayout(){ Rows = { new TableRow(new TableCell(new Label { Text = "State: "}), stateLabel)}},
+                    //user row
                     new TableLayout(){ Rows = { new TableRow(new TableCell(
                         new Label { Text = "User ID: ", VerticalAlignment = VerticalAlignment.Center}), 
                         textBox, 
                         userButton,
                         userIdErrorLabel
                         )}},
+                    //group row
                     new TableLayout(){ Rows = { new TableRow(new TableCell(new Label { Text = "Group ID: ", VerticalAlignment = VerticalAlignment.Center}), grouptextBox, groupErrorLabel)}},
+                    //ptt state row
                     pttStateLabel, 
-                    new TableRow(button),
+                    //button
+                    //new TableRow(button),
+                    button
                 }
             };
             DataContext = mainViewModel;
@@ -171,8 +219,8 @@ namespace Ropu.ClientUI
 
             var protocolSwitch = new ProtocolSwitch(controlPortStarting, new PortFinder());
             var servingNodeClient = new ServingNodeClient(protocolSwitch);
-            //var audioSource = new FileAudioSource("/home/daniel/Music/oliver-twist-001.wav");
-            var audioSource = new AlsaAudioSource();
+            var audioSource = new FileAudioSource("/home/daniel/Music/oliver-twist-001.wav");
+            //var audioSource = new AlsaAudioSource();
             var audioPlayer = new AlsaAudioPlayer();
             var audioCodec = new RawCodec();
             var mediaClient = new MediaClient(protocolSwitch, audioSource, audioPlayer, audioCodec, settings);
