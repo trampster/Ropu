@@ -186,13 +186,6 @@ namespace Ropu.ClientUI
                 {
                     //state row
                     new TableLayout(){ Rows = { new TableRow(new TableCell(new Label { Text = "State: "}), stateLabel)}},
-                    //user row
-                    new TableLayout(){ Rows = { new TableRow(new TableCell(
-                        new Label { Text = "User ID: ", VerticalAlignment = VerticalAlignment.Center}), 
-                        textBox, 
-                        userButton,
-                        userIdErrorLabel
-                        )}},
                     //group row
                     new TableLayout(){ Rows = { new TableRow(new TableCell(new Label { Text = "Group ID: ", VerticalAlignment = VerticalAlignment.Center}), grouptextBox, groupErrorLabel)}},
                     //ptt state row
@@ -207,15 +200,18 @@ namespace Ropu.ClientUI
         
 
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
-
             const ushort controlPortStarting = 5061;
             const string myAddress = "192.168.1.6";
             const string loadBalancerIP =  "192.168.1.6";
             const int loadBalancerPort = 5069;
 
             var settings = new ClientSettings();
+            if(args.Length > 0 && uint.TryParse(args[0], out uint userId))
+            {
+                settings.UserId = userId;
+            }
 
             var protocolSwitch = new ProtocolSwitch(controlPortStarting, new PortFinder());
             var servingNodeClient = new ServingNodeClient(protocolSwitch);
