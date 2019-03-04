@@ -228,7 +228,9 @@ namespace Ropu.ClientUI
             var ropuClient = new RopuClient(protocolSwitch, servingNodeClient, mediaClient, ipAddress, callManagementProtocol, loadBalancerEndpoint, settings);
 
             var application = new RopuApplication(ropuClient);
-            application.Run(new MainForm(new MainViewModel(ropuClient, settings)));
+            var mainForm = new MainForm(new MainViewModel(ropuClient, settings));
+            mainForm.Icon = new Icon("../Icon/Ropu.ico");
+            application.Run(mainForm);
         }
     }
 }
