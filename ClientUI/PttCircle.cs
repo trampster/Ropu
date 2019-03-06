@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Windows.Input;
 using Eto.Drawing;
 using Eto.Forms;
@@ -8,6 +9,12 @@ namespace Ropu.ClientUI
     public class PttCircle : Drawable
     {
         readonly Color _blue = Color.FromRgb(0x3193e3);
+        FontFamily _fontFamily;
+
+        ImageLabel _callGroupDrawable;
+        ImageLabel _talkerDrawable;
+        IdleGroup _idleGroupDrawable;
+
 
         bool _buttonDown = false;
         public PttCircle()
@@ -26,6 +33,14 @@ namespace Ropu.ClientUI
                 _buttonDown = false;
                 Invalidate();
             };
+            _fontFamily = Eto.Drawing.Fonts.AvailableFontFamilies.First();
+             _callGroupDrawable = new ImageLabel(_fontFamily);
+             _callGroupDrawable.Text = "A Team";
+             _talkerDrawable = new ImageLabel(_fontFamily);
+             _talkerDrawable.Text = "Franky";
+
+             _idleGroupDrawable = new IdleGroup(_fontFamily);
+             _idleGroupDrawable.GroupName = "A Team";
         }
 
         Color _pttColor;
@@ -50,19 +65,89 @@ namespace Ropu.ClientUI
             }
         }
 
+        public string Talker
+        {
+            get =>  _talkerDrawable.Text;
+            set
+            {
+                _talkerDrawable.Hidden = value == null;
+                _talkerDrawable.Text = value;
+                Invalidate();
+            }
+        }
+
+        public BindableBinding<PttCircle, string> TalkerBinding
+        { 
+            get
+            {
+                return new BindableBinding<PttCircle, string>(
+                    this, 
+                    p => p.Talker, 
+                    (p,c) => p.Talker = c);
+            }
+        }
+
+        public string CallGroup
+        {
+            get =>  _callGroupDrawable.Text;
+            set
+            {
+                _callGroupDrawable.Hidden = value == null;
+                _callGroupDrawable.Text = value;
+                Invalidate();
+            }
+        }
+
+        public BindableBinding<PttCircle, string> CallGroupBinding
+        { 
+            get
+            {
+                return new BindableBinding<PttCircle, string>(
+                    this, 
+                    p => p.CallGroup, 
+                    (p,c) => p.CallGroup = c);
+            }
+        }
+
+
         void PaintHandler(object caller, PaintEventArgs paintEventArgs)
         {
+            Console.WriteLine($"PaintHandler Width {Width} Height {Height}");
             var graphics = paintEventArgs.Graphics;
 
+            const int padding = 5;
+
+            _callGroupDrawable.X = padding;
+            _callGroupDrawable.Y = padding;
+            _callGroupDrawable.Draw(graphics);
+            
+            _talkerDrawable.X = Width - _talkerDrawable.Width - padding;
+            _talkerDrawable.Y = padding;
+            _talkerDrawable.Draw(graphics);
+
+            _idleGroupDrawable.X = Width - _idleGroupDrawable.Width - padding;
+            _idleGroupDrawable.Y = Height - _idleGroupDrawable.Height - padding;
+            _idleGroupDrawable.Draw(graphics);
+
+            DrawPttCircle(graphics, _callGroupDrawable.Height + padding, padding);
+        }
+
+        void DrawPttCircle(Graphics graphics, int topSpace, int padding)
+        {
+            int heightAvailable = Height - topSpace*2;
             int penWidth = _buttonDown ? 9 : 6;
-            int diameter = Math.Min(Width, Height) -penWidth - (_buttonDown ? 0 : 3);
+            int diameter = Math.Min(Width - (padding*2), heightAvailable) -penWidth - (_buttonDown ? 0 : 3);
 
-            int yPosition = (Height/2) - (diameter/2);
-            int xPosition = (Width/2) - (diameter/2);
-
+            int radius = diameter/2;
+            int yPosition = (Height/2) - radius;
+            int xPosition = (Width/2) - radius;
 
             Pen pen = new Pen(PttColor, penWidth);
             graphics.DrawEllipse(pen, xPosition, yPosition, diameter, diameter);
+            var font = new Font(_fontFamily, radius/4);
+            string group = "Team A";
+            var groupTextSize = font.MeasureString(group);
+            graphics.DrawText(font, new SolidBrush(PttColor), (Width/2) - (groupTextSize.Width/2), (Height/2) - (groupTextSize.Height/2), "Team A");
         }
 
         event EventHandler<EventArgs> ButtonDownEvent;
@@ -88,10 +173,10 @@ namespace Ropu.ClientUI
         public ICommand ButtonUpCommand
         {
             get { return Properties.GetCommand(ButtonUpCommandKey); }
-			set { Properties.SetCommand(ButtonUpCommandKey, value, e => Enabled = e, r => this.ButtonUpEvent += r, r => ButtonUpEvent -= r, () => ButtonUPCommandParameter); }
+			set { Properties.SetCommand(ButtonUpCommandKey, value, e => Enabled = e, r => this.ButtonUpEvent += r, r => ButtonUpEvent -= r, () => ButtonUpCommandParameter); }
         }
 
-        public object ButtonUPCommandParameter
+        public object ButtonUpCommandParameter
 		{
 			get { return Properties.Get<object>(ButtonUpCommandKey); }
 			set { Properties.Set(ButtonUpCommandKey, value, () => Properties.UpdateCommandCanExecute(ButtonUpCommandKey)); }

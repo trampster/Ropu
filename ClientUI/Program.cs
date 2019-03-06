@@ -28,6 +28,22 @@ namespace Ropu.ClientUI
                 Application.Instance.Invoke(ChangeState);
             };
             _state = _ropuClient.State.ToString();
+            _ropuClient.IdleGroup = 4242;
+        }
+
+        bool InCall(StateId state)
+        {
+            switch (state)
+            {
+                case StateId.InCallIdle:
+                case StateId.InCallRequestingFloor:
+                case StateId.InCallReceiving:
+                case StateId.InCallTransmitting:
+                case StateId.InCallReleasingFloor:
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         void ChangeState()
@@ -57,6 +73,11 @@ namespace Ropu.ClientUI
                 default:
                     throw new Exception("Unhandled Call State");
             }
+
+            CallGroup = InCall(state) ? CallGroup = _ropuClient.CallGroup.ToString() : null;
+
+            Talker = state == StateId.InCallReceiving ? "Snoke" : null;
+
         }
 
         string _state = "";
@@ -116,6 +137,20 @@ namespace Ropu.ClientUI
             set => SetProperty(ref _pttColor, value);
         }
 
+        string _talker;
+        public string Talker
+        {
+            get => _talker;
+            set => SetProperty(ref _talker, value);
+        }
+
+        string _callGroup;
+        public string CallGroup
+        {
+            get => _callGroup;
+            set => SetProperty(ref _callGroup, value);
+        }
+
         string _groupIdError = "";
         public string GroupIdError
         {
@@ -146,58 +181,25 @@ namespace Ropu.ClientUI
 
     public class MainForm : Form
     {
+        readonly PixelLayout _pttCircle_pixelLayout;
+        readonly PttCircle _pttCircle;
         public MainForm (MainViewModel mainViewModel)
         {
             Title = "Ropu Client";
             ClientSize = new Size(400, 200);
 
-            var pttStateLabel = new Label();
-            pttStateLabel.TextBinding.BindDataContext<MainViewModel>(m => m.PttState);
+            _pttCircle = new PttCircle();
+            _pttCircle.BindDataContext(c => c.ButtonDownCommand, (MainViewModel model) => model.PttDownCommand);
+            _pttCircle.BindDataContext(c => c.ButtonUpCommand, (MainViewModel model) => model.PttUpCommand);
+            _pttCircle.PttColorBinding.BindDataContext<MainViewModel>(m => m.PttColor);
 
-            var stateLabel = new Label();
-            stateLabel.TextBinding.BindDataContext<MainViewModel>(m => m.State);
+            _pttCircle.TalkerBinding.BindDataContext<MainViewModel>(m => m.Talker);
+            _pttCircle.CallGroupBinding.BindDataContext<MainViewModel>(m => m.CallGroup);
 
-            var button = new PttCircle()
-            {
-               //Text = "Push To Talk"
-            };
-            button.BindDataContext(c => c.ButtonDownCommand, (MainViewModel model) => model.PttDownCommand);
-            button.BindDataContext(c => c.ButtonUpCommand, (MainViewModel model) => model.PttUpCommand);
-            button.PttColorBinding.BindDataContext<MainViewModel>(m => m.PttColor);
-
-            var textBox = new TextBox();
-            textBox.TextBinding.BindDataContext<MainViewModel>(m => m.UserId);
-            var userIdErrorLabel = new Label();
-            userIdErrorLabel.TextBinding.BindDataContext<MainViewModel>(m => m.UserIdError);
-            var userButton = new Button(){Text="Set"};
-            userButton.BindDataContext(c => c.Command, (MainViewModel model) => model.UserIdCommand);
-
-
-            var grouptextBox = new TextBox();
-            grouptextBox.TextBinding.BindDataContext<MainViewModel>(m => m.GroupId);
-            var groupErrorLabel = new Label();
-            groupErrorLabel.TextBinding.BindDataContext<MainViewModel>(m => m.GroupIdError);
-
-            Content = new TableLayout
-            {
-                Padding = new Padding(10,10,10,10),
-                Spacing = new Size(5,5),
-                Rows = 
-                {
-                    //state row
-                    new TableLayout(){ Rows = { new TableRow(new TableCell(new Label { Text = "State: "}), stateLabel)}},
-                    //group row
-                    new TableLayout(){ Rows = { new TableRow(new TableCell(new Label { Text = "Group ID: ", VerticalAlignment = VerticalAlignment.Center}), grouptextBox, groupErrorLabel)}},
-                    //ptt state row
-                    pttStateLabel, 
-                    //button
-                    //new TableRow(button),
-                    button
-                }
-            };
+            Content = _pttCircle;
             DataContext = mainViewModel;
         }
-        
+
 
         [STAThread]
         static void Main(string[] args)

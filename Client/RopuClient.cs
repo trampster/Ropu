@@ -349,6 +349,8 @@ namespace Ropu.Client
             _stateManager.HandleEvent(EventId.CallRequest);
         }
 
+        public ushort CallGroup => _callGroup;
+
         async Task StartCall(CancellationToken token)
         {
             if(_callGroup == 0)

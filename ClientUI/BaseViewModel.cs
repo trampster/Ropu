@@ -8,7 +8,7 @@ namespace Ropu.ClientUI
         
         protected void SetProperty<T>(ref T property, T value, [CallerMemberName] string memberName = null)
         {
-            if(!property.Equals(value))
+            if(property == null || !property.Equals(value))
             {
                 property = value;
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(memberName));
