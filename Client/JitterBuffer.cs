@@ -38,6 +38,7 @@ namespace Ropu.Client
         public BufferEntry(int index)
         {
             _index = index;
+            AudioData = new AudioData();
         }
 
         public int Index => _index;
@@ -81,13 +82,13 @@ namespace Ropu.Client
             }
         }
 
-        public void Fill(uint userId, ushort sequenceNumber, AudioData audioData, int overId)
+        public void Fill(uint userId, ushort sequenceNumber, Span<byte> audioData, int overId)
         {
             lock(_bufferLock)
             {
                 UserId = userId;
                 SequenceNumber = sequenceNumber;
-                AudioData = audioData;
+                AudioData.Data = audioData;
                 OverId = overId;
                 _isSet = true;
             }
@@ -95,15 +96,11 @@ namespace Ropu.Client
     }
     public class JitterBuffer
     {
-        MemoryPool<AudioData> _bufferPool = new MemoryPool<AudioData>(() => new AudioData());
         BufferEntry[] _buffer;
         int _readIndex = 0;
         int _writeIndex;
         ushort _nextExpectedSequenceNumber = 0;
         uint _currentUserId = 0;
-        AudioData _lastAudioData;
-        //This is empty because the details of silence depends on the codec
-        readonly AudioData _silence = new AudioData();
         const float _packetSuccessRequired = 0.95f;
         int _bufferSize;
         readonly int _min;
@@ -198,8 +195,6 @@ namespace Ropu.Client
                     Console.WriteLine($"Packet is to late or to early offset {offset}");
                     return;
                 }
-                var data = _bufferPool.Get();
-                data.Data = audioData;
                 if(_buffer[index].IsSet && _buffer[index].OverId == _overId)
                 {
                     Console.WriteLine("Attempted to write packet to index that is still set");
@@ -214,7 +209,7 @@ namespace Ropu.Client
                     throw new Exception($"Attempted to write packet to index that is still set {index} seq {sequenceNumber}");
                 }
 
-                _buffer[index].Fill(userId, sequenceNumber, data, _overId);
+                _buffer[index].Fill(userId, sequenceNumber, audioData, _overId);
                 if(Interlocked.Increment(ref _packetsInBuffer) == 1)
                 {
                     _dataInBuffer.Set();
@@ -345,28 +340,13 @@ namespace Ropu.Client
                 {
                     //success, the packet is available
                     var audioData = entry.AudioData;
-                    if(_lastAudioData != null)
-                    {
-                        _bufferPool.Add(_lastAudioData); //release back to pool
-                    }
-                    _lastAudioData = audioData;
                     entry.Empty();
                     DecrementPacketsInBuffer();
                     return audioData;
                 }
 
-                // Was a miss (either late or lost)
-                if(_lastAudioData != null)
-                {
-                    Console.WriteLine("Buffer Miss Repeating last packet");
-
-                    var last = _lastAudioData;
-                    _bufferPool.Add(_lastAudioData); //release back to pool
-                    _lastAudioData = null; //only use this once, after that silence
-                    return last;
-                }
-                Console.WriteLine("Buffer Miss returning silence");
-                return _silence;
+                Console.WriteLine("Buffer Miss");
+                return null;
             }
         }
 

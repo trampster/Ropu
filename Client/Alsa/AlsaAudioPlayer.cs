@@ -35,8 +35,14 @@ namespace Ropu.Client.Alsa
             }
         }
 
+        readonly short[] _silence = new short[160];
+
         public void PlayAudio(short[] buffer)
         {
+            if(buffer == null)
+            {
+                buffer = _silence;
+            }
             int result = _soundPcm.WriteInterleaved(buffer, 160);
             if(result == -32)
             {

@@ -89,12 +89,18 @@ namespace Ropu.Client
                 while(!_disposing)
                 {
                     var data = _jitterBuffer.GetNext(afterWait);
-                    
-                    //decode 
-                    _audioCodec.Decode(data, outputBuffer);
+                    if(data != null)
+                    {
+                        //decode 
+                        _audioCodec.Decode(data, outputBuffer);
 
-                    //play
-                    _audioPlayer.PlayAudio(outputBuffer);
+                        //play
+                        _audioPlayer.PlayAudio(outputBuffer);
+                    }
+                    else
+                    {
+                        _audioPlayer.PlayAudio(null);
+                    }
 
                     //sleep until next
                     var elapsed = stopwatch.ElapsedMilliseconds;
