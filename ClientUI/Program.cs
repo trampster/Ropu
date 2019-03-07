@@ -10,6 +10,7 @@ using Ropu.Shared;
 using Ropu.Shared.LoadBalancing;
 using Ropu.Client.Alsa;
 using Ropu.Client.FileAudio;
+using Ropu.Shared.Groups;
 
 namespace Ropu.ClientUI
 {
@@ -18,17 +19,22 @@ namespace Ropu.ClientUI
     {
         readonly RopuClient _ropuClient;
         readonly IClientSettings _clientSettings;
+        readonly IGroupsClient _groupsClient;
+        readonly IUsersClient _usersClient;
 
-        public MainViewModel(RopuClient ropuClient, IClientSettings clientSettings)
+        public MainViewModel(RopuClient ropuClient, IClientSettings clientSettings, IGroupsClient groupsClient, IUsersClient usersClient)
         {
-            _clientSettings = clientSettings;
             _ropuClient = ropuClient;
             _ropuClient.StateChanged += (sender, args) => 
             {
                 Application.Instance.Invoke(ChangeState);
             };
+            _groupsClient = groupsClient;
+            _usersClient = usersClient;
+
             _state = _ropuClient.State.ToString();
             _ropuClient.IdleGroup = 4242;
+            _idleGroup = _groupsClient.Get(_ropuClient.IdleGroup).Name;
         }
 
         bool InCall(StateId state)
@@ -74,10 +80,13 @@ namespace Ropu.ClientUI
                     throw new Exception("Unhandled Call State");
             }
 
-            CallGroup = InCall(state) ? CallGroup = _ropuClient.CallGroup.ToString() : null;
+            CallGroup = InCall(state) ? _groupsClient.Get(_ropuClient.CallGroup).Name : null;
 
-            Talker = state == StateId.InCallReceiving ? "Snoke" : null;
+            CircleText = InCall(state) ? 
+                _groupsClient.Get(_ropuClient.CallGroup).Name : 
+                _groupsClient.Get(_ropuClient.IdleGroup).Name;
 
+            Talker = state == StateId.InCallReceiving ? _usersClient.Get(_ropuClient.Talker.Value).Name : null;
         }
 
         string _state = "";
@@ -151,6 +160,20 @@ namespace Ropu.ClientUI
             set => SetProperty(ref _callGroup, value);
         }
 
+        string _idleGroup;
+        public string IdleGroup
+        {
+            get => _idleGroup;
+            set => SetProperty(ref _idleGroup, value);
+        }
+
+        string _circleText;
+        public string CircleText
+        {
+            get => _circleText;
+            set => SetProperty(ref _circleText, value);
+        }
+
         string _groupIdError = "";
         public string GroupIdError
         {
@@ -194,7 +217,9 @@ namespace Ropu.ClientUI
             _pttCircle.PttColorBinding.BindDataContext<MainViewModel>(m => m.PttColor);
 
             _pttCircle.TalkerBinding.BindDataContext<MainViewModel>(m => m.Talker);
+            _pttCircle.IdleGroupBinding.BindDataContext<MainViewModel>(m => m.IdleGroup);
             _pttCircle.CallGroupBinding.BindDataContext<MainViewModel>(m => m.CallGroup);
+            _pttCircle.CircleTextBinding.BindDataContext<MainViewModel>(m => m.CircleText);
 
             Content = _pttCircle;
             DataContext = mainViewModel;
@@ -230,7 +255,11 @@ namespace Ropu.ClientUI
             var ropuClient = new RopuClient(protocolSwitch, servingNodeClient, mediaClient, ipAddress, callManagementProtocol, loadBalancerEndpoint, settings);
 
             var application = new RopuApplication(ropuClient);
-            var mainForm = new MainForm(new MainViewModel(ropuClient, settings));
+
+            var groupsClient = new HardcodedGroupsClient();
+            var usersClient = new HardcodedUsersClient();
+
+            var mainForm = new MainForm(new MainViewModel(ropuClient, settings, groupsClient, usersClient));
             mainForm.Icon = new Icon("../Icon/Ropu.ico");
             application.Run(mainForm);
         }

@@ -34,13 +34,18 @@ namespace Ropu.ClientUI
                 Invalidate();
             };
             _fontFamily = Eto.Drawing.Fonts.AvailableFontFamilies.First();
+
              _callGroupDrawable = new ImageLabel(_fontFamily);
              _callGroupDrawable.Text = "A Team";
+             _callGroupDrawable.Image = new Bitmap("../Icon/knot32.png");
+
              _talkerDrawable = new ImageLabel(_fontFamily);
              _talkerDrawable.Text = "Franky";
+             _talkerDrawable.Image = new Bitmap("../Icon/rope32.png");
 
              _idleGroupDrawable = new IdleGroup(_fontFamily);
              _idleGroupDrawable.GroupName = "A Team";
+             _idleGroupDrawable.Image = new Bitmap("../Icon/knot32.png");
         }
 
         Color _pttColor;
@@ -109,6 +114,48 @@ namespace Ropu.ClientUI
             }
         }
 
+        string _circleText;
+        public string CircleText
+        {
+            get =>  _circleText;
+            set
+            {
+                _circleText = value;
+                Invalidate();
+            }
+        }
+
+        public BindableBinding<PttCircle, string> CircleTextBinding
+        { 
+            get
+            {
+                return new BindableBinding<PttCircle, string>(
+                    this, 
+                    p => p.CircleText, 
+                    (p,c) => p.CircleText = c);
+            }
+        }
+
+        public string IdleGroup
+        {
+            get =>  _idleGroupDrawable.GroupName;
+            set
+            {
+                _idleGroupDrawable.GroupName = value;
+                Invalidate();
+            }
+        }
+
+        public BindableBinding<PttCircle, string> IdleGroupBinding
+        { 
+            get
+            {
+                return new BindableBinding<PttCircle, string>(
+                    this, 
+                    p => p.IdleGroup, 
+                    (p,c) => p.IdleGroup = c);
+            }
+        }
 
         void PaintHandler(object caller, PaintEventArgs paintEventArgs)
         {
@@ -145,9 +192,11 @@ namespace Ropu.ClientUI
             Pen pen = new Pen(PttColor, penWidth);
             graphics.DrawEllipse(pen, xPosition, yPosition, diameter, diameter);
             var font = new Font(_fontFamily, radius/4);
-            string group = "Team A";
-            var groupTextSize = font.MeasureString(group);
-            graphics.DrawText(font, new SolidBrush(PttColor), (Width/2) - (groupTextSize.Width/2), (Height/2) - (groupTextSize.Height/2), "Team A");
+            if(!string.IsNullOrEmpty(_circleText))
+            {
+                var groupTextSize = font.MeasureString(_circleText);
+                graphics.DrawText(font, new SolidBrush(PttColor), (Width/2) - (groupTextSize.Width/2), (Height/2) - (groupTextSize.Height/2), _circleText);
+            }
         }
 
         event EventHandler<EventArgs> ButtonDownEvent;

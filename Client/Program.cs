@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using System.Threading.Tasks;
 using Ropu.Client.Alsa;
 using Ropu.Shared;
+using Ropu.Shared.Groups;
 using Ropu.Shared.LoadBalancing;
 
 namespace Ropu.Client

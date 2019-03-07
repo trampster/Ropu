@@ -18,6 +18,11 @@ namespace Ropu.Shared.Groups
             get;
         }
 
+        string Name
+        {
+            get;
+        }
+
         bool HasMember(uint userId);
     }
 }

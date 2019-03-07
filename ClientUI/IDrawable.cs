@@ -33,7 +33,7 @@ namespace Ropu.ClientUI
         {
             get
             {
-                return Math.Max(Image.Size.Width, (int)_font.MeasureString(Text == null ? "Test" : Text).Width);
+                return Math.Max(ImageWidth, (int)_font.MeasureString(Text == null ? "Test" : Text).Width);
             }
         }
 
@@ -41,7 +41,30 @@ namespace Ropu.ClientUI
         {
             get
             {
-                return Image.Size.Height + TextHeight + _padding;
+                return ImageHeight + TextHeight + _padding;
+            }
+        }
+
+        int ImageHeight
+        {
+            get
+            {
+                if(Image == null)
+                {
+                    return 32;
+                }
+                return Image.Size.Height;
+            }
+        }
+        int ImageWidth
+        {
+            get
+            {
+                if(Image == null)
+                {
+                    return 32;
+                }
+                return Image.Size.Width;
             }
         }
 
@@ -59,7 +82,6 @@ namespace Ropu.ClientUI
 
         public ImageLabel(FontFamily fontFamily)
         {
-            Image = new Bitmap("../Icon/Ropu32.png");
             _fontFamily = fontFamily;
             _font = new Font(fontFamily, 12);
         }
@@ -90,12 +112,15 @@ namespace Ropu.ClientUI
             }
 
             int width = Width;
-            int imageX = width > Image.Width ? (width - Image.Width)/2 + X: X;
+            int imageX = width > ImageWidth ? (width - ImageWidth)/2 + X: X;
 
-            graphics.DrawImage(Image, imageX, Y);
+            if(Image != null)
+            {
+                graphics.DrawImage(Image, imageX, Y);
+            }
             var font = new Font(_fontFamily, 14);
 
-            graphics.DrawText(_font, new SolidBrush(Color.FromArgb(50,50,50,0xFF)), X, Image.Height + _padding + Y, Text);
+            graphics.DrawText(_font, new SolidBrush(Color.FromArgb(50,50,50,0xFF)), X, ImageHeight + _padding + Y, Text);
         }
     }
 
@@ -106,9 +131,9 @@ namespace Ropu.ClientUI
 
         const int _padding = 3;
 
-        public int Width => (int)(Image.Width + _padding + GroupNameSize.Width + _padding +  TriangleSize);
+        public int Width => (int)(ImageWidth + _padding + GroupNameSize.Width + _padding +  TriangleSize);
 
-        public int Height =>  Math.Max(Image.Size.Height, (int)GroupNameSize.Height);
+        public int Height =>  Math.Max(ImageHeight, (int)GroupNameSize.Height);
 
         public int X 
         {
@@ -124,10 +149,34 @@ namespace Ropu.ClientUI
 
         public IdleGroup(FontFamily fontFamily)
         {
-            Image = new Bitmap("../Icon/Ropu32.png");
             _fontFamily = fontFamily;
             _font = new Font(fontFamily, 12);
             GroupName = "Team A";
+        }
+
+
+        int ImageHeight
+        {
+            get
+            {
+                if(Image == null)
+                {
+                    return 32;
+                }
+                return Image.Size.Height;
+            }
+        }
+
+        int ImageWidth
+        {
+            get
+            {
+                if(Image == null)
+                {
+                    return 32;
+                }
+                return Image.Size.Width;
+            }
         }
 
         public Image Image
@@ -163,17 +212,20 @@ namespace Ropu.ClientUI
 
             int width = Width;
 
-            int textY = (int)( (Image.Height - GroupNameSize.Height) /2 );
+            int textY = (int)( (ImageHeight - GroupNameSize.Height) /2 );
 
             var textColor = Color.FromArgb(50,50,50,0xFF);
 
             var fontBrush = new SolidBrush(textColor);
 
-            graphics.DrawImage(Image, 0, 0);
+            if(Image != null)
+            {
+                graphics.DrawImage(Image, 0, 0);
+            }
 
-            graphics.DrawText(_font, fontBrush, Image.Width + _padding, textY, GroupName);
+            graphics.DrawText(_font, fontBrush, ImageWidth + _padding, textY, GroupName);
 
-            int triangleX = (int)(Image.Width + _padding + GroupNameSize.Width + _padding);
+            int triangleX = (int)(ImageWidth + _padding + GroupNameSize.Width + _padding);
 
             int triangleWidth = (int)GroupNameSize.Height;
             int triangleHeigth = GetTriangleHeight(triangleWidth);

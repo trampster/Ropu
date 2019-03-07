@@ -13,6 +13,12 @@ namespace Ropu.Shared.Groups
             _groupMembers = new HashSet<uint>();
         }
 
+        public string Name
+        {
+            get;
+            set;
+        }
+
         public void Add(uint unitId)
         {
             _groupMembers.Add(unitId);
