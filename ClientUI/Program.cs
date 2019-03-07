@@ -31,6 +31,7 @@ namespace Ropu.ClientUI
             };
             _groupsClient = groupsClient;
             _usersClient = usersClient;
+            _clientSettings = clientSettings;
 
             _state = _ropuClient.State.ToString();
             _ropuClient.IdleGroup = 4242;
@@ -204,12 +205,11 @@ namespace Ropu.ClientUI
 
     public class MainForm : Form
     {
-        readonly PixelLayout _pttCircle_pixelLayout;
         readonly PttCircle _pttCircle;
         public MainForm (MainViewModel mainViewModel)
         {
             Title = "Ropu Client";
-            ClientSize = new Size(400, 200);
+            ClientSize = new Size(300, 500);
 
             _pttCircle = new PttCircle();
             _pttCircle.BindDataContext(c => c.ButtonDownCommand, (MainViewModel model) => model.PttDownCommand);
