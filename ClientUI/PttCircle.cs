@@ -159,7 +159,6 @@ namespace Ropu.ClientUI
 
         void PaintHandler(object caller, PaintEventArgs paintEventArgs)
         {
-            Console.WriteLine($"PaintHandler Width {Width} Height {Height}");
             var graphics = paintEventArgs.Graphics;
 
             const int padding = 5;
