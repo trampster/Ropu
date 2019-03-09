@@ -81,6 +81,8 @@ namespace Ropu.ClientUI
                     throw new Exception("Unhandled Call State");
             }
 
+            Transmitting = state == StateId.InCallTransmitting;
+
             CallGroup = InCall(state) ? _groupsClient.Get(_ropuClient.CallGroup).Name : null;
 
             CircleText = InCall(state) ? 
@@ -134,10 +136,10 @@ namespace Ropu.ClientUI
             }
         }
 
-        readonly static Color Blue = Color.FromRgb(0x3193e3);
-        readonly static Color Green = Color.FromRgb(0x31e393);
-        readonly static Color Gray = Color.FromRgb(0x999999);
-        readonly static Color Red = Color.FromRgb(0xFF6961);
+        public readonly static Color Blue = Color.FromRgb(0x3193e3);
+        public readonly static Color Green = Color.FromRgb(0x31e393);
+        public readonly static Color Gray = Color.FromRgb(0x999999);
+        public readonly static Color Red = Color.FromRgb(0xFF6961);
 
 
         Color _pttColor = Blue;
@@ -152,6 +154,13 @@ namespace Ropu.ClientUI
         {
             get => _talker;
             set => SetProperty(ref _talker, value);
+        }
+
+        bool _transmitting;
+        public bool Transmitting
+        {
+            get => _transmitting;
+            set => SetProperty(ref _transmitting, value);
         }
 
         string _callGroup;
@@ -220,6 +229,9 @@ namespace Ropu.ClientUI
             _pttCircle.IdleGroupBinding.BindDataContext<MainViewModel>(m => m.IdleGroup);
             _pttCircle.CallGroupBinding.BindDataContext<MainViewModel>(m => m.CallGroup);
             _pttCircle.CircleTextBinding.BindDataContext<MainViewModel>(m => m.CircleText);
+            _pttCircle.TransmittingBinding.BindDataContext<MainViewModel>(m => m.Transmitting);
+            _pttCircle.TransmittingAnimationColor = MainViewModel.Green;
+            _pttCircle.ReceivingAnimationColor = MainViewModel.Red;
 
             Content = _pttCircle;
             DataContext = mainViewModel;

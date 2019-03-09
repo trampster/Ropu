@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using Eto.Drawing;
 using Eto.Forms;
@@ -8,13 +11,14 @@ namespace Ropu.ClientUI
 {
     public class PttCircle : Drawable
     {
-        readonly Color _blue = Color.FromRgb(0x3193e3);
+        readonly Task _animationTask;
         FontFamily _fontFamily;
 
         ImageLabel _callGroupDrawable;
         ImageLabel _talkerDrawable;
         IdleGroup _idleGroupDrawable;
-
+        TransmittingIndicator _transmittingIndicator;
+        TransmittingIndicator _receivingIndicator;
 
         bool _buttonDown = false;
         public PttCircle()
@@ -35,17 +39,60 @@ namespace Ropu.ClientUI
             };
             _fontFamily = Eto.Drawing.Fonts.AvailableFontFamilies.First();
 
-             _callGroupDrawable = new ImageLabel(_fontFamily);
-             _callGroupDrawable.Text = "A Team";
-             _callGroupDrawable.Image = new Bitmap("../Icon/knot32.png");
+            _callGroupDrawable = new ImageLabel(_fontFamily);
+            _callGroupDrawable.Text = "A Team";
+            _callGroupDrawable.Image = new Bitmap("../Icon/knot32.png");
 
-             _talkerDrawable = new ImageLabel(_fontFamily);
-             _talkerDrawable.Text = "Franky";
-             _talkerDrawable.Image = new Bitmap("../Icon/rope32.png");
+            _talkerDrawable = new ImageLabel(_fontFamily);
+            _talkerDrawable.Text = "Franky";
+            _talkerDrawable.Image = new Bitmap("../Icon/rope32.png");
 
-             _idleGroupDrawable = new IdleGroup(_fontFamily);
-             _idleGroupDrawable.GroupName = "A Team";
-             _idleGroupDrawable.Image = new Bitmap("../Icon/knot32.png");
+            _idleGroupDrawable = new IdleGroup(_fontFamily);
+            _idleGroupDrawable.GroupName = "A Team";
+            _idleGroupDrawable.Image = new Bitmap("../Icon/knot32.png");
+
+            _transmittingIndicator = new TransmittingIndicator();
+            _transmittingAnimationAction = AnimateTransmitting;
+
+            _receivingIndicator = new TransmittingIndicator();
+            _receivingAnimationAction = AnimateReceiving;
+
+            _animationTask = RunAnimations();
+        }
+
+        public Color TransmittingAnimationColor
+        {
+            set
+            {
+                _transmittingIndicator.CircleColor = value;
+            }
+        }
+
+        public Color ReceivingAnimationColor
+        {
+            set
+            {
+                _receivingIndicator.CircleColor = value;
+            }
+        }
+
+        Action _transmittingAnimationAction;
+        Action _receivingAnimationAction;
+
+        void AnimateTransmitting()
+        {
+            float fraction = _transmittingIndicator.AnimationFraction;
+            fraction += 0.01f;
+            if(fraction > 1) fraction = 0;
+            _transmittingIndicator.AnimationFraction = fraction;
+        }
+
+        void AnimateReceiving()
+        {
+            float fraction = _receivingIndicator.AnimationFraction;
+            fraction += 0.01f;
+            if(fraction > 1) fraction = 0;
+            _receivingIndicator.AnimationFraction = fraction;
         }
 
         Color _pttColor;
@@ -75,6 +122,16 @@ namespace Ropu.ClientUI
             get =>  _talkerDrawable.Text;
             set
             {
+                if(value == null)
+                {
+                    _receivingIndicator.Hidden = true;
+                    RemoveAnimation(_receivingAnimationAction);
+                }
+                else
+                {
+                    _receivingIndicator.Hidden = false;
+                    AddAnimation(_receivingAnimationAction);
+                }
                 _talkerDrawable.Hidden = value == null;
                 _talkerDrawable.Text = value;
                 Invalidate();
@@ -89,6 +146,37 @@ namespace Ropu.ClientUI
                     this, 
                     p => p.Talker, 
                     (p,c) => p.Talker = c);
+            }
+        }
+
+        bool _transmitting = false;
+        public bool Transmitting
+        {
+            get =>  _transmitting;
+            set
+            {
+                _transmittingIndicator.Hidden = !value;
+                if(value)
+                {
+                    AddAnimation(_transmittingAnimationAction);
+                }
+                else
+                {
+                    RemoveAnimation(_transmittingAnimationAction);
+                }
+                _transmitting = true;
+                Invalidate();
+            }
+        }
+
+        public BindableBinding<PttCircle, bool> TransmittingBinding
+        { 
+            get
+            {
+                return new BindableBinding<PttCircle, bool>(
+                    this, 
+                    p => p.Transmitting, 
+                    (p,c) => p.Transmitting = c);
             }
         }
 
@@ -175,10 +263,61 @@ namespace Ropu.ClientUI
             _idleGroupDrawable.Y = Height - _idleGroupDrawable.Height - padding;
             _idleGroupDrawable.Draw(graphics);
 
-            DrawPttCircle(graphics, _callGroupDrawable.Height + padding, padding);
+            int radius = DrawPttCircle(graphics, _callGroupDrawable.Height + padding, padding);
+
+            _transmittingIndicator.X = Width/2;
+            _transmittingIndicator.Y = Height/2;
+            _transmittingIndicator.MinRadius = radius;
+            _transmittingIndicator.MaxRadius = radius + (radius/2);
+            _transmittingIndicator.Draw(graphics);
+
+            _receivingIndicator.X = _talkerDrawable.X + (_talkerDrawable.Width/2);
+            _receivingIndicator.Y = _talkerDrawable.Y + (_talkerDrawable.Height/2);
+            int receivingRadius = (int)( Math.Max(_talkerDrawable.Width, _talkerDrawable.Height)*0.75);
+            _receivingIndicator.MinRadius = receivingRadius;
+            _receivingIndicator.MaxRadius = receivingRadius + receivingRadius;
+            _receivingIndicator.Draw(graphics);
         }
 
-        void DrawPttCircle(Graphics graphics, int topSpace, int padding)
+        List<Action> _animationUpdates = new List<Action>();
+        ManualResetEvent _animationNeeded = new ManualResetEvent(false);
+
+        void AddAnimation(Action action)
+        {
+            _animationUpdates.Add(action);
+            _animationNeeded.Set();
+        }
+
+        void RemoveAnimation(Action action)
+        {
+            _animationUpdates.Remove(action);
+            if(_animationUpdates.Count == 0)
+            {
+                _animationNeeded.Reset();
+            }
+        }
+
+        async Task RunAnimations()
+        {
+            while(true)
+            {
+                await Task.Delay(16);
+                if(_animationUpdates.Count == 0)
+                {
+                    await Task.Run(() => _animationNeeded.WaitOne());
+                }
+                foreach(var update in _animationUpdates)
+                {
+                    update();
+                }
+                if(_animationUpdates.Count != 0)
+                {
+                    Invalidate();
+                }
+            }
+        }
+
+        int DrawPttCircle(Graphics graphics, int topSpace, int padding)
         {
             int heightAvailable = Height - topSpace*2;
             int penWidth = _buttonDown ? 9 : 6;
@@ -196,6 +335,7 @@ namespace Ropu.ClientUI
                 var groupTextSize = font.MeasureString(_circleText);
                 graphics.DrawText(font, new SolidBrush(PttColor), (Width/2) - (groupTextSize.Width/2), (Height/2) - (groupTextSize.Height/2), _circleText);
             }
+            return diameter/2;
         }
 
         event EventHandler<EventArgs> ButtonDownEvent;

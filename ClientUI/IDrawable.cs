@@ -71,13 +71,13 @@ namespace Ropu.ClientUI
         public int X 
         {
             set;
-            private get;
+            get;
         }
 
         public int Y
         {
             set;
-            private get;
+            get;
         }
 
         public ImageLabel(FontFamily fontFamily)
