@@ -61,20 +61,18 @@ namespace Ropu.ClientUI
             {
                 case StateId.Start:
                 case StateId.Unregistered:
-                case StateId.Deregistering:
                     PttColor = Gray;
                     break;
                 case StateId.Registered:
-                case StateId.InCallIdle:
+                case StateId.Deregistering:
                 case StateId.StartingCall:
-                case StateId.InCallRequestingFloor:
                     PttColor = Blue;
                     break;
-                case StateId.InCallReceiving:
-                    PttColor = Red;
-                    break;
-                case StateId.InCallTransmitting:
+                case StateId.InCallRequestingFloor:
                 case StateId.InCallReleasingFloor:
+                case StateId.InCallTransmitting:
+                case StateId.InCallIdle:
+                case StateId.InCallReceiving:
                     PttColor = Green;
                     break;
                 default:
