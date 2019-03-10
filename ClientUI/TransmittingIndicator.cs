@@ -72,9 +72,18 @@ namespace Ropu.ClientUI
 
         public Color CircleColor
         {
-            get;
-            set;
+            get => _brush.Color;
+            set => _brush.Color = value;
         }
+
+        public TransmittingIndicator()
+        {
+            _brush = new SolidBrush(new Color());
+            _pen = new Pen(_brush, 2);
+        }
+
+        SolidBrush _brush;
+        Pen _pen;
 
         void DrawCircle(Graphics graphics, float animationFraction)
         {
@@ -84,8 +93,8 @@ namespace Ropu.ClientUI
 
             var color = CircleColor;
             color.Ab = (int)(0xFF * (1- animationFraction));
-            var pen = new Pen(color, 2);
-            graphics.DrawEllipse(pen, -radius, -radius, diameter, diameter);
+            _brush.Color = color;
+            graphics.DrawEllipse(_pen, -radius, -radius, diameter, diameter);
         }
     }
 }

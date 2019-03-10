@@ -214,13 +214,13 @@ namespace Ropu.ClientUI
 
     public class MainForm : Form
     {
-        readonly PttCircle _pttCircle;
+        readonly PttPage _pttCircle;
         public MainForm (MainViewModel mainViewModel)
         {
             Title = "Ropu Client";
             ClientSize = new Size(300, 500);
 
-            _pttCircle = new PttCircle();
+            _pttCircle = new PttPage();
             _pttCircle.BindDataContext(c => c.ButtonDownCommand, (MainViewModel model) => model.PttDownCommand);
             _pttCircle.BindDataContext(c => c.ButtonUpCommand, (MainViewModel model) => model.PttUpCommand);
             _pttCircle.PttColorBinding.BindDataContext<MainViewModel>(m => m.PttColor);

@@ -23,7 +23,9 @@ namespace Ropu.ClientUI
     public class ImageLabel : IDrawable
     {
         readonly FontFamily _fontFamily;
-        Font _font;
+        readonly Font _font;
+
+        readonly SolidBrush _textBrush;
 
         const int _padding = 3;
 
@@ -84,6 +86,7 @@ namespace Ropu.ClientUI
         {
             _fontFamily = fontFamily;
             _font = new Font(fontFamily, 12);
+            _textBrush = new SolidBrush(Color.FromArgb(50,50,50,0xFF));
         }
 
         public Image Image
@@ -118,16 +121,16 @@ namespace Ropu.ClientUI
             {
                 graphics.DrawImage(Image, imageX, Y);
             }
-            var font = new Font(_fontFamily, 14);
 
-            graphics.DrawText(_font, new SolidBrush(Color.FromArgb(50,50,50,0xFF)), X, ImageHeight + _padding + Y, Text);
+            graphics.DrawText(_font, _textBrush, X, ImageHeight + _padding + Y, Text);
         }
     }
 
     public class IdleGroup : IDrawable
     {
         readonly FontFamily _fontFamily;
-        Font _font;
+        readonly Font _font;
+        readonly SolidBrush _fontBrush;
 
         const int _padding = 3;
 
@@ -152,6 +155,10 @@ namespace Ropu.ClientUI
             _fontFamily = fontFamily;
             _font = new Font(fontFamily, 12);
             GroupName = "Team A";
+
+            var textColor = Color.FromArgb(50,50,50,0xFF);
+
+            _fontBrush = new SolidBrush(textColor);
         }
 
 
@@ -214,16 +221,12 @@ namespace Ropu.ClientUI
 
             int textY = (int)( (ImageHeight - GroupNameSize.Height) /2 );
 
-            var textColor = Color.FromArgb(50,50,50,0xFF);
-
-            var fontBrush = new SolidBrush(textColor);
-
             if(Image != null)
             {
                 graphics.DrawImage(Image, 0, 0);
             }
 
-            graphics.DrawText(_font, fontBrush, ImageWidth + _padding, textY, GroupName);
+            graphics.DrawText(_font, _fontBrush, ImageWidth + _padding, textY, GroupName);
 
             int triangleX = (int)(ImageWidth + _padding + GroupNameSize.Width + _padding);
 
@@ -234,15 +237,19 @@ namespace Ropu.ClientUI
 
             var trangleColor = Color.FromArgb(70,70,70,0xFF);
 
-            graphics.FillPolygon(trangleColor, new PointF[]
-            {
-                new PointF(triangleX, triangleY),
-                new PointF(triangleX + triangleWidth, triangleY),
-                new PointF(triangleX + (triangleWidth/2), triangleY + triangleHeigth)
-            });
+            _trianglePoints[0].X = triangleX;
+            _trianglePoints[0].Y = triangleY;
+            _trianglePoints[1].X = triangleX + triangleWidth;  
+            _trianglePoints[1].Y = triangleY;
+            _trianglePoints[2].X = triangleX + (triangleWidth/2);  
+            _trianglePoints[2].Y = triangleY + triangleHeigth;
+
+            graphics.FillPolygon(trangleColor, _trianglePoints);
 
             graphics.RestoreTransform();
         }
+
+        readonly PointF[] _trianglePoints = new PointF[3];
 
         int GetTriangleHeight(int width)
         {
