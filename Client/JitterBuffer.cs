@@ -24,6 +24,8 @@ namespace Ropu.Client
             }
         }
 
+        public byte[] Buffer => _data;
+
         public int Length
         {
             get;
@@ -305,7 +307,7 @@ namespace Ropu.Client
         //incase the stream isn't finished just lost for a bit
         int _emptyCount = int.MaxValue; 
 
-        public AudioData GetNext(Action waitFinished)
+        public (AudioData, bool) GetNext(Action waitFinished)
         {
             if(_packetsInBuffer == 0)
             {
@@ -342,11 +344,17 @@ namespace Ropu.Client
                     var audioData = entry.AudioData;
                     entry.Empty();
                     DecrementPacketsInBuffer();
-                    return audioData;
+                    return (audioData, false);
                 }
 
-                Console.WriteLine("Buffer Miss");
-                return null;
+                var nextEntry = _buffer[_readIndex];
+                if(nextEntry.IsSet)
+                {
+                    Console.WriteLine("Buffer Miss returning next");
+                    return (nextEntry.AudioData, true);
+                }
+                Console.WriteLine("Buffer Miss returning null");
+                return (null, false);
             }
         }
 

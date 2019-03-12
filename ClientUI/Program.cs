@@ -11,6 +11,7 @@ using Ropu.Shared.LoadBalancing;
 using Ropu.Client.Alsa;
 using Ropu.Client.FileAudio;
 using Ropu.Shared.Groups;
+using Ropu.Client.Opus;
 
 namespace Ropu.ClientUI
 {
@@ -255,7 +256,7 @@ namespace Ropu.ClientUI
             var audioSource = new FileAudioSource("/home/daniel/Music/oliver-twist-001.wav");
             //var audioSource = new AlsaAudioSource();
             var audioPlayer = new AlsaAudioPlayer();
-            var audioCodec = new RawCodec();
+            var audioCodec = new OpusCodec();
             var mediaClient = new MediaClient(protocolSwitch, audioSource, audioPlayer, audioCodec, settings);
             var callManagementProtocol = new LoadBalancerProtocol(new PortFinder(), 5079);
 

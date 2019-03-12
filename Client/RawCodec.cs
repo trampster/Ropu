@@ -14,8 +14,18 @@ namespace Ropu.Client
             return raw.Length*2;
         }
 
-        public int Decode(AudioData encodedData, short[] output)
+
+        public int Decode(AudioData encodedData, bool isNext, short[] output)
         {
+            if(encodedData == null)
+            {
+                //return silence
+                for(int index = 0; index < output.Length; index++)
+                {
+                    output[index] = 0;
+                }
+                return 160;
+            }
             var encoded = encodedData.Data;
             if(encoded.Length == 0)
             {
