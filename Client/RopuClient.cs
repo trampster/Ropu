@@ -87,6 +87,7 @@ namespace Ropu.Client
             {
                 Entry = async token => 
                 { 
+                    _callGroup = IdleGroup;
                     _registeredUserId = _clientSettings.UserId;
                     if(_heartbeatTask == null)
                     {
@@ -256,7 +257,6 @@ namespace Ropu.Client
             });
         }
 
-        bool _heartbeatRequired = false;
 
         async Task Heartbeat(CancellationToken token)
         {
@@ -264,10 +264,6 @@ namespace Ropu.Client
             {
                 await WaitForEvent(_heartbeatOnEvent);
                 await Task.Delay(25000, token);
-                if(!_heartbeatRequired)
-                {
-                    continue;
-                }
                 _heartbeatResetEvent.Reset();
                 bool heartbeatReceived = false;
                 for(int attemptNumber = 0; attemptNumber < 3; attemptNumber++)
