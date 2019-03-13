@@ -12,6 +12,7 @@ using Ropu.Client.Alsa;
 using Ropu.Client.FileAudio;
 using Ropu.Shared.Groups;
 using Ropu.Client.Opus;
+using System.Linq;
 
 namespace Ropu.ClientUI
 {
@@ -35,7 +36,7 @@ namespace Ropu.ClientUI
             _clientSettings = clientSettings;
 
             _state = _ropuClient.State.ToString();
-            _ropuClient.IdleGroup = 4242;
+            _ropuClient.IdleGroup = _groupsClient.GetUsersGroups(clientSettings.UserId).First();
             _idleGroup = _groupsClient.Get(_ropuClient.IdleGroup).Name;
         }
 
