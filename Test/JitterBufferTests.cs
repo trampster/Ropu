@@ -16,7 +16,7 @@ namespace Ropu.Tests.Client
         }
 
         [Test]
-        public void GetNext_BufferEmpty_ReturnsEmptyData()
+        public void GetNext_BufferEmpty_ReturnsNull()
         {
             // arrange
             var data = new byte[320];
@@ -28,10 +28,10 @@ namespace Ropu.Tests.Client
 
 
             // act
-            var audio = _jitterBuffer.GetNext(() => {});
+            (AudioData audio, bool next) = _jitterBuffer.GetNext(() => {});
 
             // assert
-            SpanAssert.AreEqual(new byte[0].AsSpan(), audio.Data);
+            Assert.IsNull(audio);
         }
 
         int GetBufferDelay()
@@ -43,8 +43,8 @@ namespace Ropu.Tests.Client
             while(true)
             {
                 size++;
-                var audioOut = _jitterBuffer.GetNext(() => {}).Data;
-                if(audioOut.Length > 0 && audioOut[0] == 42)
+                AudioData audioData = _jitterBuffer.GetNext(() => {}).Item1;
+                if(audioData != null && audioData.Data.Length > 0 && audioData.Data[0] == 42)
                 {
                     return size;
                 }
