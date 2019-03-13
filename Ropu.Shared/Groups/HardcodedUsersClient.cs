@@ -16,6 +16,21 @@ namespace Ropu.Shared.Groups
                     {
                         Name = "Hulk"
                     };
+                case 2004:
+                    return new User()
+                    {
+                        Name = "Batman"
+                    };
+                case 2005:
+                    return new User()
+                    {
+                        Name = "Superman"
+                    };
+                case 2000:
+                    return new User()
+                    {
+                        Name = "Deadpool"
+                    };
                 default:
                     return new User()
                     {

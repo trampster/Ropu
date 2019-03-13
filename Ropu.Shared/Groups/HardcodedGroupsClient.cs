@@ -12,7 +12,8 @@ namespace Ropu.Shared.Groups
         public HardcodedGroupsClient()
         {
             _groupLookup = new Dictionary<ushort, IGroup>();
-            AddTestGroup(4242, "Avengers", 1000, 3000);
+            AddTestGroup(4242, "Avengers", 1000, 2000);
+            AddTestGroup(1234, "Justice L", 2000, 3000);
         }
 
         public IEnumerable<IGroup> Groups
@@ -51,7 +52,7 @@ namespace Ropu.Shared.Groups
             var group = new Group(groupId);
             group.Name = name;
 
-            for(uint unitId = startUnitId; unitId < endUnitId; unitId++)
+            for(uint unitId = startUnitId; unitId <= endUnitId; unitId++)
             {
                 group.Add(unitId);
             }
