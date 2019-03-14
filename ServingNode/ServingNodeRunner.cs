@@ -76,7 +76,7 @@ namespace Ropu.ServingNode
                 Console.WriteLine($"No members for group {groupId}");
                 return;
             }
-            _ropuProtocol.BulkSendAsync(packetData, length, clientEndPoints.GetSpan(), () => clientEndPoints.Release(), from);
+            _ropuProtocol.BulkSendAsync(packetData, length, clientEndPoints.GetSnapShot(), () => clientEndPoints.Release(), from);
         }
 
         public void ForwardClientMediaPacket(ushort groupId, byte[] packetData, int length, IPEndPoint from)
@@ -92,7 +92,7 @@ namespace Ropu.ServingNode
             //forward to all serving nodes
             var servingNodeEndPoints = _servingNodes.EndPoints;
             packetData[0] = (byte)RopuPacketType.MediaPacketGroupCallServingNode;
-            _ropuProtocol.BulkSendAsync(packetData, length, servingNodeEndPoints.GetSpan(), () => servingNodeEndPoints.Release());
+            _ropuProtocol.BulkSendAsync(packetData, length, servingNodeEndPoints.GetSnapShot(), () => servingNodeEndPoints.Release());
 
             //forward to clients
             ForwardPacketToClients(groupId, packetData, length, from);

@@ -25,11 +25,11 @@ namespace Ropu.Shared
             }
         }
 
-        public ISetReader<IPEndPoint> EndPoints
+        public SnapshotSet<IPEndPoint> EndPoints
         {
             get
             {
-                return _set.GetSnapShot();
+                return _set;
             }
         }
 

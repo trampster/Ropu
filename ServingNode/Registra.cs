@@ -80,14 +80,14 @@ namespace Ropu.ServingNode
             }
         }
 
-        public ISetReader<IPEndPoint> GetUserEndPoints(ushort groupId)
+        public SnapshotSet<IPEndPoint> GetUserEndPoints(ushort groupId)
         {
             var snapshotSet = _registeredGroupMembersLookup[groupId];
             if(snapshotSet == null)
             {
                 return null;
             }
-            return snapshotSet.GetSnapShot();
+            return snapshotSet;
         }
 
         public bool UpdateRegistration(uint userId)

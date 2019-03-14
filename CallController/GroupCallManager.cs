@@ -16,8 +16,6 @@ namespace Ropu.CallController
         uint _callInitiator;
         uint? _talker;
 
-        ISetReader<IPEndPoint> _servingNodesReader;
-
         public GroupCallManager(ushort groupId, RopuProtocol ropuProtocol, ServingNodes servingNodes)
         {
             _groupId = groupId;
@@ -40,9 +38,9 @@ namespace Ropu.CallController
             _callInitiator = userId;
 
 
-            _servingNodesReader?.Release();
-            _servingNodesReader = _servingNodes.EndPoints;
-            _ropuProtocol.SendFloorTaken(_talker.Value, _groupId, _servingNodesReader.GetSpan());
+            var endPointsReader = _servingNodes.EndPoints;
+            _ropuProtocol.SendFloorTaken(_talker.Value, _groupId, endPointsReader.GetSnapShot());
+            endPointsReader.Release();
 
             Console.WriteLine($"Called started with group {_groupId} initiator {userId}");
 
@@ -60,12 +58,16 @@ namespace Ropu.CallController
                 while(!token.IsCancellationRequested)
                 {
                     await Task.Delay(2000, token);
+                    var endPointsReader = _servingNodes.EndPoints;
+
                     if(_talker == null)
                     {
-                        _ropuProtocol.SendFloorIdle(_groupId, _servingNodesReader.GetSpan());
+                        _ropuProtocol.SendFloorIdle(_groupId, endPointsReader.GetSnapShot());
+                        endPointsReader.Release();
                         continue;
                     }
-                    _ropuProtocol.SendFloorTaken(_talker.Value, _groupId, _servingNodesReader.GetSpan());
+                    _ropuProtocol.SendFloorTaken(_talker.Value, _groupId, endPointsReader.GetSnapShot());
+                    endPointsReader.Release();
                 }
             }
             catch(TaskCanceledException)
@@ -86,7 +88,9 @@ namespace Ropu.CallController
                     if(now > expiryTime)
                     {
                         //end the call
-                        _ropuProtocol.SendCallEnded(_groupId, _servingNodesReader.GetSpan());
+                        var endPointsReader = _servingNodes.EndPoints;
+                        _ropuProtocol.SendCallEnded(_groupId, endPointsReader.GetSnapShot());
+                        endPointsReader.Release();
                         _callInProgress = false;
                         Console.WriteLine($"Call ended because idle timer expired after {callHangTime/1000} seconds.");
                         _callCancellationTokenSource.Cancel();
@@ -118,18 +122,24 @@ namespace Ropu.CallController
 
             Console.WriteLine("Releasing Floor");
             _talker = null;
-            _ropuProtocol.SendFloorIdle(_groupId, _servingNodesReader.GetSpan());
+
+            var endPointsReader = _servingNodes.EndPoints;
+            _ropuProtocol.SendFloorIdle(_groupId, endPointsReader.GetSnapShot());
+            endPointsReader.Release();
         }
 
         public void FloorRequest(uint userId)
         {
             _lastActivity = DateTime.UtcNow;
+            var endPointsReader = _servingNodes.EndPoints;
 
             if(_talker == userId)
             {
                 Console.WriteLine($"Got floor request from {userId} but they already have the floor");
                 //send another floor taken so they figure it out
-                _ropuProtocol.SendFloorTaken(_talker.Value, _groupId, _servingNodesReader.GetSpan());
+                _ropuProtocol.SendFloorTaken(_talker.Value, _groupId, endPointsReader.GetSnapShot());
+                endPointsReader.Release();
+
                 return;
             }
             if(_talker != null)
@@ -139,7 +149,8 @@ namespace Ropu.CallController
             }
             Console.WriteLine($"Floor granted to {userId} for group {_groupId}");
             _talker = userId;
-            _ropuProtocol.SendFloorTaken(userId, _groupId, _servingNodesReader.GetSpan());
+            _ropuProtocol.SendFloorTaken(userId, _groupId, endPointsReader.GetSnapShot());
+            endPointsReader.Release();
 
         }
     }
