@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 
@@ -56,9 +57,20 @@ namespace Ropu.Shared.Groups
             {
                 group.Add(unitId);
             }
-            _groupLookup.Add(groupId, group);
-        }
 
+            var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            var iconPath = Path.Combine(home, "RopuIcons", $"{name}.png");
+            if(File.Exists(iconPath))
+            {
+                group.Image = File.ReadAllBytes(iconPath);
+            }
+            else
+            {
+                group.Image = File.ReadAllBytes("../Icon/knot32.png");
+            }
+            _groupLookup.Add(groupId, group);
+
+        }
         
     }
 }

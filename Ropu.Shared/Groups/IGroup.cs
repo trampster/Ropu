@@ -24,5 +24,10 @@ namespace Ropu.Shared.Groups
         }
 
         bool HasMember(uint userId);
+
+        byte[] Image
+        {
+            get;
+        }
     }
 }

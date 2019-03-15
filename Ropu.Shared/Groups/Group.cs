@@ -40,5 +40,11 @@ namespace Ropu.Shared.Groups
         public ushort Id => _id;
 
         public int MemberCount => _groupMembers.Count;
+
+        public byte[] Image
+        {
+            get;
+            set;
+        }
     }
 }

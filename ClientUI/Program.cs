@@ -37,7 +37,9 @@ namespace Ropu.ClientUI
 
             _state = _ropuClient.State.ToString();
             _ropuClient.IdleGroup = _groupsClient.GetUsersGroups(clientSettings.UserId).First();
-            _idleGroup = _groupsClient.Get(_ropuClient.IdleGroup).Name;
+            var idleGroup =_groupsClient.Get(_ropuClient.IdleGroup);
+            _idleGroup = idleGroup.Name;
+            _idleGroupImage = idleGroup.Image;
         }
 
         bool InCall(StateId state)
@@ -83,13 +85,17 @@ namespace Ropu.ClientUI
 
             Transmitting = state == StateId.InCallTransmitting;
 
-            CallGroup = InCall(state) ? _groupsClient.Get(_ropuClient.CallGroup).Name : null;
+            var callGroup = InCall(state) ? _groupsClient.Get(_ropuClient.CallGroup) : null;
+            CallGroup = callGroup?.Name;
+            CallGroupImage = callGroup?.Image;
 
             CircleText = InCall(state) ? 
                 _groupsClient.Get(_ropuClient.CallGroup).Name : 
                 _groupsClient.Get(_ropuClient.IdleGroup).Name;
 
-            Talker = state == StateId.InCallReceiving ? _usersClient.Get(_ropuClient.Talker.Value).Name : null;
+            var user = state == StateId.InCallReceiving ? _usersClient.Get(_ropuClient.Talker.Value) : null;
+            Talker = user?.Name;
+            TalkerImage = user?.Image;
         }
 
         string _state = "";
@@ -156,6 +162,13 @@ namespace Ropu.ClientUI
             set => SetProperty(ref _talker, value);
         }
 
+        byte[] _talkerImage;
+        public byte[] TalkerImage
+        {
+            get => _talkerImage;
+            set => SetProperty(ref _talkerImage, value);
+        }
+
         bool _transmitting;
         public bool Transmitting
         {
@@ -170,11 +183,25 @@ namespace Ropu.ClientUI
             set => SetProperty(ref _callGroup, value);
         }
 
+        byte[] _callGroupImage;
+        public byte[] CallGroupImage
+        {
+            get => _callGroupImage;
+            set => SetProperty(ref _callGroupImage, value);
+        }
+
         string _idleGroup;
         public string IdleGroup
         {
             get => _idleGroup;
             set => SetProperty(ref _idleGroup, value);
+        }
+
+        byte[] _idleGroupImage;
+        public byte[] IdleGroupImage
+        {
+            get => _idleGroupImage;
+            set => SetProperty(ref _idleGroupImage, value);
         }
 
         string _circleText;
@@ -226,8 +253,11 @@ namespace Ropu.ClientUI
             _pttCircle.PttColorBinding.BindDataContext<MainViewModel>(m => m.PttColor);
 
             _pttCircle.TalkerBinding.BindDataContext<MainViewModel>(m => m.Talker);
+            _pttCircle.TalkerImageBinding.BindDataContext<MainViewModel>(m => m.TalkerImage);
             _pttCircle.IdleGroupBinding.BindDataContext<MainViewModel>(m => m.IdleGroup);
+            _pttCircle.IdleGroupImageBinding.BindDataContext<MainViewModel>(m => m.IdleGroupImage);
             _pttCircle.CallGroupBinding.BindDataContext<MainViewModel>(m => m.CallGroup);
+            _pttCircle.CallGroupImageBinding.BindDataContext<MainViewModel>(m => m.CallGroupImage);
             _pttCircle.CircleTextBinding.BindDataContext<MainViewModel>(m => m.CircleText);
             _pttCircle.TransmittingBinding.BindDataContext<MainViewModel>(m => m.Transmitting);
             _pttCircle.TransmittingAnimationColor = MainViewModel.Green;

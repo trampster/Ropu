@@ -6,5 +6,10 @@ namespace Ropu.Shared.Groups
         {
             get;
         }
+
+        byte[] Image
+        {
+            get;
+        }
     }
 }

@@ -7,5 +7,11 @@ namespace Ropu.Shared.Groups
             get;
             set;
         }
+
+        public byte[] Image
+        {
+            get;
+            set;
+        }
     }
 }

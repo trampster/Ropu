@@ -154,6 +154,27 @@ namespace Ropu.ClientUI
             }
         }
 
+        public byte[] TalkerImage
+        {
+            set
+            {
+                if(value == null) return;
+                _talkerDrawable.Image = new Bitmap(value);
+                Invalidate();
+            }
+        }
+
+        public BindableBinding<PttPage, byte[]> TalkerImageBinding
+        { 
+            get
+            {
+                return new BindableBinding<PttPage, byte[]>(
+                    this, 
+                    p => null, 
+                    (p,c) => p.TalkerImage = c);
+            }
+        }
+
         bool _transmitting = false;
         public bool Transmitting
         {
@@ -207,6 +228,27 @@ namespace Ropu.ClientUI
             }
         }
 
+        public byte[] CallGroupImage
+        {
+            set
+            {
+                if(value == null) return;
+                _callGroupDrawable.Image = new Bitmap(value);
+                Invalidate();
+            }
+        }
+
+        public BindableBinding<PttPage, byte[]> CallGroupImageBinding
+        { 
+            get
+            {
+                return new BindableBinding<PttPage, byte[]>(
+                    this, 
+                    p => null, 
+                    (p,c) => p.CallGroupImage = c);
+            }
+        }
+
         public string CircleText
         {
             get =>  _pttCircle.Text;
@@ -246,6 +288,27 @@ namespace Ropu.ClientUI
                     this, 
                     p => p.IdleGroup, 
                     (p,c) => p.IdleGroup = c);
+            }
+        }
+
+        public byte[] IdleGroupImage
+        {
+            set
+            {
+                if(value == null) return;
+                _idleGroupDrawable.Image = new Bitmap(value);
+                Invalidate();
+            }
+        }
+
+        public BindableBinding<PttPage, byte[]> IdleGroupImageBinding
+        { 
+            get
+            {
+                return new BindableBinding<PttPage, byte[]>(
+                    this, 
+                    p => null, 
+                    (p,c) => p.IdleGroupImage = c);
             }
         }
 
