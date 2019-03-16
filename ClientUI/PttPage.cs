@@ -22,20 +22,54 @@ namespace Ropu.ClientUI
         readonly PttCircle _pttCircle;
 
         bool _buttonDown = false;
+
+        void ButtonDown()
+        {
+            ButtonDownEvent?.Invoke(this, EventArgs.Empty);
+            _buttonDown = true;
+            _pttCircle.PenWidth = 9;
+
+            Invalidate();
+        }
+
+        void ButtonUp()
+        {
+            ButtonUpEvent?.Invoke(this, EventArgs.Empty);
+            _buttonDown = false;
+            _pttCircle.PenWidth = 6;
+            Invalidate();
+        }
+
+        void ToggleButton()
+        {
+            if(_buttonDown) 
+            {
+                ButtonUp();
+                return;
+            }
+            ButtonDown();
+        }
+        
         public PttPage()
         {
             Paint += PaintHandler;
             this.MouseDown += (sender, args) =>
             {
-                ButtonDownEvent?.Invoke(this, EventArgs.Empty);
-                _buttonDown = true;
-                _pttCircle.PenWidth = 9;
+                if(args.Buttons == MouseButtons.Middle)
+                {
+                    //toggle
+                    ToggleButton();
+                    return;
+                }
 
-                Invalidate();
-
+                ButtonDown();
             };
             this.MouseUp += (sender, args) =>
             {
+                if(args.Buttons == MouseButtons.Middle)
+                {
+                    return;
+                }
                 ButtonUpEvent?.Invoke(this, EventArgs.Empty);
                 _buttonDown = false;
                 _pttCircle.PenWidth = 6;

@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Ropu.Client.Alsa;
+using Ropu.Client.JitterBuffer;
 using Ropu.Shared;
 using Ropu.Shared.Groups;
 using Ropu.Shared.LoadBalancing;
@@ -31,7 +32,9 @@ namespace Ropu.Client
             var audioSource = new AlsaAudioSource();
             var audioPlayer = new AlsaAudioPlayer();
             var audioCodec = new RawCodec();
-            _mediaClient = new MediaClient(protocolSwitch, audioSource, audioPlayer, audioCodec, settings);
+            var jitterBuffer = new AdaptiveJitterBuffer(2, 50);
+
+            _mediaClient = new MediaClient(protocolSwitch, audioSource, audioPlayer, audioCodec, jitterBuffer, settings);
             var callManagementProtocol = new LoadBalancerProtocol(new PortFinder(), 5079);
 
             var ipAddress = IPAddress.Parse(MyAddress);

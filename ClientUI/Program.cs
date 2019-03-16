@@ -13,6 +13,7 @@ using Ropu.Client.FileAudio;
 using Ropu.Shared.Groups;
 using Ropu.Client.Opus;
 using System.Linq;
+using Ropu.Client.JitterBuffer;
 
 namespace Ropu.ClientUI
 {
@@ -288,7 +289,8 @@ namespace Ropu.ClientUI
             //var audioSource = new AlsaAudioSource();
             var audioPlayer = new AlsaAudioPlayer();
             var audioCodec = new OpusCodec();
-            var mediaClient = new MediaClient(protocolSwitch, audioSource, audioPlayer, audioCodec, settings);
+            var jitterBuffer = new AdaptiveJitterBuffer(2, 50);
+            var mediaClient = new MediaClient(protocolSwitch, audioSource, audioPlayer, audioCodec, jitterBuffer, settings);
             var callManagementProtocol = new LoadBalancerProtocol(new PortFinder(), 5079);
 
             var ipAddress = IPAddress.Parse(myAddress);

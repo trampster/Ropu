@@ -425,10 +425,15 @@ namespace Ropu.Client
             _stateManager.HandleEvent(EventId.CallEnded);
         }
 
+        uint? _talker = null;
         public uint? Talker
         {
-            get;
-            set;
+            get => _talker;
+            set
+            {
+                _talker = value;
+                _mediaClient.Talker = value;
+            }
         }
 
         public void HandleFloorTaken(ushort groupId, uint userId)

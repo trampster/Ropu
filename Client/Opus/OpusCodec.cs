@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using Ropu.Client.JitterBuffer;
 
 namespace Ropu.Client.Opus
 {

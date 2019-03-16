@@ -4,99 +4,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Ropu.Shared;
 
-namespace Ropu.Client
+namespace Ropu.Client.JitterBuffer
 {
-
-    public class AudioData
-    {
-        byte[] _data = new byte[320];
-
-        public Span<byte> Data
-        {
-            get => _data.AsSpan(0, Length);
-            set
-            {
-                for(int index = 0; index < value.Length; index++)
-                {
-                    _data[index] = value[index];
-                }
-                Length = value.Length;
-            }
-        }
-
-        public byte[] Buffer => _data;
-
-        public int Length
-        {
-            get;
-            private set;
-        }
-    }
-
-    public class BufferEntry
-    {
-        readonly object _bufferLock = new object();
-        readonly int _index;
-        public BufferEntry(int index)
-        {
-            _index = index;
-            AudioData = new AudioData();
-        }
-
-        public int Index => _index;
-
-        public uint UserId
-        {
-            get;
-            private set;
-        }
-
-        public ushort SequenceNumber
-        {
-            get;
-            private set;
-        }
-
-        public AudioData AudioData
-        {
-            get;
-            private set;
-        }
-
-        public int OverId
-        {
-            get;
-            private set;
-        }
-
-        volatile bool _isSet = false;
-
-        public bool IsSet
-        {
-            get => _isSet;
-        }
-
-        public void Empty()
-        {
-            lock(_bufferLock)
-            {
-                _isSet = false;
-            }
-        }
-
-        public void Fill(uint userId, ushort sequenceNumber, Span<byte> audioData, int overId)
-        {
-            lock(_bufferLock)
-            {
-                UserId = userId;
-                SequenceNumber = sequenceNumber;
-                AudioData.Data = audioData;
-                OverId = overId;
-                _isSet = true;
-            }
-        }
-    }
-    public class JitterBuffer
+    public class AdaptiveJitterBuffer : IJitterBuffer
     {
         BufferEntry[] _buffer;
         int _readIndex = 0;
@@ -117,7 +27,7 @@ namespace Ropu.Client
 
         int _packetsInBuffer = 0;
 
-        public JitterBuffer(int min, int max)
+        public AdaptiveJitterBuffer(int min, int max)
         {
             Console.WriteLine("JitterBuffer Constructor");
             _buffer = new BufferEntry[max];
@@ -163,6 +73,10 @@ namespace Ropu.Client
         int _overId = 0;//incremented for each over we receive
         public void AddAudio(uint userId, ushort sequenceNumber, Span<byte> audioData)
         {
+            if(_talker != null && _talker != userId)
+            {
+                return; //this use doesn't have floor
+            }
             lock(_lock)
             {
                 if(userId != _currentUserId)
@@ -305,7 +219,16 @@ namespace Ropu.Client
         static readonly object _lock = new object();
         //when the buffer is empty allow the read to continue for another loop through the buffer
         //incase the stream isn't finished just lost for a bit
-        int _emptyCount = int.MaxValue; 
+        int _emptyCount = int.MaxValue;
+
+        uint? _talker = null;
+        public uint? Talker 
+        { 
+            set
+            {
+                _talker = value;
+            }
+        }
 
         public (AudioData, bool) GetNext(Action waitFinished)
         {

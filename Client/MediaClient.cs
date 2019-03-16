@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Ropu.Client.JitterBuffer;
 using Ropu.Shared;
 using Ropu.Shared.ControlProtocol;
 
@@ -16,15 +17,15 @@ namespace Ropu.Client
         readonly IAudioPlayer _audioPlayer;
         readonly IAudioCodec _audioCodec;
         readonly IClientSettings _clientSettings;
-        readonly JitterBuffer _jitterBuffer = new JitterBuffer(2, 50);
-
+        readonly IJitterBuffer _jitterBuffer;
         ushort _sequenceNumber = 0;
 
         public MediaClient(
             ProtocolSwitch protocolSwitch, 
             IAudioSource audioSource,
             IAudioPlayer audioPlayer,
-            IAudioCodec audioCodec, 
+            IAudioCodec audioCodec,
+            IJitterBuffer jitterBuffer,
             IClientSettings clientSettings)
         {
             _protocolSwitch = protocolSwitch;
@@ -32,7 +33,18 @@ namespace Ropu.Client
             _audioSource = audioSource;
             _audioPlayer = audioPlayer;
             _audioCodec = audioCodec;
+            _jitterBuffer = jitterBuffer;
             _clientSettings = clientSettings;
+        }
+
+        uint? _talker;
+        public uint? Talker
+        {
+            set
+            {
+                _talker = value;
+                _jitterBuffer.Talker = value;
+            }
         }
 
         volatile bool _sendingAudio = false;
@@ -73,6 +85,14 @@ namespace Ropu.Client
             _jitterBuffer.AddAudio(userId, sequenceNumber, audioData);
         }
 
+        void Silence(short[] buffer)
+        {
+            for(int index = 0; index < buffer.Length; index++)
+            {
+                buffer[index] = 0;
+            }
+        }
+
         public async Task PlayAudio()
         {
             await Task.Run(() =>
@@ -91,7 +111,15 @@ namespace Ropu.Client
                     (AudioData data, bool isNext) = _jitterBuffer.GetNext(afterWait);
 
                     //decode 
-                    _audioCodec.Decode(data, isNext, outputBuffer);
+                    if(data != null || (data == null && _talker != null))
+                    {
+                        _audioCodec.Decode(data, isNext, outputBuffer);
+                    }
+                    else
+                    {
+                        Silence(outputBuffer); //don't do packet loss concellement if we don't have a talker
+                    }
+
 
                     //play
                     _audioPlayer.PlayAudio(outputBuffer);
