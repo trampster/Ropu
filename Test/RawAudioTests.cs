@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using Ropu.Client;
+using Ropu.Client.JitterBuffer;
 using System;
 using System.Linq;
 

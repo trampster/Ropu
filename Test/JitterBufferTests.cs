@@ -1,18 +1,19 @@
 using NUnit.Framework;
 using Ropu.Client;
+using Ropu.Client.JitterBuffer;
 using System;
 using System.Linq;
 
 namespace Ropu.Tests.Client
 {
-    public class JitterBufferTests
+    public class AdaptiveJitterBufferTests
     {
-        JitterBuffer _jitterBuffer;
+        AdaptiveJitterBuffer _jitterBuffer;
         
         [SetUp]
         public void Setup()
         {
-            _jitterBuffer = new JitterBuffer(2,10);
+            _jitterBuffer = new AdaptiveJitterBuffer(2,10);
         }
 
         [Test]
