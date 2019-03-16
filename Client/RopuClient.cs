@@ -436,8 +436,29 @@ namespace Ropu.Client
             }
         }
 
+        bool InCall()
+        {
+            var state = _stateManager.CurrentState.Identifier;
+            switch(state)
+            {
+                case StateId.InCallIdle:
+                case StateId.InCallReceiving:
+                case StateId.InCallReleasingFloor:
+                case StateId.InCallRequestingFloor:
+                case StateId.InCallTransmitting:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
         public void HandleFloorTaken(ushort groupId, uint userId)
         {
+            if(InCall() && _callGroup != groupId)
+            {
+                Console.WriteLine("HandleFloorTaken Not Current call");
+                return; //not for the current call;
+            }
             _callGroup = groupId;
             Talker = userId;
             
@@ -451,6 +472,11 @@ namespace Ropu.Client
 
         public void HandleFloorIdle(ushort groupId)
         {
+            if(InCall() && _callGroup != groupId)
+            {
+                Console.WriteLine("HandleFloorIdle but Not Current call");
+                return; //not for the current call;
+            }
             _callGroup = groupId;
             Talker = null;
             _stateManager.HandleEvent(EventId.FloorIdle);
