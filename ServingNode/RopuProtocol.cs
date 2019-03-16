@@ -30,6 +30,7 @@ namespace Ropu.ServingNode
             Console.WriteLine($"Serving Node Protocol bound to port {MediaPort}");
 
             _socketEventArgsPool = new MemoryPool<SocketAsyncEventArgs>(() => CreateSocketAsyncEventArgs());
+            _bulkRequestTokenPool = new MemoryPool<BulkRequestToken>(() => new BulkRequestToken());
         }
 
         public void SetMessageHandler(IMessageHandler messageHandler)
@@ -161,8 +162,7 @@ namespace Ropu.ServingNode
         }
 
         readonly MemoryPool<SocketAsyncEventArgs> _socketEventArgsPool;
-        int _waitingSendCount = 0;
-        Action _onBulkAsyncFinished;
+        readonly MemoryPool<BulkRequestToken> _bulkRequestTokenPool;
         readonly object _asyncCompleteLock = new object();
 
         SocketAsyncEventArgs CreateSocketAsyncEventArgs()
@@ -172,6 +172,35 @@ namespace Ropu.ServingNode
             return args;
         }
 
+        class BulkRequestToken
+        {
+            int _waitingSendCount = 0;
+
+            public void Reset()
+            {
+                Finished = null;
+                _waitingSendCount = 0;
+            }
+
+            public int WaitingCount => _waitingSendCount;
+
+            public int IncrementWaitingCount()
+            {
+                return Interlocked.Increment(ref _waitingSendCount);
+            }
+
+            public int DecrementWaitingCount()
+            {
+                return Interlocked.Decrement(ref _waitingSendCount);
+            }
+
+            public Action Finished
+            {
+                get;
+                set;
+            }
+        }
+
         void AsyncSendComplete(object sender, SocketAsyncEventArgs args)
         {
             
@@ -179,11 +208,12 @@ namespace Ropu.ServingNode
 
             lock(_asyncCompleteLock)
             {
-                int newCount = Interlocked.Decrement(ref _waitingSendCount);
+                var token = (BulkRequestToken)args.UserToken;
+                int newCount = token.DecrementWaitingCount();
                 if(newCount == 0)
                 {
-                    _onBulkAsyncFinished?.Invoke();
-                    _onBulkAsyncFinished = null;
+                    token.Finished?.Invoke();
+                    token.Finished = null;
                 }
 
             }
@@ -191,9 +221,18 @@ namespace Ropu.ServingNode
 
         public void BulkSendAsync(byte[] buffer, int length, Span<IPEndPoint> endPoints, Action onComplete, IPEndPoint except)
         {
+            var token = _bulkRequestTokenPool.Get();
+            token.Reset();
+            token.Finished = () => 
+            {
+                onComplete();
+                _bulkRequestTokenPool.Add(token);
+            };
+
             for(int endpointIndex = 0; endpointIndex < endPoints.Length; endpointIndex++)
             {
                 var args = _socketEventArgsPool.Get();
+                args.UserToken = token;
                 var endPoint = endPoints[endpointIndex];
                 if(endPoint.Equals(except))
                 {
@@ -204,19 +243,21 @@ namespace Ropu.ServingNode
 
                 if(!_socket.SendToAsync(args))
                 {
-                    Interlocked.Increment(ref _waitingSendCount);
                     //completed syncronously
                     _socketEventArgsPool.Add(args); //release the memory back to the pool
+                }
+                else
+                {
+                    token.IncrementWaitingCount();
                 }
             }
             lock(_asyncCompleteLock)
             {
-                if(_waitingSendCount == 0) 
+                if(token.WaitingCount == 0) 
                 {
-                    onComplete();
+                    token.Finished();
                     return;
                 }
-                _onBulkAsyncFinished = onComplete;
             }
         }
 
@@ -243,27 +284,34 @@ namespace Ropu.ServingNode
 
         public void BulkSendAsync(byte[] buffer, int length, Span<IPEndPoint> endPoints, Action onComplete)
         {
+            var token = new BulkRequestToken();
+            token.Reset();
+            token.Finished = onComplete;
+
             for(int endpointIndex = 0; endpointIndex < endPoints.Length; endpointIndex++)
             {
                 var args = _socketEventArgsPool.Get();
                 args.RemoteEndPoint = endPoints[endpointIndex];
                 args.SetBuffer(buffer, 0, length);
+                args.UserToken = token;
 
                 if(!_socket.SendToAsync(args))
                 {
-                    Interlocked.Increment(ref _waitingSendCount);
                     //completed syncronously
                     _socketEventArgsPool.Add(args); //release the memory back to the pool
+                }
+                else
+                {
+                    token.IncrementWaitingCount();
                 }
             }
             lock(_asyncCompleteLock)
             {
-                if(_waitingSendCount == 0) 
+                if(token.WaitingCount == 0) 
                 {
                     onComplete();
                     return;
                 }
-                _onBulkAsyncFinished = onComplete;
             }
         }
 
