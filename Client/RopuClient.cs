@@ -17,7 +17,7 @@ namespace Ropu.Client
 
         readonly ServingNodeClient _servingNodeClient;
         readonly ProtocolSwitch _protocolSwitch;
-        readonly MediaClient _mediaClient;
+        readonly IMediaClient _mediaClient;
 
         readonly IClientSettings _clientSettings;
 
@@ -58,7 +58,7 @@ namespace Ropu.Client
         public RopuClient(
             ProtocolSwitch protocolSwitch, 
             ServingNodeClient servingNodeClient, 
-            MediaClient mediaClient,
+            IMediaClient mediaClient,
             IPAddress address,
             LoadBalancerProtocol loadBalancerProtocol,
             IPEndPoint loadBalancerEndPoint,

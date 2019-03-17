@@ -13,10 +13,12 @@ namespace Ropu.Client
         {
             bool showHelp = false;
             string userIdString = "";
+            bool fakeMedia = false;
 
             var optionSet = new OptionSet () 
             {
-                { "n|userid=", "the {User ID} of this client.",  v => userIdString = v },
+                { "n|userid=", "the {User ID} of this client",  v => userIdString = v },
+                { "f|fakemedia", "Don't do any media processing", v =>  fakeMedia = v != null },
                 { "h|help",  "show this message and exit", v => showHelp = v != null }
             };
             optionSet.Parse(args);
@@ -33,6 +35,8 @@ namespace Ropu.Client
                     return false;
                 }
             }
+
+            FakeMedia = fakeMedia;
 
             return true;
         }
@@ -52,6 +56,12 @@ namespace Ropu.Client
                 _userId = value;
                 UserIdChanged?.Invoke(this, EventArgs.Empty);
             }
+        }
+
+        public bool FakeMedia
+        {
+            get;
+            set;
         }
     }
 }

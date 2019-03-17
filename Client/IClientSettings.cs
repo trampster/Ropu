@@ -7,5 +7,11 @@ namespace Ropu.Client
         uint UserId{get;set;}
 
         event EventHandler UserIdChanged;
+
+        bool FakeMedia
+        {
+            get;
+            set;
+        }
     }
 }

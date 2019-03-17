@@ -10,7 +10,7 @@ using Ropu.Shared.ControlProtocol;
 
 namespace Ropu.Client
 {
-    public class MediaClient : IMediaPacketParser, IDisposable
+    public class MediaClient : IMediaClient
     {
         readonly ProtocolSwitch _protocolSwitch;
         readonly IAudioSource _audioSource;

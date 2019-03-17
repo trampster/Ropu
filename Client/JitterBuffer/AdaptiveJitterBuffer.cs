@@ -216,7 +216,7 @@ namespace Ropu.Client.JitterBuffer
             Console.WriteLine($"Decrease buffersize to {_bufferSize}.");
         }
 
-        static readonly object _lock = new object();
+        readonly object _lock = new object();
         //when the buffer is empty allow the read to continue for another loop through the buffer
         //incase the stream isn't finished just lost for a bit
         int _emptyCount = int.MaxValue;

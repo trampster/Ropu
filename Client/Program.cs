@@ -18,7 +18,7 @@ namespace Ropu.Client
         const string LoadBalancerIP =  "192.168.1.6";
         const string MyAddress = "192.168.1.6";
         const int LoadBalancerPort = 5069;
-        static MediaClient _mediaClient;
+        static IMediaClient _mediaClient;
         static async Task Main(string[] args)
         {
             var settings = new CommandLineClientSettings();
@@ -29,14 +29,10 @@ namespace Ropu.Client
 
             var protocolSwitch = new ProtocolSwitch(_controlPortStarting, new PortFinder());
             var servingNodeClient = new ServingNodeClient(protocolSwitch);
-            var audioSource = new AlsaAudioSource();
-            var audioPlayer = new AlsaAudioPlayer();
-            var audioCodec = new RawCodec();
-            var jitterBuffer = new AdaptiveJitterBuffer(2, 50);
 
-            _mediaClient = new MediaClient(protocolSwitch, audioSource, audioPlayer, audioCodec, jitterBuffer, settings);
             var callManagementProtocol = new LoadBalancerProtocol(new PortFinder(), 5079);
-
+            
+            _mediaClient = BuildMediaClient(protocolSwitch, settings);
             var ipAddress = IPAddress.Parse(MyAddress);
 
             IPEndPoint loadBalancerEndpoint = new IPEndPoint(IPAddress.Parse(LoadBalancerIP), LoadBalancerPort);
@@ -46,6 +42,21 @@ namespace Ropu.Client
             var consoleTask = TaskCordinator.RunLong(HandleCommands);
             
             await TaskCordinator.WaitAll(ropuClientTask, consoleTask);
+        }
+
+        static IMediaClient BuildMediaClient(ProtocolSwitch protocolSwitch, IClientSettings settings)
+        {
+            if(settings.FakeMedia)
+            {
+                Console.WriteLine("Using FakeMediaClient");
+                return new FakeMediaClient();
+            }
+            var audioSource = new AlsaAudioSource();
+            var audioPlayer = new AlsaAudioPlayer();
+            var audioCodec = new RawCodec();
+            var jitterBuffer = new AdaptiveJitterBuffer(2, 50);
+
+            return new MediaClient(protocolSwitch, audioSource, audioPlayer, audioCodec, jitterBuffer, settings);
         }
 
         static void HandleCommands()

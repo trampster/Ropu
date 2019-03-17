@@ -1,0 +1,31 @@
+[
+    {
+        "Name": "LoadBalancer",
+        "Folder": "../LoadBalancer/",
+        "Command": "dotnet",
+        "Args": "run bin/Debug/netcoreapp2.1/LoadBalancer.dll"
+    },
+    {
+        "Name": "ServingNode",
+        "Folder": "../ServingNode/",
+        "Command": "dotnet",
+        "Args": "run bin/Debug/netcoreapp2.1/ServingNode.dll"
+    },
+    {
+        "Name": "CallController",
+        "Folder": "../CallController/",
+        "Command": "dotnet",
+        "Args": "run bin/Debug/netcoreapp2.1/CallController.dll"
+    },
+    {
+        "Name": "Client",
+        "Folder": "../Client/",
+        "Command": "dotnet",
+        "Args": "run bin/Release/netcoreapp2.1/ClientUI.dll -- --userid={0} -f",
+        "ArgParam":
+        {
+            "start": 1010,
+            "end": 1110
+        }
+    }
+]

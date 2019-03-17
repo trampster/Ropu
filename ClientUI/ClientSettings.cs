@@ -16,6 +16,8 @@ namespace Ropu.ClientUI
             }
         }
 
+        public bool FakeMedia { get; set; }
+
         public event EventHandler UserIdChanged;
     }
 }
