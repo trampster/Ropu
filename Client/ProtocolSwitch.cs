@@ -104,7 +104,8 @@ namespace Ropu.Client
                     break;
                 //floor
                 case RopuPacketType.FloorDenied:
-                    throw new NotImplementedException();
+                    Console.Error.WriteLine("Got Floor Denied but not Implemented");
+                    break;
                 case RopuPacketType.FloorTaken:
                     _controlPacketParser?.ParseFloorTaken(data);
                     break;
