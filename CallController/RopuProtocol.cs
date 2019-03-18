@@ -21,7 +21,7 @@ namespace Ropu.CallController
 
         IMessageHandler _messageHandler;
 
-        MemoryPool<byte[]> _sendBufferPool = new MemoryPool<byte[]>(() => new byte[ushort.MaxValue]);
+        readonly MemoryPool<byte[]> _sendBufferPool = new MemoryPool<byte[]>(() => new byte[ushort.MaxValue]);
 
         public RopuProtocol(PortFinder portFinder, int startingPort)
         {

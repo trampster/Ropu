@@ -85,7 +85,12 @@ namespace Ropu.Shared.Concurrent
                 {
                     newLength = _maxElements;
                 }
-                _array = new T[newLength];
+                var newArray = new T[newLength];
+                for(int index = 0; index < _array.Length; index++)
+                {
+                    newArray[index] = _array[index];
+                }
+                _array = newArray;
             }
             _array[_length] = item;
             _length++;
