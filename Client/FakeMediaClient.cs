@@ -17,12 +17,12 @@ namespace Ropu.Client
 
         public async Task PlayAudio()
         {
-            await Task.Delay(-1);
+            await Task.Delay(1);
         }
 
         public async Task StartSendingAudio(ushort groupId)
         {
-            await Task.Delay(-1);
+            await Task.Delay(1);
         }
 
         public void StopSendingAudio()

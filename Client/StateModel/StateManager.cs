@@ -55,7 +55,6 @@ namespace Ropu.Client.StateModel
                 expected.RunExit(newState);
                 newState.RunEntry();
                 StateChanged?.Invoke(this, EventArgs.Empty);
-                Console.WriteLine($"State Transition {original} -> {newState}");
             }
             return original;
         }
@@ -67,7 +66,6 @@ namespace Ropu.Client.StateModel
 
         public void HandleEvent(EventT eventType)
         {
-            Console.WriteLine($"Event Occured {eventType}");
             while(true) 
             {
                 var current = CurrentState;

@@ -19,13 +19,13 @@ namespace Ropu.Client
         const string MyAddress = "192.168.1.6";
         const int LoadBalancerPort = 5069;
         IMediaClient _mediaClient;
-        static async Task Main(string[] args)
+        static void Main(string[] args)
         {
             var program = new Program();
-            await program.Run(args);
+            program.Run(args);
         }
 
-        public async Task Run(string[] args)
+        public void Run(string[] args)
         {
             var settings = new CommandLineClientSettings();
             if(!settings.ParseArgs(args))
@@ -45,16 +45,17 @@ namespace Ropu.Client
             _ropuClient = new RopuClient(protocolSwitch, servingNodeClient, _mediaClient, ipAddress, callManagementProtocol, loadBalancerEndpoint, settings);
             var ropuClientTask = _ropuClient.Run();
 
-            var consoleTask = TaskCordinator.RunLong(HandleCommands);
+            //var consoleTask = TaskCordinator.RunLong(HandleCommands);
             
-            await TaskCordinator.WaitAll(ropuClientTask, consoleTask);
+            //TaskCordinator.WaitAll(ropuClientTask, consoleTask).Wait();
+            ropuClientTask.Wait();
         }
 
         IMediaClient BuildMediaClient(ProtocolSwitch protocolSwitch, IClientSettings settings)
         {
             if(settings.FakeMedia)
             {
-                Console.WriteLine("Using FakeMediaClient");
+                //Console.WriteLine("Using FakeMediaClient");
                 return new FakeMediaClient();
             }
             var audioSource = new AlsaAudioSource();

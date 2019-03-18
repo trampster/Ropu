@@ -13,7 +13,6 @@ namespace Ropu.Bender
         static int Main(string[] args)
         {
             ThreadPool.GetMaxThreads(out int max, out int completetions);
-            Console.WriteLine($"Max threads {max}");
 
             if(args.Length == 0)
             {
@@ -32,16 +31,13 @@ namespace Ropu.Bender
             var runner = new RopeRunner();
 
             var tasks = new List<Task>();
+            var clientThreads = new List<Thread>();
             foreach(var rope in Expand(ropes))
             {
                 if(rope.Name.StartsWith("Client"))
                 {
                     Console.WriteLine($"Starting {rope.Name}");
-                    tasks.Add(Task.Run(async () => 
-                    {
-                        var program = new Ropu.Client.Program();
-                        await program.Run(rope.Args.Split(' ', StringSplitOptions.RemoveEmptyEntries));
-                    }));
+                    clientThreads.Add(StartClient(rope));
                 }
                 else
                 {
@@ -52,6 +48,17 @@ namespace Ropu.Bender
             Task.WaitAll(tasks.ToArray());
 
             return 0;
+        }
+
+        static Thread StartClient(Rope rope)
+        {
+            Thread thread = new Thread(_ => 
+            {
+                var program = new Ropu.Client.Program();
+                program.Run(rope.Args.Split(' ', StringSplitOptions.RemoveEmptyEntries));
+            });
+            thread.Start();
+            return thread;
         }
 
         static IEnumerable<Rope> Expand(Rope[] ropes)

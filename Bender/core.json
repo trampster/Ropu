@@ -3,27 +3,18 @@
         "Name": "LoadBalancer",
         "Folder": "../LoadBalancer/",
         "Command": "dotnet",
-        "Args": "run bin/Debug/netcoreapp2.1/LoadBalancer.dll"
+        "Args": "run"
     },
     {
         "Name": "ServingNode",
         "Folder": "../ServingNode/",
         "Command": "dotnet",
-        "Args": "run bin/Debug/netcoreapp2.1/ServingNode.dll"
+        "Args": "run"
     },
     {
         "Name": "CallController",
         "Folder": "../CallController/",
         "Command": "dotnet",
-        "Args": "run bin/Debug/netcoreapp2.1/CallController.dll"
-    },
-    {
-        "Name": "Client",
-        "Args": "--userid={0} -f",
-        "ArgParam":
-        {
-            "start": 1010,
-            "end": 1015
-        }
+        "Args": "run"
     }
 ]

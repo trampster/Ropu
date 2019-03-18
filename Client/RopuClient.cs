@@ -268,7 +268,6 @@ namespace Ropu.Client
                 bool heartbeatReceived = false;
                 for(int attemptNumber = 0; attemptNumber < 3; attemptNumber++)
                 {
-                    Console.WriteLine("Sending Heartbeat");
                     _servingNodeClient.SendHeartbeat(_clientSettings.UserId);
                     heartbeatReceived = await WaitForEvent(token, _heartbeatResetEvent, 1000);
                     if(token.IsCancellationRequested) return;
@@ -300,7 +299,6 @@ namespace Ropu.Client
                 }
                 if(_protocolSwitch.ServingNodeEndpoint == null)
                 {
-                    Console.WriteLine($"Requesting Serving Node from LoadBalancer {_loadBalancerEndPoint}");
                     var servingNodeEndpoint = await _loadBalancerProtocol.RequestServingNode(_loadBalancerEndPoint);
                     if(servingNodeEndpoint == null)
                     {
