@@ -24,7 +24,7 @@ namespace Ropu.Shared.LoadBalancing
         ushort _requestId = 0;
 
 
-        static readonly IPEndPoint Any = new IPEndPoint(IPAddress.Any, AnyPort);
+        readonly IPEndPoint Any = new IPEndPoint(IPAddress.Any, AnyPort);
 
         ILoadBalancerServerMessageHandler _serverMessageHandler;
         ILoadBalancerClientMessageHandler _clientMessageHandler;
@@ -51,37 +51,21 @@ namespace Ropu.Shared.LoadBalancing
 
         public async Task Run()
         {
-            var task = new Task(() => AsyncPump.Run(ProcessPackets), TaskCreationOptions.LongRunning);
+            var task = new Task(() => ProcessPackets(), TaskCreationOptions.LongRunning);
             task.Start();
             await task;
         }
 
-        async Task ProcessPackets()
+        void ProcessPackets()
         {
             var buffer = new byte[MaxUdpSize];
             EndPoint any = Any;
 
-            var resetEvent = new ManualResetEvent(false);
-
-            var socketArgs = new SocketAsyncEventArgs();
-            socketArgs.SetBuffer(buffer);
-            socketArgs.RemoteEndPoint = any;
-            socketArgs.SocketFlags = SocketFlags.None;
-            socketArgs.Completed += (sender, args) =>
-            {
-                resetEvent.Set();
-            };
-
             while(true)
             {
-                if(_socket.ReceiveFromAsync(socketArgs))
-                {
-                    //didn't complete yet, need to wait for it
-                    await Task.Run(() => resetEvent.WaitOne());
-                    resetEvent.Reset();
-                }
+                int read = _socket.ReceiveFrom(buffer, ref any);
 
-                HandlePacket(buffer, socketArgs.BytesTransferred, (IPEndPoint)socketArgs.RemoteEndPoint);
+                HandlePacket(buffer, read, (IPEndPoint)any);
             }
         }
 
@@ -489,7 +473,7 @@ namespace Ropu.Shared.LoadBalancing
 
         async Task<bool> AwaitResetEvent(ManualResetEvent resetEvent)
         {
-            return await Task<bool>.Run(() => resetEvent.WaitOne(1000));
+            return await Task<bool>.Run(() => resetEvent.WaitOne(1000000));
         }
     }
 }
