@@ -19,13 +19,11 @@
     },
     {
         "Name": "Client",
-        "Folder": "../Client/",
-        "Command": "dotnet",
-        "Args": "run bin/Release/netcoreapp2.1/ClientUI.dll -- --userid={0} -f",
+        "Args": "--userid={0} -f",
         "ArgParam":
         {
             "start": 1010,
-            "end": 1110
+            "end": 1015
         }
     }
 ]

@@ -11,15 +11,21 @@ using Ropu.Shared.LoadBalancing;
 
 namespace Ropu.Client
 {
-    class Program
+    public class Program
     {
         const ushort _controlPortStarting = 5061;
-        static RopuClient _ropuClient;
+        RopuClient _ropuClient;
         const string LoadBalancerIP =  "192.168.1.6";
         const string MyAddress = "192.168.1.6";
         const int LoadBalancerPort = 5069;
-        static IMediaClient _mediaClient;
+        IMediaClient _mediaClient;
         static async Task Main(string[] args)
+        {
+            var program = new Program();
+            await program.Run(args);
+        }
+
+        public async Task Run(string[] args)
         {
             var settings = new CommandLineClientSettings();
             if(!settings.ParseArgs(args))
@@ -44,7 +50,7 @@ namespace Ropu.Client
             await TaskCordinator.WaitAll(ropuClientTask, consoleTask);
         }
 
-        static IMediaClient BuildMediaClient(ProtocolSwitch protocolSwitch, IClientSettings settings)
+        IMediaClient BuildMediaClient(ProtocolSwitch protocolSwitch, IClientSettings settings)
         {
             if(settings.FakeMedia)
             {
@@ -59,7 +65,7 @@ namespace Ropu.Client
             return new MediaClient(protocolSwitch, audioSource, audioPlayer, audioCodec, jitterBuffer, settings);
         }
 
-        static void HandleCommands()
+        void HandleCommands()
         {
             Console.Write(">");
 
@@ -71,7 +77,7 @@ namespace Ropu.Client
             }
         }
 
-        static void HandleCommand(string commandLine)
+        void HandleCommand(string commandLine)
         {
             if(string.IsNullOrEmpty(commandLine))
             {
@@ -99,8 +105,5 @@ namespace Ropu.Client
                     break;
             }
         }
-
-
-
     }
 }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
@@ -11,6 +12,9 @@ namespace Ropu.Bender
     {
         static int Main(string[] args)
         {
+            ThreadPool.GetMaxThreads(out int max, out int completetions);
+            Console.WriteLine($"Max threads {max}");
+
             if(args.Length == 0)
             {
                 Console.Error.WriteLine("You must supply a config file to load.");
@@ -30,7 +34,19 @@ namespace Ropu.Bender
             var tasks = new List<Task>();
             foreach(var rope in Expand(ropes))
             {
-                tasks.Add(Task.Run(() => runner.Run(rope)));
+                if(rope.Name.StartsWith("Client"))
+                {
+                    Console.WriteLine($"Starting {rope.Name}");
+                    tasks.Add(Task.Run(async () => 
+                    {
+                        var program = new Ropu.Client.Program();
+                        await program.Run(rope.Args.Split(' ', StringSplitOptions.RemoveEmptyEntries));
+                    }));
+                }
+                else
+                {
+                    tasks.Add(Task.Run(() => runner.Run(rope)));
+                }
             }
 
             Task.WaitAll(tasks.ToArray());
