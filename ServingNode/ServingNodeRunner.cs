@@ -2,6 +2,7 @@ using System;
 using System.Net;
 using System.Threading.Tasks;
 using Ropu.Shared;
+using Ropu.Shared.Concurrent;
 using Ropu.Shared.ControlProtocol;
 using Ropu.Shared.LoadBalancing;
 
@@ -76,7 +77,12 @@ namespace Ropu.ServingNode
                 Console.WriteLine($"No members for group {groupId}");
                 return;
             }
-            _ropuProtocol.BulkSendAsync(packetData, length, clientEndPoints.GetSnapShot(), () => clientEndPoints.Release(), from);
+            _ropuProtocol.BulkSendAsync(packetData, length, clientEndPoints.GetSnapShot(), ReleaseSnapshotSet, clientEndPoints, from);
+        }
+
+        static void ReleaseSnapshotSet(object snapshot)
+        {
+            ((SnapshotSet<IPEndPoint>)snapshot).Release();
         }
 
         public void ForwardClientMediaPacket(ushort groupId, byte[] packetData, int length, IPEndPoint from)
@@ -92,7 +98,7 @@ namespace Ropu.ServingNode
             //forward to all serving nodes
             var servingNodeEndPoints = _servingNodes.EndPoints;
             packetData[0] = (byte)RopuPacketType.MediaPacketGroupCallServingNode;
-            _ropuProtocol.BulkSendAsync(packetData, length, servingNodeEndPoints.GetSnapShot(), () => servingNodeEndPoints.Release());
+            _ropuProtocol.BulkSendAsync(packetData, length, servingNodeEndPoints.GetSnapShot(), ReleaseSnapshotSet, servingNodeEndPoints);
 
             //forward to clients
             ForwardPacketToClients(groupId, packetData, length, from);
