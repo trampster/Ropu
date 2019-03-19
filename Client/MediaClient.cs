@@ -93,49 +93,52 @@ namespace Ropu.Client
             }
         }
 
+        void AudioLoop()
+        {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+            int nextWakeTime = 20;
+            short[] outputBuffer = new short[160];
+            Action afterWait = () => 
+            {
+                nextWakeTime = (int)stopwatch.ElapsedMilliseconds + 20;
+            };
+
+            while(!_disposing)
+            {
+                (AudioData data, bool isNext) = _jitterBuffer.GetNext(afterWait);
+
+                //decode 
+                if(data != null || (data == null && _talker != null))
+                {
+                    _audioCodec.Decode(data, isNext, outputBuffer);
+                }
+                else
+                {
+                    Silence(outputBuffer); //don't do packet loss concellement if we don't have a talker
+                }
+
+                //play
+                _audioPlayer.PlayAudio(outputBuffer);
+
+                //sleep until next
+                var elapsed = stopwatch.ElapsedMilliseconds;
+                var sleepTime = (int)(nextWakeTime - elapsed);
+                if(sleepTime < 0) 
+                {
+                    Console.WriteLine($"Sleep time less than zero {sleepTime}");
+                    sleepTime = 0;
+                }
+                System.Threading.Thread.Sleep(sleepTime);
+                nextWakeTime += 20;
+            }
+        }
+
         public async Task PlayAudio()
         {
-            await Task.Run(() =>
-            {
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
-                int nextWakeTime = 20;
-                short[] outputBuffer = new short[160];
-                Action afterWait = () => 
-                {
-                    nextWakeTime = (int)stopwatch.ElapsedMilliseconds + 20;
-                };
-
-                while(!_disposing)
-                {
-                    (AudioData data, bool isNext) = _jitterBuffer.GetNext(afterWait);
-
-                    //decode 
-                    if(data != null || (data == null && _talker != null))
-                    {
-                        _audioCodec.Decode(data, isNext, outputBuffer);
-                    }
-                    else
-                    {
-                        Silence(outputBuffer); //don't do packet loss concellement if we don't have a talker
-                    }
-
-
-                    //play
-                    _audioPlayer.PlayAudio(outputBuffer);
-
-                    //sleep until next
-                    var elapsed = stopwatch.ElapsedMilliseconds;
-                    var sleepTime = (int)(nextWakeTime - elapsed);
-                    if(sleepTime < 0) 
-                    {
-                        Console.WriteLine($"Sleep time less than zero {sleepTime}");
-                        sleepTime = 0;
-                    }
-                    System.Threading.Thread.Sleep(sleepTime);
-                    nextWakeTime += 20;
-                }
-            });
+            var task = new Task(AudioLoop, TaskCreationOptions.LongRunning);
+            task.Start();
+            await task;
         }
 
         void SendMediaPacket(ushort groupId, ushort sequenceNumber, uint userId, short[] audio)
