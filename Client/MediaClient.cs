@@ -118,11 +118,9 @@ namespace Ropu.Client
 
         public async Task PlayAudio()
         {
-            var thread = new Thread(_ => AudioLoop());
-            thread.Start();
-            var task = new Task(() => thread.Join(), TaskCreationOptions.LongRunning);
-             task.Start();
-             await task;
+            var task = new Task(AudioLoop, TaskCreationOptions.LongRunning);
+            task.Start();
+            await task;
         }
 
         void SendMediaPacket(ushort groupId, ushort sequenceNumber, uint userId, short[] audio)
