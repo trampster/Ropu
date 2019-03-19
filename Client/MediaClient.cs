@@ -76,7 +76,6 @@ namespace Ropu.Client
             _sendingAudio = false;
         }
 
-
         public void ParseMediaPacketGroupCall(Span<byte> data)
         {
             var sequenceNumber = data.Slice(3).ParseUshort();
@@ -95,18 +94,12 @@ namespace Ropu.Client
 
         void AudioLoop()
         {
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
-            int nextWakeTime = 20;
+            System.Threading.Thread.CurrentThread.Priority = ThreadPriority.Highest;
             short[] outputBuffer = new short[160];
-            Action afterWait = () => 
-            {
-                nextWakeTime = (int)stopwatch.ElapsedMilliseconds + 20;
-            };
 
             while(!_disposing)
             {
-                (AudioData data, bool isNext) = _jitterBuffer.GetNext(afterWait);
+                (AudioData data, bool isNext) = _jitterBuffer.GetNext();
 
                 //decode 
                 if(data != null || (data == null && _talker != null))
@@ -120,25 +113,16 @@ namespace Ropu.Client
 
                 //play
                 _audioPlayer.PlayAudio(outputBuffer);
-
-                //sleep until next
-                var elapsed = stopwatch.ElapsedMilliseconds;
-                var sleepTime = (int)(nextWakeTime - elapsed);
-                if(sleepTime < 0) 
-                {
-                    Console.WriteLine($"Sleep time less than zero {sleepTime}");
-                    sleepTime = 0;
-                }
-                System.Threading.Thread.Sleep(sleepTime);
-                nextWakeTime += 20;
             }
         }
 
         public async Task PlayAudio()
         {
-            var task = new Task(AudioLoop, TaskCreationOptions.LongRunning);
-            task.Start();
-            await task;
+            var thread = new Thread(_ => AudioLoop());
+            thread.Start();
+            var task = new Task(() => thread.Join(), TaskCreationOptions.LongRunning);
+             task.Start();
+             await task;
         }
 
         void SendMediaPacket(ushort groupId, ushort sequenceNumber, uint userId, short[] audio)

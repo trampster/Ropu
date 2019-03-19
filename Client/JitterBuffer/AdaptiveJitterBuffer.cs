@@ -230,7 +230,7 @@ namespace Ropu.Client.JitterBuffer
             }
         }
 
-        public (AudioData, bool) GetNext(Action waitFinished)
+        public (AudioData, bool) GetNext()
         {
             if(_packetsInBuffer == 0)
             {
@@ -241,7 +241,6 @@ namespace Ropu.Client.JitterBuffer
                     _nextExpectedSequenceNumber = 0;
                     _dataInBuffer.WaitOne();
                     _emptyCount = 0;
-                    waitFinished();
                 }
 
                 _emptyCount++;
