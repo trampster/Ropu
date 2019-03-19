@@ -473,7 +473,7 @@ namespace Ropu.Shared.LoadBalancing
 
         async Task<bool> AwaitResetEvent(ManualResetEvent resetEvent)
         {
-            return await Task<bool>.Run(() => resetEvent.WaitOne(1000000));
+            return await Task<bool>.Run(() => resetEvent.WaitOne(1000));
         }
     }
 }
