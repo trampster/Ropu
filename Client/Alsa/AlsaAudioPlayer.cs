@@ -35,6 +35,7 @@ namespace Ropu.Client.Alsa
             }
         }
 
+        readonly short[] _silence = new short[160];
 
         public void PlayAudio(short[] buffer)
         {
@@ -43,7 +44,7 @@ namespace Ropu.Client.Alsa
             {
                 Console.WriteLine($"Audio underrun calling prepare error {result}");
                 _soundPcm.Prepare();
-                result = _soundPcm.WriteInterleaved(buffer, 160);
+                result = _soundPcm.WriteInterleaved(_silence, 160);
                 result = _soundPcm.WriteInterleaved(buffer, 160);
             }
             if(160 != result)
