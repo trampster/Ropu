@@ -42,7 +42,8 @@ namespace Ropu.Client
             var ipAddress = IPAddress.Parse(MyAddress);
 
             IPEndPoint loadBalancerEndpoint = new IPEndPoint(IPAddress.Parse(LoadBalancerIP), LoadBalancerPort);
-            _ropuClient = new RopuClient(protocolSwitch, servingNodeClient, _mediaClient, ipAddress, callManagementProtocol, loadBalancerEndpoint, settings);
+            var beepPlayer = new BeepPlayer(new AlsaAudioPlayer());
+            _ropuClient = new RopuClient(protocolSwitch, servingNodeClient, _mediaClient, ipAddress, callManagementProtocol, loadBalancerEndpoint, settings, beepPlayer);
             var ropuClientTask = _ropuClient.Run();
 
             //var consoleTask = TaskCordinator.RunLong(HandleCommands);

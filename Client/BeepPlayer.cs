@@ -1,29 +1,51 @@
 using System;
+using System.Threading.Tasks;
 
 namespace Ropu.Client
 {
     public class BeepPlayer : IDisposable
     {
+        readonly short[] _goAhead;
+        readonly short[] _deniedPartOne;
+        readonly short[] _deniedPartTwo;
+        readonly short[] _buffer = new short[160];
+        readonly object _lock = new object();
+
         readonly IAudioPlayer _audioPlayer;
 
         public BeepPlayer(IAudioPlayer audioPlayer)
         {
             _audioPlayer = audioPlayer;
+            _goAhead = BuildTone(440,300);
+            _deniedPartOne = BuildTone(369.994, 200);
+            _deniedPartTwo = BuildTone(329.628, 400);
         }
 
         public void PlayGoAhead()
         {
-            PlayTone(440, 300);
+            Task.Run(() =>  
+            {
+                lock(_lock)
+                {
+                    Play(_goAhead);
+                }
+            });
         }
 
         public void PlayDenied()
         {
-            PlayTone(369.994, 200);
-            System.Threading.Thread.Sleep(20);
-            PlayTone(329.628, 400);
+            Task.Run(() =>
+            {
+                lock(_lock)
+                {
+                    Play(_deniedPartOne);
+                    System.Threading.Thread.Sleep(20);
+                    Play(_deniedPartTwo);
+                }
+            });
         }
 
-        void PlayTone(double freq, int duration)
+        short[] BuildTone(double freq, int duration)
         {
             const int sampleRate = 8000;
             int samplesRequired = (int)(sampleRate * (duration/1000d));
@@ -38,7 +60,7 @@ namespace Ropu.Client
                 short sample =  (short)(short.MaxValue * Math.Sin(signFactor * index));
                 buffer[index] = sample;
             }
-            Play(buffer);
+            return buffer;
         }
 
         void Play(short[] audio)
@@ -50,14 +72,13 @@ namespace Ropu.Client
                 attenuationIndex++;
                 audio[index] = (short) (audio[index] * (1-(attenationFactor*attenuationIndex)));
             }
-            short[] buffer = new short[160];
             for(int audioIndex = 0; audioIndex < audio.Length; audioIndex += 160)
             {
-                for(int index = 0; index < buffer.Length; index++)
+                for(int index = 0; index < _buffer.Length; index++)
                 {
-                    buffer[index] = audio[audioIndex + index];
+                    _buffer[index] = audio[audioIndex + index];
                 }
-                _audioPlayer.PlayAudio(buffer);
+                _audioPlayer.PlayAudio(_buffer);
             }
         }
 

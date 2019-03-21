@@ -54,6 +54,7 @@ namespace Ropu.Client
         Task _heartbeatTask;
         CancellationTokenSource _heartbeatCancellationTokenSource = new CancellationTokenSource();
         ManualResetEvent _heartbeatOnEvent = new ManualResetEvent(false);
+        readonly BeepPlayer _beepPlayer;
 
         public RopuClient(
             ProtocolSwitch protocolSwitch, 
@@ -62,8 +63,10 @@ namespace Ropu.Client
             IPAddress address,
             LoadBalancerProtocol loadBalancerProtocol,
             IPEndPoint loadBalancerEndPoint,
-            IClientSettings clientSettings)
+            IClientSettings clientSettings,
+            BeepPlayer beepPlayer)
         {
+            _beepPlayer = beepPlayer;
             _clientSettings = clientSettings;
             _clientSettings.UserIdChanged += (sender, args) =>
             { 
@@ -148,6 +151,11 @@ namespace Ropu.Client
             //in call transmitting
             _inCallTransmitting = new RopuState(StateId.InCallTransmitting)
             {
+                Entry = token => 
+                {
+                    _beepPlayer.PlayGoAhead();
+                    return new Task(() => {});
+                },
                 Exit = newState =>
                 {
                     if(newState != _inCallTransmitting && newState != _inCallRequestingFloor)
@@ -173,6 +181,7 @@ namespace Ropu.Client
                     if(newState != _inCallTransmitting && newState != _inCallRequestingFloor)
                     {
                         _mediaClient.StopSendingAudio();
+                        _beepPlayer.PlayDenied();
                     }
                 }
             };
@@ -202,7 +211,7 @@ namespace Ropu.Client
             _stateManager.AddTransitionToAll(EventId.CallEnded, () => _registered, stateId => stateId != StateId.Unregistered && stateId != StateId.Start && stateId != StateId.Deregistering);
             _stateManager.AddTransitionToAll(EventId.FloorIdle, () => _inCallIdle, stateId => true);
             _stateManager.AddTransitionToAll(EventId.FloorTaken, () => _inCallReceiveing, stateId => true);
-            _stateManager.AddTransitionToAll(EventId.FloorGranted, () => _inCallTransmitting, stateId => stateId != StateId.InCallReleasingFloor);
+            _stateManager.AddTransitionToAll(EventId.FloorGranted, () => _inCallTransmitting, stateId => stateId != StateId.InCallReleasingFloor && stateId != StateId.InCallTransmitting);
 
             _ipAddress = address;
         }
@@ -383,6 +392,10 @@ namespace Ropu.Client
         {
             IsPttDown = true;
             _stateManager.HandleEvent(EventId.PttDown);
+            if(_stateManager.CurrentState.Identifier == StateId.InCallReceiving)
+            {
+                _beepPlayer.PlayDenied();
+            }
         }
 
         void StartRetryTimer(int duration, Action callback)
