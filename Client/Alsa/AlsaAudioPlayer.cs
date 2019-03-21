@@ -22,13 +22,13 @@ namespace Ropu.Client.Alsa
                 {
                     throw new Exception($"Could not get required sample rate of {8000} instead got {rate}");
                 }
+                hardwareParams.Channels = 1;
                 uint bufferSize = 320;
                 hardwareParams.SetBufferNear(ref bufferSize);
                 if(bufferSize != 320)
                 {
                     Console.WriteLine("Could not get requested buffer size instead got {bufferSize}");
                 }
-                hardwareParams.Channels = 1;
 
                 _soundPcm.HardwareParams = hardwareParams;
                 _soundPcm.Start();
@@ -42,8 +42,10 @@ namespace Ropu.Client.Alsa
             int result = _soundPcm.WriteInterleaved(buffer, 160);
             if(result == -32)
             {
-                Console.WriteLine($"Audio underrun calling prepare error {result}");
                 _soundPcm.Prepare();
+                result = _soundPcm.WriteInterleaved(_silence, 160);
+                result = _soundPcm.WriteInterleaved(_silence, 160);
+                result = _soundPcm.WriteInterleaved(_silence, 160);
                 result = _soundPcm.WriteInterleaved(_silence, 160);
                 result = _soundPcm.WriteInterleaved(buffer, 160);
             }

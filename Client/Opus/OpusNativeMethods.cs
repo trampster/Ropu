@@ -62,6 +62,13 @@ namespace Ropu.Client.Opus
         [DllImport(OPUS_LIB)]
         public static extern void opus_encoder_destroy(IntPtr st);
 
+        /// <summary>
+        /// Frees an OpusDecoder allocated by opus_decoder_create().
+        /// </summary>
+        /// <param name="st">State to be freed.</param>
+        [DllImport(OPUS_LIB)]
+        public static extern void opus_decoder_destroy(IntPtr st);
+
         [DllImport(OPUS_LIB)]
         public static extern ErrorCodes opus_encoder_ctl(IntPtr st, EncoderCtlOptions request, int value);
 

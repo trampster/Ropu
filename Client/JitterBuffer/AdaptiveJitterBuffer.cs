@@ -230,7 +230,9 @@ namespace Ropu.Client.JitterBuffer
             }
         }
 
-        public (AudioData, bool) GetNext()
+        bool _returnedAudioSinceEmpty = false;
+
+        public (AudioData, bool) GetNext(Action reset)
         {
             if(_packetsInBuffer == 0)
             {
@@ -241,10 +243,11 @@ namespace Ropu.Client.JitterBuffer
                     _nextExpectedSequenceNumber = 0;
                     _dataInBuffer.WaitOne();
                     _emptyCount = 0;
+                    _returnedAudioSinceEmpty = false;
+                    reset();
                 }
 
                 _emptyCount++;
-
             }
             else
             {
@@ -266,16 +269,15 @@ namespace Ropu.Client.JitterBuffer
                     var audioData = entry.AudioData;
                     entry.Empty();
                     DecrementPacketsInBuffer();
+                    _returnedAudioSinceEmpty = true;
                     return (audioData, false);
                 }
 
                 var nextEntry = _buffer[_readIndex];
-                if(nextEntry.IsSet)
+                if(_returnedAudioSinceEmpty && nextEntry.IsSet)
                 {
-                    Console.WriteLine("Buffer Miss returning next");
                     return (nextEntry.AudioData, true);
                 }
-                Console.WriteLine("Buffer Miss returning null");
                 return (null, false);
             }
         }

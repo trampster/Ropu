@@ -23,11 +23,12 @@ namespace Ropu.Client.FileAudio
 
         public void ReadAudio(short[] output)
         {
-            if(_nextPlayTime < _stopwatch.ElapsedMilliseconds - 500)
+            if(starting)
             {
                 _stopwatch.Reset();
                 _stopwatch.Start();
                 _nextPlayTime = 20;
+                starting = false;
             }
             int ammountRead = _fileStream.Read(_buffer, 0, 320);
             if(ammountRead == 0)
@@ -48,6 +49,7 @@ namespace Ropu.Client.FileAudio
             if(waitTime < 0)
             {
                 Console.WriteLine($"Sleep time less than zero {waitTime}");
+                waitTime = 0;
             }
             else
             {
@@ -58,11 +60,11 @@ namespace Ropu.Client.FileAudio
             _nextPlayTime += 20;
         }
 
+        bool starting = false;
+
         public void Start()
         {
-            _stopwatch.Reset();
-            _stopwatch.Start();
-            _nextPlayTime = 20;
+            starting = true;
         }
 
         public void Stop()

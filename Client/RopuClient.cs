@@ -151,10 +151,10 @@ namespace Ropu.Client
             //in call transmitting
             _inCallTransmitting = new RopuState(StateId.InCallTransmitting)
             {
-                Entry = token => 
+                Entry = async token => 
                 {
                     _beepPlayer.PlayGoAhead();
-                    return new Task(() => {});
+                    await Task.Run(() => {});
                 },
                 Exit = newState =>
                 {

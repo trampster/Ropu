@@ -51,24 +51,29 @@ namespace Ropu.Client
 
         public async Task StartSendingAudio(ushort groupId)
         {
-            _sendingAudio = true;
-            short[] audio = new short[160];
-            //bump the sequence number by 1000, this allows the receivers to reset there jitter buffers on new overs.
-            //this is required because we don't have a over id in media packets
-            _sequenceNumber += 1000; 
-
-            _audioSource.Start();
-            while(_sendingAudio)
+            var task = new Task(() =>
             {
-                await Task.Run(() => _audioSource.ReadAudio(audio));
-                if(!_sendingAudio)
+                _sendingAudio = true;
+                short[] audio = new short[160];
+                //bump the sequence number by 1000, this allows the receivers to reset there jitter buffers on new overs.
+                //this is required because we don't have a over id in media packets
+                _sequenceNumber += 1000; 
+
+                _audioSource.Start();
+                while(_sendingAudio)
                 {
-                    return; //nothing available
+                    _audioSource.ReadAudio(audio);
+                    if(!_sendingAudio)
+                    {
+                        return; //nothing available
+                    }
+                    SendMediaPacket(groupId, _sequenceNumber, _clientSettings.UserId, audio);
+                    _sequenceNumber++;
                 }
-                SendMediaPacket(groupId, _sequenceNumber, _clientSettings.UserId, audio);
-                _sequenceNumber++;
-            }
-            _audioSource.Stop();
+                _audioSource.Stop();
+            }, TaskCreationOptions.LongRunning);
+            task.Start();
+            await task;
         }
 
         public void StopSendingAudio()
@@ -96,13 +101,29 @@ namespace Ropu.Client
         {
             System.Threading.Thread.CurrentThread.Priority = ThreadPriority.Highest;
             short[] outputBuffer = new short[160];
+            
+            bool newStream = true;
+            Action reset = () =>
+            {
+                newStream = true;
+            };
 
             while(!_disposing)
             {
-                (AudioData data, bool isNext) = _jitterBuffer.GetNext();
+
+                (AudioData data, bool isNext) = _jitterBuffer.GetNext(reset);
+
+                if(data != null)
+                {
+                    newStream = false;
+                }
 
                 //decode 
-                if(data != null || (data == null && _talker != null))
+                if(newStream)
+                {
+                    Silence(outputBuffer); //don't do packet loss concellement its just unfilled slots at start of new stream
+                }
+                else if(data != null || (data == null && _talker != null))
                 {
                     _audioCodec.Decode(data, isNext, outputBuffer);
                 }
@@ -112,7 +133,14 @@ namespace Ropu.Client
                 }
 
                 //play
-                _audioPlayer.PlayAudio(outputBuffer);
+                if(!newStream)
+                {
+                    _audioPlayer.PlayAudio(outputBuffer);
+                }
+                else
+                {
+                    System.Threading.Thread.Sleep(20);
+                }
             }
         }
 

@@ -10,6 +10,12 @@ namespace Ropu.Client.Opus
         IntPtr _opusDecoderPtr;
         public OpusCodec()
         {
+            Init();
+        }
+
+        public void Init()
+        {
+            //init encoder
             ErrorCodes errorCode = ErrorCodes.OPUS_OK;
             _opusEncoderPtr = OpusNativeMethods.opus_encoder_create(8000, 1, OpusApplication.OPUS_APPLICATION_VOIP, ref errorCode);
             if(errorCode != ErrorCodes.OPUS_OK)
@@ -22,9 +28,10 @@ namespace Ropu.Client.Opus
             }
             if(OpusNativeMethods.opus_encoder_ctl(_opusEncoderPtr, EncoderCtlOptions.OPUS_SET_PACKET_LOSS_PERC_REQUEST, 30) != ErrorCodes.OPUS_OK)
             {
-                throw new Exception($"Failed to set pakcet loss on opus encoder");
+                throw new Exception($"Failed to set packet loss on opus encoder");
             }
 
+            //init decoder
             _opusDecoderPtr = OpusNativeMethods.opus_decoder_create(8000, 1, ref errorCode);
             if(errorCode != ErrorCodes.OPUS_OK)
             {
