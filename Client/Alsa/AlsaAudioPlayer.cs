@@ -45,8 +45,6 @@ namespace Ropu.Client.Alsa
                 _soundPcm.Prepare();
                 result = _soundPcm.WriteInterleaved(_silence, 160);
                 result = _soundPcm.WriteInterleaved(_silence, 160);
-                result = _soundPcm.WriteInterleaved(_silence, 160);
-                result = _soundPcm.WriteInterleaved(_silence, 160);
                 result = _soundPcm.WriteInterleaved(buffer, 160);
             }
             if(160 != result)
