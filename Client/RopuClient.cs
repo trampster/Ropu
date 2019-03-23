@@ -54,7 +54,7 @@ namespace Ropu.Client
         Task _heartbeatTask;
         CancellationTokenSource _heartbeatCancellationTokenSource = new CancellationTokenSource();
         ManualResetEvent _heartbeatOnEvent = new ManualResetEvent(false);
-        readonly BeepPlayer _beepPlayer;
+        readonly IBeepPlayer _beepPlayer;
 
         public RopuClient(
             ProtocolSwitch protocolSwitch, 
@@ -64,7 +64,7 @@ namespace Ropu.Client
             LoadBalancerProtocol loadBalancerProtocol,
             IPEndPoint loadBalancerEndPoint,
             IClientSettings clientSettings,
-            BeepPlayer beepPlayer)
+            IBeepPlayer beepPlayer)
         {
             _beepPlayer = beepPlayer;
             _clientSettings = clientSettings;

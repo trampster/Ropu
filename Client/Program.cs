@@ -42,7 +42,7 @@ namespace Ropu.Client
             var ipAddress = IPAddress.Parse(MyAddress);
 
             IPEndPoint loadBalancerEndpoint = new IPEndPoint(IPAddress.Parse(LoadBalancerIP), LoadBalancerPort);
-            var beepPlayer = new BeepPlayer(new AlsaAudioPlayer());
+            var beepPlayer = BuildBeepPlayer(settings);
             _ropuClient = new RopuClient(protocolSwitch, servingNodeClient, _mediaClient, ipAddress, callManagementProtocol, loadBalancerEndpoint, settings, beepPlayer);
             var ropuClientTask = _ropuClient.Run();
 
@@ -50,6 +50,16 @@ namespace Ropu.Client
             
             //TaskCordinator.WaitAll(ropuClientTask, consoleTask).Wait();
             ropuClientTask.Wait();
+        }
+
+        IBeepPlayer BuildBeepPlayer(IClientSettings settings)
+        {
+            if(settings.FakeMedia)
+            {
+                //Console.WriteLine("Using FakeMediaClient");
+                return new SilentBeepPlayer();
+            }
+            return new BeepPlayer(new AlsaAudioPlayer());     
         }
 
         IMediaClient BuildMediaClient(ProtocolSwitch protocolSwitch, IClientSettings settings)

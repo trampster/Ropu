@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Ropu.Client
 {
-    public class BeepPlayer : IDisposable
+    public class BeepPlayer : IBeepPlayer
     {
         readonly short[] _goAhead;
         readonly short[] _deniedPartOne;
