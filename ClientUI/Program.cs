@@ -278,10 +278,18 @@ namespace Ropu.ClientUI
             const int loadBalancerPort = 5069;
 
             var settings = new ClientSettings();
-            if(args.Length > 0 && uint.TryParse(args[0], out uint userId))
+            if(args.Length != 1)
             {
-                settings.UserId = userId;
+                Console.Error.WriteLine("You must provide a User ID as a command line arg");
+                return;
             }
+            if(!uint.TryParse(args[0], out uint userId))
+            {
+                Console.Error.WriteLine("Could not parse User ID from command line.");
+                return;
+            }
+            settings.UserId = userId;
+
 
             var protocolSwitch = new ProtocolSwitch(controlPortStarting, new PortFinder());
             var servingNodeClient = new ServingNodeClient(protocolSwitch);
