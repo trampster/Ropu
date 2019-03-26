@@ -112,14 +112,14 @@ namespace Ropu.Shared.Concurrent
                 {
                     return;
                 }
-                var movedItem = _array[_length-1];
-
-                RemoveUnsafe(itemIndex);
-                _indexLookup.Remove(item);
-                if(_length != 0)
+                if(itemIndex != _length -1)
                 {
+                    var movedItem = _array[_length-1];
                     _indexLookup[movedItem] = itemIndex; //the last item was moved to the index of the old one.
                 }
+                _indexLookup.Remove(item);
+                RemoveUnsafe(itemIndex);
+
             }
         }
 
