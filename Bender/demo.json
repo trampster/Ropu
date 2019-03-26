@@ -1,0 +1,26 @@
+[
+    {
+        "Name": "Avenger1",
+        "Folder": "../ClientUI/",
+        "Command": "dotnet",
+        "Args": "run --configuration Release -- 1004"
+    },
+    {
+        "Name": "Deadpool",
+        "Folder": "../ClientUI/",
+        "Command": "dotnet",
+        "Args": "run --configuration Release -- 2000"
+    },
+    {
+        "Name": "Justice1",
+        "Folder": "../ClientUI/",
+        "Command": "dotnet",
+        "Args": "run --configuration Release -- 2004"
+    },
+    {
+        "Name": "Justice2",
+        "Folder": "../ClientUI/",
+        "Command": "dotnet",
+        "Args": "run --configuration Release -- 2005"
+    }
+]

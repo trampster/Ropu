@@ -1,0 +1,20 @@
+[
+    {
+        "Name": "LoadBalancer",
+        "Folder": "../LoadBalancer/",
+        "Command": "dotnet",
+        "Args": "run"
+    },
+    {
+        "Name": "ServingNode",
+        "Folder": "../ServingNode/",
+        "Command": "dotnet",
+        "Args": "run"
+    },
+    {
+        "Name": "CallController",
+        "Folder": "../CallController/",
+        "Command": "dotnet",
+        "Args": "run"
+    }
+]
