@@ -75,7 +75,7 @@ namespace Ropu.Client.JitterBuffer
         {
             if(_talker != null && _talker != userId)
             {
-                return; //this use doesn't have floor
+                return; //this user doesn't have floor
             }
             lock(_lock)
             {
