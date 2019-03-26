@@ -174,6 +174,11 @@ namespace Ropu.LoadBalancer
 
         public void Refresh(byte controllerId)
         {
+            if(_controllers[controllerId] == null)
+            {
+                Console.Error.WriteLine($"Tried to refresh a controller with ID {controllerId} but it isn't registered");
+                return;
+            }
             _controllers[controllerId].RefreshExpiry();
         }
     }
