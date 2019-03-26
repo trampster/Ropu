@@ -84,7 +84,8 @@ namespace Ropu.CallController
             {
                 return (ushort)(_refreshInterval.Value * 1000);
             }
-            const ushort defaultInterval = 30000;
+            Console.WriteLine("No refresh interval using default");
+            const ushort defaultInterval = 5000;
             return defaultInterval;
         }
 
