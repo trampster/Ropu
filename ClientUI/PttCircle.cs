@@ -61,7 +61,8 @@ namespace Ropu.ClientUI
 
         void UpdateGroupTextSize()
         {
-            _groupTextSize = _font.MeasureString(Text);
+            var text = string.IsNullOrEmpty(Text) ? "Group" : Text;
+            _groupTextSize = _font.MeasureString(text);
         }
 
         public Color Color
