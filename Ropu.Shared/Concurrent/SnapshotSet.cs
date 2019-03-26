@@ -116,7 +116,10 @@ namespace Ropu.Shared.Concurrent
 
                 RemoveUnsafe(itemIndex);
                 _indexLookup.Remove(item);
-                _indexLookup[movedItem] = itemIndex; //the last item was moved to the index of the old one.
+                if(_length != 0)
+                {
+                    _indexLookup[movedItem] = itemIndex; //the last item was moved to the index of the old one.
+                }
             }
         }
 

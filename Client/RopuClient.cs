@@ -194,7 +194,7 @@ namespace Ropu.Client
                 {
                     _servingNodeClient.SendFloorReleased(_callGroup, _clientSettings.UserId);
                     return new Task(() => {});
-                }
+                }   
             };
             _inCallReleasingFloor.AddTransition(EventId.FloorGranted, () => _inCallReleasingFloor);
             _stateManager.AddState(_inCallReleasingFloor);
@@ -209,11 +209,19 @@ namespace Ropu.Client
             _stateManager.AddTransitionToAll(EventId.NotRegistered, () => _unregistered, stateId => stateId != StateId.Unregistered);
             _stateManager.AddTransitionToAll(EventId.UserIdChanged, () => _deregistering, stateId => stateId != StateId.Unregistered);
             _stateManager.AddTransitionToAll(EventId.CallEnded, () => _registered, stateId => stateId != StateId.Unregistered && stateId != StateId.Start && stateId != StateId.Deregistering);
-            _stateManager.AddTransitionToAll(EventId.FloorIdle, () => _inCallIdle, stateId => true);
-            _stateManager.AddTransitionToAll(EventId.FloorTaken, () => _inCallReceiveing, stateId => true);
+            _stateManager.AddTransitionToAll(EventId.FloorIdle, () => _inCallIdle, IsRegistered);
+            _stateManager.AddTransitionToAll(EventId.FloorTaken, () => _inCallReceiveing, IsRegistered);
             _stateManager.AddTransitionToAll(EventId.FloorGranted, () => _inCallTransmitting, stateId => stateId != StateId.InCallReleasingFloor && stateId != StateId.InCallTransmitting);
 
             _ipAddress = address;
+        }
+
+        bool IsRegistered(StateId stateId)
+        {
+            return  
+                stateId != StateId.Unregistered && 
+                stateId != StateId.Deregistering &&
+                stateId != StateId.Start;
         }
 
         public StateId State
@@ -465,6 +473,8 @@ namespace Ropu.Client
 
         public void HandleFloorTaken(ushort groupId, uint userId)
         {
+            Console.WriteLine($"FloorTaken from group {groupId} for user {userId}");
+
             if(InCall() && _callGroup != groupId)
             {
                 Console.WriteLine("HandleFloorTaken Not Current call");
@@ -483,6 +493,7 @@ namespace Ropu.Client
 
         public void HandleFloorIdle(ushort groupId)
         {
+            Console.WriteLine($"FloorIdle from group {groupId}");
             if(InCall() && _callGroup != groupId)
             {
                 Console.WriteLine("HandleFloorIdle but Not Current call");

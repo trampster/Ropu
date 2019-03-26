@@ -113,6 +113,21 @@ namespace Ropu.Tests
         }
 
         [Test]
+        public void Remove_LastItem_IsRemoved()
+        {
+            //arrange
+            var set = new SnapshotSet<int>(10);
+            set.Add(1);
+
+            //act
+            set.Remove(1);
+
+            //assert
+            var snapshot = set.GetSnapShot();
+            Assert.That(snapshot.Length, Is.EqualTo(0));
+        }
+
+        [Test]
         public void AddAndRemove_Locked_CorrectContents()
         {
             //arrange
