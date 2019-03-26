@@ -23,35 +23,59 @@ namespace Ropu.ServingNode
             _registeredGroupMembersLookup = new SnapshotSet<IPEndPoint>[ushort.MaxValue];
         }
 
+        readonly object _registerLock = new object();
+
         public void Register(Registration registration)
         {
-            Console.WriteLine($"Received registration from User ID: {registration.UserId} at {registration.EndPoint}");
-
-            registration.Renew();
-            if(_registrationLookup.AddOrUpdate(registration.UserId, registration))
+            lock(_registerLock)
             {
-                //was an update, need to change the one in the list
-                for(int index = 0; index < _registrations.Count; index++)
+                Console.WriteLine($"Received registration from User ID: {registration.UserId} at {registration.EndPoint}");
+
+                registration.Renew();
+                if(_registrationLookup.AddOrUpdate(registration.UserId, registration))
                 {
-                    var existingRegistration = _registrations[index];
-                    if(existingRegistration.UserId == registration.UserId)
+                    //was an update, need to change the one in the list
+                    for(int index = 0; index < _registrations.Count; index++)
                     {
-                        _registrations[index] = registration;
+                        var existingRegistration = _registrations[index];
+                        if(existingRegistration.UserId == registration.UserId)
+                        {
+                            _registrations[index] = registration;
+                            if(existingRegistration.EndPoint != registration.EndPoint)
+                            {
+                                foreach(var groupId in _groupsClient.GetUsersGroups(registration.UserId))
+                                {
+                                    var endpoints = LookupGroupEndpoints(groupId);
+                                    Console.WriteLine($"Changing endpoint for user: {registration.UserId} in group {groupId}");
+                                    endpoints.Remove(existingRegistration.EndPoint);
+                                    endpoints.Add(registration.EndPoint);
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    _registrations.Add(registration);
+                
+                    foreach(var groupId in _groupsClient.GetUsersGroups(registration.UserId))
+                    {
+                        var endpoints = LookupGroupEndpoints(groupId);
+                        Console.WriteLine($"Adding user: {registration.UserId} to group {groupId}");
+                        endpoints.Add(registration.EndPoint);
                     }
                 }
             }
-            else
+        }
+
+        SnapshotSet<IPEndPoint> LookupGroupEndpoints(ushort groupId)
+        {
+            if(_registeredGroupMembersLookup[groupId] == null)
             {
-                _registrations.Add(registration);
+                Console.WriteLine($"Createing Group: {groupId}");
+                _registeredGroupMembersLookup[groupId] = new SnapshotSet<IPEndPoint>(MaxGroupMembers);
             }
-            foreach(var groupId in _groupsClient.GetUsersGroups(registration.UserId))
-            {
-                if(_registeredGroupMembersLookup[groupId] == null)
-                {
-                    _registeredGroupMembersLookup[groupId] = new SnapshotSet<IPEndPoint>(MaxGroupMembers);
-                }
-                _registeredGroupMembersLookup[groupId].Add(registration.EndPoint);
-            }
+            return _registeredGroupMembersLookup[groupId];
         }
 
         public async Task CheckExpiries()
@@ -82,22 +106,23 @@ namespace Ropu.ServingNode
 
         public SnapshotSet<IPEndPoint> GetUserEndPoints(ushort groupId)
         {
-            var snapshotSet = _registeredGroupMembersLookup[groupId];
-            if(snapshotSet == null)
+            lock(_registerLock)
             {
-                return null;
+                return LookupGroupEndpoints(groupId);
             }
-            return snapshotSet;
         }
 
         public bool UpdateRegistration(uint userId)
         {
-            if(_registrationLookup.TryGetValue(userId, out var registration))
+            lock(_registerLock)
             {
-                registration.Renew();
-                return true;
+                if(_registrationLookup.TryGetValue(userId, out var registration))
+                {
+                    registration.Renew();
+                    return true;
+                }
+                return false; //not registered
             }
-            return false; //not registered
         }
 
         public void Deregister(uint userId)
