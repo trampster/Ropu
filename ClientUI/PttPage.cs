@@ -75,7 +75,7 @@ namespace Ropu.ClientUI
                 _pttCircle.PenWidth = 6;
                 Invalidate();
             };
-            _fontFamily = Eto.Drawing.Fonts.AvailableFontFamilies.First();
+            _fontFamily = ChooseFont();
 
             _callGroupDrawable = new ImageLabel(_fontFamily);
             _callGroupDrawable.Text = "A Team";
@@ -98,6 +98,28 @@ namespace Ropu.ClientUI
             _pttCircle = new PttCircle(_fontFamily);
 
             _animationTask = RunAnimations();
+        }
+        
+        FontFamily ChooseFont()
+        {
+            var ubuntu = GetFontFamily("Ubuntu");
+            if(ubuntu != null)
+            {
+                return ubuntu;
+            }
+            var freeSans = GetFontFamily("FreeSans");
+            if(freeSans != null)
+            {
+                return freeSans;
+            }
+            return Eto.Drawing.Fonts.AvailableFontFamilies.First();
+        }
+
+        FontFamily GetFontFamily(string name)
+        {
+            return Eto.Drawing.Fonts.AvailableFontFamilies
+                .Where(f => f.Name == name)
+                .FirstOrDefault();
         }
 
         public Color TransmittingAnimationColor
