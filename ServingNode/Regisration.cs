@@ -12,7 +12,7 @@ namespace Ropu.ServingNode
         public Registration(uint userId, IPEndPoint endPoint)
         {
             UserId = userId;
-            EndPoint = endPoint;
+            EndPoint = new UserIPEndPoint(UserId, endPoint);
         }
 
         public uint UserId

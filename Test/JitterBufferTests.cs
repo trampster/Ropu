@@ -60,7 +60,7 @@ namespace Ropu.Tests.Client
             var bufferSize = GetBufferDelay();
 
             // assert
-            Assert.That(bufferSize, Is.EqualTo(2));
+            Assert.That(bufferSize, Is.EqualTo(3));
         }
     }
 }
