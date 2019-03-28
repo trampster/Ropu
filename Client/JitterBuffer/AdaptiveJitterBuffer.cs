@@ -73,7 +73,7 @@ namespace Ropu.Client.JitterBuffer
         int _overId = 0;//incremented for each over we receive
         public void AddAudio(uint userId, ushort sequenceNumber, Span<byte> audioData)
         {
-            if(_talker != null && _talker != userId)
+            if(_talker != userId)
             {
                 return; //this user doesn't have floor
             }
