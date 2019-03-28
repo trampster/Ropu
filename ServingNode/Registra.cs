@@ -98,8 +98,7 @@ namespace Ropu.ServingNode
                 foreach(var registration in toRemove)
                 {
                     Console.WriteLine($"Removing expired registration for User ID: {registration.UserId} at {registration.EndPoint}");
-                    _registrationLookup.Remove(registration.UserId);
-                    _registrations.Remove(registration);
+                    RemoveRegistration(registration);
                 }
             }
         }
@@ -125,14 +124,22 @@ namespace Ropu.ServingNode
             }
         }
 
+        void RemoveRegistration(Registration registration)
+        {
+            _registrationLookup.Remove(registration.UserId);
+            _registrations.Remove(registration);
+            foreach(var groupId in _groupsClient.GetUsersGroups(registration.UserId))
+            {
+                _registeredGroupMembersLookup[groupId].Remove(registration.EndPoint);
+            }
+        }
+
         public void Deregister(uint userId)
         {
             if(_registrationLookup.TryGetValue(userId, out var registration))
             {
                 Console.WriteLine($"Deregister registration for User ID: {userId} at {registration.EndPoint}");
-
-                _registrationLookup.Remove(userId);
-                _registrations.Remove(registration);
+                RemoveRegistration(registration);
             }
         }
     }
