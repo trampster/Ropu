@@ -24,7 +24,12 @@ namespace Ropu.ServingNode
             var other = comparand as UserIPEndPoint;
             if(other == null)
             {
-                return false;
+                IPEndPoint otherEndpoint = comparand as IPEndPoint;
+                if(otherEndpoint == null)
+                {
+                    return false;
+                }
+                return base.Equals(comparand);
             }
             if(_userId != other._userId)
             {
