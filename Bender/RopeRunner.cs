@@ -24,18 +24,18 @@ namespace Ropu.Bender
                 {
                     process.OutputDataReceived += (sender, args) =>
                     {
-                        Console.WriteLine($"[{rope.Name}] [{DateTime.Now}] {args.Data}");
+                        Console.WriteLine($"[{rope.Name}] [{DateTime.UtcNow.ToString("o")}] {args.Data}");
                     };
                     process.ErrorDataReceived += (sender, args) =>
                     {
-                        Console.Error.WriteLine($"[{rope.Name}] [{DateTime.Now}] [ERROR] {args.Data}");
+                        Console.Error.WriteLine($"[{rope.Name}] [{DateTime.UtcNow.ToString("o")}] [ERROR] {args.Data}");
                     };
                     process.StartInfo = processStartInfo;
                     process.Start();
                     process.BeginOutputReadLine();
                     process.BeginErrorReadLine();
                     process.WaitForExit();
-                    Console.WriteLine($"{rope.Name} exited with code {process.ExitCode}, restarting.");
+                    Console.WriteLine($"[{rope.Name}] [{DateTime.UtcNow.ToString("o")}] exited with code {process.ExitCode}, restarting.");
                 }
             }
         }
