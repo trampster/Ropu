@@ -107,10 +107,8 @@ namespace Ropu.Client
             {
                 newStream = true;
             };
-
             while(!_disposing)
             {
-
                 (AudioData data, bool isNext) = _jitterBuffer.GetNext(reset);
 
                 if(data != null)
@@ -133,14 +131,7 @@ namespace Ropu.Client
                 }
 
                 //play
-                if(!newStream)
-                {
-                    _audioPlayer.PlayAudio(outputBuffer);
-                }
-                else
-                {
-                    System.Threading.Thread.Sleep(20);
-                }
+                _audioPlayer.PlayAudio(outputBuffer);
             }
         }
 
