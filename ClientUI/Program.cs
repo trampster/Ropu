@@ -277,24 +277,21 @@ namespace Ropu.ClientUI
             const string loadBalancerIP =  "192.168.1.6";
             const int loadBalancerPort = 5069;
 
-            var settings = new ClientSettings();
-            if(args.Length != 1)
-            {
-                Console.Error.WriteLine("You must provide a User ID as a command line arg");
-                return;
-            }
-            if(!uint.TryParse(args[0], out uint userId))
-            {
-                Console.Error.WriteLine("Could not parse User ID from command line.");
-                return;
-            }
-            settings.UserId = userId;
+            var settings = new CommandLineClientSettings();
 
+            if(!settings.ParseArgs(args))
+            {
+                return;
+            }
 
             var protocolSwitch = new ProtocolSwitch(controlPortStarting, new PortFinder());
             var servingNodeClient = new ServingNodeClient(protocolSwitch);
-            var audioSource = new FileAudioSource("/home/daniel/Music/oliver-twist-001.wav");
-            //var audioSource = new AlsaAudioSource();
+
+            IAudioSource audioSource =
+                settings.FileMediaSource != null ?
+                (IAudioSource)new FileAudioSource(settings.FileMediaSource) :
+                (IAudioSource)new AlsaAudioSource();
+
             var audioPlayer = new AlsaAudioPlayer();
             var audioCodec = new OpusCodec();
             var jitterBuffer = new AdaptiveJitterBuffer(2, 50);

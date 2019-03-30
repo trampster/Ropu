@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using Mono.Options;
 
 namespace Ropu.Client
@@ -19,14 +20,18 @@ namespace Ropu.Client
             {
                 { "n|userid=", "the {User ID} of this client",  v => userIdString = v },
                 { "f|fakemedia", "Don't do any media processing", v =>  fakeMedia = v != null },
+                { "l|filemedia=", "use file as media source", v =>  FileMediaSource = v },
                 { "h|help",  "show this message and exit", v => showHelp = v != null }
             };
+            
             optionSet.Parse(args);
+
             if(showHelp)
             {
                 ShowHelp(optionSet);
                 return false;
             }
+
             if(userIdString != "")
             {
                 if(!uint.TryParse(userIdString, out _userId))
@@ -34,6 +39,12 @@ namespace Ropu.Client
                     Console.Error.WriteLine("User ID must be a number");
                     return false;
                 }
+            }
+
+            if(FileMediaSource != null && !File.Exists(FileMediaSource))
+            {
+                Console.Error.WriteLine($"Could not find file {FileMediaSource}");
+                return false;
             }
 
             FakeMedia = fakeMedia;
@@ -56,6 +67,12 @@ namespace Ropu.Client
                 _userId = value;
                 UserIdChanged?.Invoke(this, EventArgs.Empty);
             }
+        }
+
+        public string FileMediaSource
+        {
+            get;
+            set;
         }
 
         public bool FakeMedia
