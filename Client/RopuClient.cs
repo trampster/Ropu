@@ -36,7 +36,6 @@ namespace Ropu.Client
         LoadBalancerProtocol _loadBalancerProtocol;
 
         readonly Ropu.Shared.Timer _retryTimer;
-        readonly IPAddress _ipAddress;
         readonly IPEndPoint _loadBalancerEndPoint;
         uint _registeredUserId = 0;
 
@@ -60,7 +59,6 @@ namespace Ropu.Client
             ProtocolSwitch protocolSwitch, 
             ServingNodeClient servingNodeClient, 
             IMediaClient mediaClient,
-            IPAddress address,
             LoadBalancerProtocol loadBalancerProtocol,
             IPEndPoint loadBalancerEndPoint,
             IClientSettings clientSettings,
@@ -213,7 +211,6 @@ namespace Ropu.Client
             _stateManager.AddTransitionToAll(EventId.FloorTaken, () => _inCallReceiveing, IsRegistered);
             _stateManager.AddTransitionToAll(EventId.FloorGranted, () => _inCallTransmitting, stateId => stateId != StateId.InCallReleasingFloor && stateId != StateId.InCallTransmitting);
 
-            _ipAddress = address;
         }
 
         bool IsRegistered(StateId stateId)

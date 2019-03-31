@@ -15,8 +15,6 @@ namespace Ropu.Client
     {
         const ushort _controlPortStarting = 5061;
         RopuClient _ropuClient;
-        const string LoadBalancerIP =  "192.168.1.6";
-        const string MyAddress = "192.168.1.6";
         const int LoadBalancerPort = 5069;
         IMediaClient _mediaClient;
         static void Main(string[] args)
@@ -39,11 +37,10 @@ namespace Ropu.Client
             var callManagementProtocol = new LoadBalancerProtocol(new PortFinder(), 5079);
             
             _mediaClient = BuildMediaClient(protocolSwitch, settings);
-            var ipAddress = IPAddress.Parse(MyAddress);
 
-            IPEndPoint loadBalancerEndpoint = new IPEndPoint(IPAddress.Parse(LoadBalancerIP), LoadBalancerPort);
+            IPEndPoint loadBalancerEndpoint = new IPEndPoint(settings.LoadBalancerIPAddress, LoadBalancerPort);
             var beepPlayer = BuildBeepPlayer(settings);
-            _ropuClient = new RopuClient(protocolSwitch, servingNodeClient, _mediaClient, ipAddress, callManagementProtocol, loadBalancerEndpoint, settings, beepPlayer);
+            _ropuClient = new RopuClient(protocolSwitch, servingNodeClient, _mediaClient, callManagementProtocol, loadBalancerEndpoint, settings, beepPlayer);
             var ropuClientTask = _ropuClient.Run();
 
             //var consoleTask = TaskCordinator.RunLong(HandleCommands);

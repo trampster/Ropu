@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Net;
 using Mono.Options;
 
 namespace Ropu.Client
@@ -15,12 +16,14 @@ namespace Ropu.Client
             bool showHelp = false;
             string userIdString = "";
             bool fakeMedia = false;
+            string loadBalancerAddress = null;
 
             var optionSet = new OptionSet () 
             {
                 { "n|userid=", "the {User ID} of this client",  v => userIdString = v },
-                { "f|fakemedia", "Don't do any media processing", v =>  fakeMedia = v != null },
-                { "l|filemedia=", "use file as media source", v =>  FileMediaSource = v },
+                { "f|fake-media", "Don't do any media processing", v =>  fakeMedia = v != null },
+                { "l|file-media=", "use file as media source", v =>  FileMediaSource = v },
+                { "b|load-balancer=", "IP Address of load balancer", v => loadBalancerAddress = v},
                 { "h|help",  "show this message and exit", v => showHelp = v != null }
             };
             
@@ -46,6 +49,19 @@ namespace Ropu.Client
                 Console.Error.WriteLine($"Could not find file {FileMediaSource}");
                 return false;
             }
+
+            if(loadBalancerAddress == null)
+            {
+                Console.Error.WriteLine($"You must specify the Load Balancer IP Address");
+                return false;
+            }
+
+            if(!IPAddress.TryParse(loadBalancerAddress, out IPAddress loadBalancerIPAddress))
+            {
+                Console.Error.WriteLine($"Load Balancer address is invalid");
+                return false;
+            }
+            LoadBalancerIPAddress = loadBalancerIPAddress;
 
             FakeMedia = fakeMedia;
 
@@ -76,6 +92,12 @@ namespace Ropu.Client
         }
 
         public bool FakeMedia
+        {
+            get;
+            set;
+        }
+
+        public IPAddress LoadBalancerIPAddress
         {
             get;
             set;

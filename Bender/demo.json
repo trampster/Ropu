@@ -3,24 +3,24 @@
         "Name": "Avenger1",
         "Folder": "../ClientUI/",
         "Command": "dotnet",
-        "Args": "run --configuration Release -- 1004"
+        "Args": "run --configuration Release -- -n 1004 -l /home/daniel/Music/oliver-twist-001.wav -b 192.168.1.6"
     },
     {
         "Name": "Deadpool",
         "Folder": "../ClientUI/",
         "Command": "dotnet",
-        "Args": "run --configuration Release -- 2000"
+        "Args": "run --configuration Release -- -n 2000 -l /home/daniel/Music/oliver-twist-001.wav -b 192.168.1.6"
     },
     {
         "Name": "Justice1",
         "Folder": "../ClientUI/",
         "Command": "dotnet",
-        "Args": "run --configuration Release -- 2004"
+        "Args": "run --configuration Release -- -n 2004 -l /home/daniel/Music/oliver-twist-001.wav -b 192.168.1.6"
     },
     {
         "Name": "Justice2",
         "Folder": "../ClientUI/",
         "Command": "dotnet",
-        "Args": "run --configuration Release -- 2005"
+        "Args": "run --configuration Release -- -n 2005 -l /home/daniel/Music/oliver-twist-001.wav -b 192.168.1.6"
     }
 ]

@@ -273,8 +273,6 @@ namespace Ropu.ClientUI
         static void Main(string[] args)
         {
             const ushort controlPortStarting = 5061;
-            const string myAddress = "192.168.1.6";
-            const string loadBalancerIP =  "192.168.1.6";
             const int loadBalancerPort = 5069;
 
             var settings = new CommandLineClientSettings();
@@ -283,6 +281,8 @@ namespace Ropu.ClientUI
             {
                 return;
             }
+
+
 
             var protocolSwitch = new ProtocolSwitch(controlPortStarting, new PortFinder());
             var servingNodeClient = new ServingNodeClient(protocolSwitch);
@@ -298,11 +298,9 @@ namespace Ropu.ClientUI
             var mediaClient = new MediaClient(protocolSwitch, audioSource, audioPlayer, audioCodec, jitterBuffer, settings);
             var callManagementProtocol = new LoadBalancerProtocol(new PortFinder(), 5079);
 
-            var ipAddress = IPAddress.Parse(myAddress);
-
-            IPEndPoint loadBalancerEndpoint = new IPEndPoint(IPAddress.Parse(loadBalancerIP), loadBalancerPort);
+            IPEndPoint loadBalancerEndpoint = new IPEndPoint(settings.LoadBalancerIPAddress, loadBalancerPort);
             var beepPlayer = new BeepPlayer(new AlsaAudioPlayer());
-            var ropuClient = new RopuClient(protocolSwitch, servingNodeClient, mediaClient, ipAddress, callManagementProtocol, loadBalancerEndpoint, settings, beepPlayer);
+            var ropuClient = new RopuClient(protocolSwitch, servingNodeClient, mediaClient, callManagementProtocol, loadBalancerEndpoint, settings, beepPlayer);
 
             var application = new RopuApplication(ropuClient);
 

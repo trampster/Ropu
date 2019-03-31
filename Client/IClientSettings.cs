@@ -1,4 +1,5 @@
 using System;
+using System.Net;
 
 namespace Ropu.Client
 {
@@ -13,5 +14,18 @@ namespace Ropu.Client
             get;
             set;
         }
+
+        string FileMediaSource
+        {
+            get;
+            set;
+        }
+
+        IPAddress LoadBalancerIPAddress
+        {
+            get;
+            set;
+        }
+
     }
 }

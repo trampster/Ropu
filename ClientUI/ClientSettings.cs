@@ -1,4 +1,5 @@
 using System;
+using System.Net;
 using Ropu.Client;
 
 namespace Ropu.ClientUI
@@ -17,7 +18,8 @@ namespace Ropu.ClientUI
         }
 
         public bool FakeMedia { get; set; }
-
+        public string FileMediaSource { get; set; }
+        public IPAddress LoadBalancerIPAddress { get; set; }
         public event EventHandler UserIdChanged;
     }
 }

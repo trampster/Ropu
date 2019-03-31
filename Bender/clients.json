@@ -1,7 +1,7 @@
 [
     {
         "Name": "Client",
-        "Args": "--userid={0} -f",
+        "Args": "-u {0} -f -b 192.168.1.6",
         "ArgParam":
         {
             "start": 1010,
