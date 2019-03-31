@@ -8,12 +8,20 @@ namespace Ropu.Shared
     {
         public IPEndPoint CallManagementServerEndpoint()
         {
-            return new IPEndPoint(IPAddress.Parse("192.168.1.6"), 5069);
+            return new IPEndPoint(GetMyAddress(), 5069);
         }
 
         public IPAddress GetMyAddress()
         {
-            return IPAddress.Parse("192.168.1.6");
+            foreach (var address in Dns.GetHostEntry(Dns.GetHostName()).AddressList)
+            {
+                if (address.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    return address;
+                }
+            }
+            throw new Exception("Failed to find my IP Address");
         }
     }
+
 }
