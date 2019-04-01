@@ -45,6 +45,8 @@ namespace Ropu.Client
             });
         }
 
+        static readonly short _max  = (short)(short.MaxValue * 0.9);
+
         short[] BuildTone(double freq, int duration)
         {
             const int sampleRate = 8000;
@@ -57,7 +59,7 @@ namespace Ropu.Client
             for(int index = 0; index < samplesRequired; index++)
             {
                 double time = index*secondsPerSample;
-                short sample =  (short)(short.MaxValue * Math.Sin(signFactor * index));
+                short sample =  (short)(_max * Math.Sin(signFactor * index));
                 buffer[index] = sample;
             }
             return buffer;
