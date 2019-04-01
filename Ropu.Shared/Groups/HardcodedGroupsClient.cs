@@ -66,6 +66,7 @@ namespace Ropu.Shared.Groups
             }
             else
             {
+                Console.WriteLine($"Failed to find group icon at {iconPath} using default icon instead.");
                 group.Image = File.ReadAllBytes("../Icon/knot32.png");
             }
             _groupLookup.Add(groupId, group);
