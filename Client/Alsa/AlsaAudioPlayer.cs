@@ -8,9 +8,11 @@ namespace Ropu.Client.Alsa
     {
         readonly SoundPcm _soundPcm;
         readonly uint _periods; //size of the buffer in periods(160 frames)
+        readonly bool _prefillBuffer;
 
-        public AlsaAudioPlayer()
+        public AlsaAudioPlayer(bool prefillBuffer)
         {
+            _prefillBuffer = prefillBuffer;
             _soundPcm = new SoundPcm("default", snd_pcm_stream_t.SND_PCM_STREAM_PLAYBACK, 0);
             using(var hardwareParams = new SoundPcmHardwareParams(_soundPcm))
             {
@@ -52,6 +54,10 @@ namespace Ropu.Client.Alsa
         void Prepare()
         {
             _soundPcm.Prepare();
+            if(!_prefillBuffer)
+            {
+                return;
+            }
             for(int index = 0; index < _periods; index++)
             {
                 _soundPcm.WriteInterleaved(_silence, 160);

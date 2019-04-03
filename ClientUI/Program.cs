@@ -292,14 +292,14 @@ namespace Ropu.ClientUI
                 (IAudioSource)new FileAudioSource(settings.FileMediaSource) :
                 (IAudioSource)new AlsaAudioSource();
 
-            var audioPlayer = new AlsaAudioPlayer();
+            var audioPlayer = new AlsaAudioPlayer(true);
             var audioCodec = new OpusCodec();
             var jitterBuffer = new AdaptiveJitterBuffer(2, 50);
             var mediaClient = new MediaClient(protocolSwitch, audioSource, audioPlayer, audioCodec, jitterBuffer, settings);
             var callManagementProtocol = new LoadBalancerProtocol(new PortFinder(), 5079);
 
             IPEndPoint loadBalancerEndpoint = new IPEndPoint(settings.LoadBalancerIPAddress, loadBalancerPort);
-            var beepPlayer = new BeepPlayer(new AlsaAudioPlayer());
+            var beepPlayer = new BeepPlayer(new AlsaAudioPlayer(false));
             var ropuClient = new RopuClient(protocolSwitch, servingNodeClient, mediaClient, callManagementProtocol, loadBalancerEndpoint, settings, beepPlayer);
 
             var application = new RopuApplication(ropuClient);

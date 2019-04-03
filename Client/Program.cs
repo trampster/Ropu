@@ -56,7 +56,7 @@ namespace Ropu.Client
                 //Console.WriteLine("Using FakeMediaClient");
                 return new SilentBeepPlayer();
             }
-            return new BeepPlayer(new AlsaAudioPlayer());     
+            return new BeepPlayer(new AlsaAudioPlayer(false));     
         }
 
         IMediaClient BuildMediaClient(ProtocolSwitch protocolSwitch, IClientSettings settings)
@@ -67,7 +67,7 @@ namespace Ropu.Client
                 return new FakeMediaClient();
             }
             var audioSource = new AlsaAudioSource();
-            var audioPlayer = new AlsaAudioPlayer();
+            var audioPlayer = new AlsaAudioPlayer(true);
             var audioCodec = new RawCodec();
             var jitterBuffer = new AdaptiveJitterBuffer(2, 50);
 
