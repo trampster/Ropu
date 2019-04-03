@@ -15,7 +15,7 @@ namespace Ropu.Shared
         {
             foreach (var address in Dns.GetHostEntry(Dns.GetHostName()).AddressList)
             {
-                if (address.AddressFamily == AddressFamily.InterNetwork)
+                if (address.AddressFamily == AddressFamily.InterNetwork && address.GetAddressBytes()[3] != 1)
                 {
                     return address;
                 }
