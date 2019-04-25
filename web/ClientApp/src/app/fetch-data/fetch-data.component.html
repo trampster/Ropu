@@ -1,0 +1,18 @@
+<h1>Groups</h1>
+
+<p *ngIf="!groups"><em>Loading...</em></p>
+
+<table class='table table-striped' *ngIf="groups">
+  <thead>
+    <tr>
+      <th>Id</th>
+      <th>Name</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let group of groups">
+      <td>{{ group.id }}</td>
+      <td>{{ group.name }}</td>
+    </tr>
+  </tbody>
+</table>
