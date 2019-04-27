@@ -5,7 +5,7 @@ import { HttpClient } from '@angular/common/http';
   selector: 'app-groups',
   templateUrl: './groups.component.html'
 })
-export class FetchDataComponent {
+export class GroupsComponent {
   public groups: Group[];
 
   constructor(http: HttpClient, @Inject('BASE_URL') baseUrl: string) {
