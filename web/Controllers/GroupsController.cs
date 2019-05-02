@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Ropu.Web.Models;
 using Ropu.Web.Services;
@@ -19,6 +20,7 @@ namespace web.Controllers
         }
         
         [HttpGet("[action]")]
+        [Authorize]
         public IEnumerable<IGroup> Groups()
         {
             return _groupsService.Groups;
