@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.SpaServices.AngularCli;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using Ropu.Web.Services;
+using StackExchange.Redis;
 
 namespace web
 {
@@ -46,6 +48,10 @@ namespace web
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Jwt:Key"]))  
                     };  
                 });  
+            services
+                .AddSingleton<ConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect("localhost"))
+                .AddSingleton<IUsersService, RedisUsersService>();
+
             services.AddMvc();
         }
 

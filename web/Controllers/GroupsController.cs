@@ -20,7 +20,7 @@ namespace web.Controllers
         }
         
         [HttpGet("[action]")]
-        [Authorize]
+        [Authorize(Roles="Admin")]
         public IEnumerable<IGroup> Groups()
         {
             return _groupsService.Groups;

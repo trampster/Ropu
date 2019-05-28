@@ -13,9 +13,9 @@ namespace web.Controllers
     {
         readonly IUsersService _usersService;
 
-        public UsersController()
+        public UsersController(IUsersService userService)
         {
-            _usersService = new HardcodedUsersService();
+            _usersService = userService;
         }
         
         [HttpGet("[action]")]
