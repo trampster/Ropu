@@ -26,5 +26,14 @@ namespace Ropu.Web.Services
                 return _users;
             }
         }
+
+        public UserCredentials AuthenticateUser(Credentials credentials)
+        {
+            return new UserCredentials()
+            {
+                UserName = credentials.UserName,
+                Roles = new List<string>{"Admin"}
+            };
+        }
     }
 }

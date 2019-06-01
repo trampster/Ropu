@@ -9,5 +9,8 @@ namespace Ropu.Web.Services
         {
             get;
         }
+
+
+        UserCredentials AuthenticateUser(Credentials credentials);
     }
 }

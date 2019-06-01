@@ -50,7 +50,8 @@ namespace web
                 });  
             services
                 .AddSingleton<ConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect("localhost"))
-                .AddSingleton<IUsersService, RedisUsersService>();
+                .AddSingleton<IUsersService, RedisUsersService>()
+                .AddSingleton<PasswordHasher, PasswordHasher>();
 
             services.AddMvc();
         }
