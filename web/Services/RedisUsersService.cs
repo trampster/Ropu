@@ -32,15 +32,28 @@ namespace Ropu.Web.Services
             AddUser("Wonder Woman", "wonder", "password5", new []{"Admin"});
         }
 
-        public void AddUser(string name, string username, string password, string[] roles)
+        public bool AddUser(string name, string username, string password, string[] roles)
         {
+            if(string.IsNullOrEmpty(name))
+            {
+                return false;
+            }
+            if(string.IsNullOrEmpty(username))
+            {
+                return false;
+            }
+            if(roles == null)
+            {
+                return false;
+            }
+
             IDatabase db = _connectionMultiplexer.GetDatabase();
 
             //see if we already have it
             var idByUsernameKey = $"IdByUsername:{username}";
             if(db.KeyExists(idByUsernameKey))
             {
-                return;
+                return false;
             }
 
             //find the next id to use
@@ -80,6 +93,8 @@ namespace Ropu.Web.Services
             };
             var userCredentialsKey = $"UsersCredentials:{userCredentials.UserName}";
             db.StringSet(userCredentialsKey, JsonConvert.SerializeObject(userCredentials));
+
+            return true;
         }
 
         public IEnumerable<IUser> Users

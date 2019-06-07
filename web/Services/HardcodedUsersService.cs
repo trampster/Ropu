@@ -27,6 +27,11 @@ namespace Ropu.Web.Services
             }
         }
 
+        public bool AddUser(string name, string username, string password, string[] roles)
+        {
+            throw new System.NotImplementedException();
+        }
+
         public UserCredentials AuthenticateUser(Credentials credentials)
         {
             return new UserCredentials()

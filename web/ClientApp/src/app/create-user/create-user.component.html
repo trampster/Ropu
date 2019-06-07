@@ -1,0 +1,20 @@
+<form class="form-signin" #createForm="ngForm" (ngSubmit)="create(createForm)">
+    <div class="container-fluid">
+        <h2 class="form-signin-heading">Create User</h2>
+        <div *ngIf="invalidUser" class="alert alert-danger">Invalid user details.</div>
+        <br/>
+        <label for="username" class="sr-only">Email address</label>
+        <input type="email" id="username" name="username" ngModel class="form-control" placeholder="User Name" required autofocus>
+        <br/>
+        <label for="name" class="sr-only">Name</label>
+        <input type="name" id="name" name="name" ngModel class="form-control" placeholder="Name" required>
+        <br/>
+        <label for="password" class="sr-only">Password</label>
+        <input type="password" id="password" name="password" ngModel class="form-control" placeholder="Password" autocomplete="new-password" required>
+        <br/>
+        <label for="retypepassword" class="sr-only">Retype Password</label>
+        <input type="password" id="retypepassword" name="retypepassword" ngModel class="form-control" placeholder="Retype Password" autocomplete="new-password" required>
+        <br/>
+        <button class="btn btn-lg btn-primary btn-block" type="submit">Create User</button>
+    </div>
+</form>

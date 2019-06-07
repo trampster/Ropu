@@ -11,6 +11,7 @@ import { HomeComponent } from './home/home.component';
 import { UsersComponent } from './users/users.component';
 import { GroupsComponent } from './groups/groups.component';
 import { LoginComponent } from './login/login.component';
+import { CreateUserComponent } from './create-user/create-user.component';
 
 
 import { HTTP_INTERCEPTORS } from '@angular/common/http';
@@ -23,7 +24,8 @@ import { AuthInterceptor } from './Intercepters/AuthInterceptor';
     HomeComponent,
     UsersComponent,
     GroupsComponent,
-    LoginComponent
+    LoginComponent,
+    CreateUserComponent
   ],
   imports: [
     BrowserModule.withServerTransition({ appId: 'ng-cli-universal' }),
@@ -31,9 +33,10 @@ import { AuthInterceptor } from './Intercepters/AuthInterceptor';
     FormsModule,
     RouterModule.forRoot([
       { path: '', component: HomeComponent, pathMatch: 'full' },
-      { path: 'users', component: UsersComponent },
+      { path: 'users', component: UsersComponent, canActivate: [AuthGuard]  },
       { path: 'groups', component: GroupsComponent, canActivate: [AuthGuard]  },
       { path: 'login', component: LoginComponent },
+      { path: 'createuser', component: CreateUserComponent },
     ])
   ],
   providers: [

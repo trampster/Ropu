@@ -12,5 +12,7 @@ namespace Ropu.Web.Services
 
 
         UserCredentials AuthenticateUser(Credentials credentials);
+
+        bool AddUser(string name, string username, string password, string[] roles);
     }
 }

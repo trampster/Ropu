@@ -41,7 +41,7 @@ namespace web.Controllers
             return response;  
         }  
   
-        private string GenerateJSONWebToken(string user, IEnumerable<string> roles)  
+        string GenerateJSONWebToken(string user, IEnumerable<string> roles)  
         {  
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));  
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);  
