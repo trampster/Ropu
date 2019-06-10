@@ -50,6 +50,7 @@ namespace web
                 });  
             services
                 .AddSingleton<ConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect("localhost"))
+                .AddSingleton<IImageService, ImageService>()
                 .AddSingleton<IUsersService, RedisUsersService>()
                 .AddSingleton<PasswordHasher, PasswordHasher>();
 

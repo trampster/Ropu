@@ -10,7 +10,7 @@ namespace Ropu.Web.Models
             set;
         }
 
-        public string UserName
+        public string Email
         {
             get;
             set;

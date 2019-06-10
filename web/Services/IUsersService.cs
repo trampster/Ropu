@@ -13,6 +13,6 @@ namespace Ropu.Web.Services
 
         UserCredentials AuthenticateUser(Credentials credentials);
 
-        bool AddUser(string name, string username, string password, string[] roles);
+        (bool, string) AddUser(string name, string email, string password, string[] roles);
     }
 }

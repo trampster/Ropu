@@ -13,10 +13,16 @@ namespace Ropu.Web.Services
     {
         readonly ConnectionMultiplexer _connectionMultiplexer;
         readonly PasswordHasher _passwordHasher;
-        public RedisUsersService(ConnectionMultiplexer connectionMultiplexer, PasswordHasher passwordHasher)
+        readonly IImageService _imageService;
+
+        public RedisUsersService(
+            ConnectionMultiplexer connectionMultiplexer, 
+            PasswordHasher passwordHasher,
+            IImageService imageService)
         {
             _connectionMultiplexer = connectionMultiplexer;
             _passwordHasher = passwordHasher;
+            _imageService = imageService;
 
             AddUsers();
         }
@@ -25,35 +31,39 @@ namespace Ropu.Web.Services
         {
             IDatabase db = _connectionMultiplexer.GetDatabase();
 
-            AddUser("Batmap", "batmap", "password1", new []{"Admin"});
-            AddUser("Superman", "soups", "password2", new []{"Admin"});
-            AddUser("Green Lantin", "greenl", "password3", new []{"Admin"});
-            AddUser("Flash", "flash", "password4", new []{"Admin"});
-            AddUser("Wonder Woman", "wonder", "password5", new []{"Admin"});
+            AddUser("Batmap", "batmap@dc.com", "password1", new []{"Admin"});
+            AddUser("Superman", "souperman@dc.com", "password2", new []{"Admin"});
+            AddUser("Green Lantin", "green.lantin@dc.com", "password3", new []{"Admin"});
+            AddUser("Flash", "flash", "password4@dc.com", new []{"Admin"});
+            AddUser("Wonder Woman", "wonder.woman@dc.com", "password5", new []{"Admin"});
         }
 
-        public bool AddUser(string name, string username, string password, string[] roles)
+        public (bool, string) AddUser(string name, string email, string password, string[] roles)
         {
             if(string.IsNullOrEmpty(name))
             {
-                return false;
+                return (false, "Name is required");
             }
-            if(string.IsNullOrEmpty(username))
+            if(string.IsNullOrEmpty(email))
             {
-                return false;
+                return (false, "Email is required");
+            }
+            if(!email.Contains('@'))
+            {
+                return (false, "Email is invalid");
             }
             if(roles == null)
             {
-                return false;
+                return (false, "Email is invalid");
             }
 
             IDatabase db = _connectionMultiplexer.GetDatabase();
 
             //see if we already have it
-            var idByUsernameKey = $"IdByUsername:{username}";
+            var idByUsernameKey = $"IdByEmail:{email}";
             if(db.KeyExists(idByUsernameKey))
             {
-                return false;
+                return (false, "User already exists with that email");
             }
 
             //find the next id to use
@@ -70,7 +80,12 @@ namespace Ropu.Web.Services
 
             //add user table
             var usersKey = $"Users:{id}";
-            var user = new User(){Id = id, Name=name};
+            var user = new User()
+            {
+                Id = id, 
+                Name=name,
+                ImageHash=_imageService.DefaultUserImageHash
+            };
             var json = JsonConvert.SerializeObject(user);
             db.StringSet(usersKey, json);
 
@@ -87,14 +102,14 @@ namespace Ropu.Web.Services
             var userCredentials = new UserCredentials()
             {
                 Id = id,
-                UserName = username,
+                Email = email,
                 PasswordHash = _passwordHasher.HashPassword(password),
                 Roles = roles.ToList()
             };
-            var userCredentialsKey = $"UsersCredentials:{userCredentials.UserName}";
+            var userCredentialsKey = $"UsersCredentials:{userCredentials.Email}";
             db.StringSet(userCredentialsKey, JsonConvert.SerializeObject(userCredentials));
 
-            return true;
+            return (true, "");
         }
 
         public IEnumerable<IUser> Users
@@ -113,7 +128,7 @@ namespace Ropu.Web.Services
         public UserCredentials AuthenticateUser(Credentials credentials)
         {
             IDatabase db = _connectionMultiplexer.GetDatabase();
-            var result = db.StringGet($"UsersCredentials:{credentials.UserName}");
+            var result = db.StringGet($"UsersCredentials:{credentials.Email}");
             if(result.IsNull)
             {
                 return null;

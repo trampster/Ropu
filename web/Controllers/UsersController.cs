@@ -30,11 +30,12 @@ namespace web.Controllers
         [HttpPost("[action]")]  
         public IActionResult Create([FromBody]NewUser login)  
         {  
-            if(_usersService.AddUser(login.Name, login.UserName, login.Password, new []{"User"}))
+            (bool result, string message) = _usersService.AddUser(login.Name, login.Email, login.Password, new []{"User"});
+            if(result)
             {
                 return Ok();
             }
-            return BadRequest();  
+            return BadRequest(message);  
         } 
     }
 }

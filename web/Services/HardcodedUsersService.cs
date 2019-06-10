@@ -27,7 +27,7 @@ namespace Ropu.Web.Services
             }
         }
 
-        public bool AddUser(string name, string username, string password, string[] roles)
+        public (bool, string) AddUser(string email, string username, string password, string[] roles)
         {
             throw new System.NotImplementedException();
         }
@@ -36,7 +36,7 @@ namespace Ropu.Web.Services
         {
             return new UserCredentials()
             {
-                UserName = credentials.UserName,
+                Email = credentials.Email,
                 Roles = new List<string>{"Admin"}
             };
         }

@@ -2,7 +2,7 @@ namespace Ropu.Web.Models
 {
     public class Credentials
     {
-        public string UserName
+        public string Email
         {
             get;
             set;

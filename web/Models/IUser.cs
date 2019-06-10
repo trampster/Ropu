@@ -5,5 +5,7 @@ namespace Ropu.Web.Models
         int Id{get;}
 
         string Name {get;}
+
+        string ImageHash {get;}
     }
 }

@@ -18,4 +18,5 @@ export class UsersComponent {
 interface User {
   name: string;
   id: number;
+  imagehash: string;
 }
