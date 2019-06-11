@@ -1,5 +1,6 @@
 import { Component, Inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-users-component',
@@ -8,15 +9,21 @@ import { HttpClient } from '@angular/common/http';
 export class UsersComponent {
   public users: User[];
 
-  constructor(http: HttpClient, @Inject('BASE_URL') baseUrl: string) {
+  constructor(http: HttpClient, private router: Router, @Inject('BASE_URL') private baseUrl: string) {
     http.get<User[]>(baseUrl + 'api/Users/Users').subscribe(result => {
       this.users = result;
     }, error => console.error(error));
+  }
+
+  showUser(user: User) 
+  {
+    console.error('show user');
+    this.router.navigate(['/user/' + user.id]);
   }
 }
 
 interface User {
   name: string;
   id: number;
-  imagehash: string;
+  imageHash: string;
 }

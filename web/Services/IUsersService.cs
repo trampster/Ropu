@@ -14,5 +14,7 @@ namespace Ropu.Web.Services
         UserCredentials AuthenticateUser(Credentials credentials);
 
         (bool, string) AddUser(string name, string email, string password, string[] roles);
+
+        IUser Get(uint id);
     }
 }

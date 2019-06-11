@@ -9,6 +9,7 @@ import { AppComponent } from './app.component';
 import { NavMenuComponent } from './nav-menu/nav-menu.component';
 import { HomeComponent } from './home/home.component';
 import { UsersComponent } from './users/users.component';
+import { UserComponent } from './user/user.component';
 import { GroupsComponent } from './groups/groups.component';
 import { LoginComponent } from './login/login.component';
 import { CreateUserComponent } from './create-user/create-user.component';
@@ -25,7 +26,8 @@ import { AuthInterceptor } from './Intercepters/AuthInterceptor';
     UsersComponent,
     GroupsComponent,
     LoginComponent,
-    CreateUserComponent
+    CreateUserComponent,
+    UserComponent
   ],
   imports: [
     BrowserModule.withServerTransition({ appId: 'ng-cli-universal' }),
@@ -34,6 +36,7 @@ import { AuthInterceptor } from './Intercepters/AuthInterceptor';
     RouterModule.forRoot([
       { path: '', component: HomeComponent, pathMatch: 'full' },
       { path: 'users', component: UsersComponent, canActivate: [AuthGuard]  },
+      { path: 'user/:userid', component: UserComponent, canActivate: [AuthGuard]  },
       { path: 'groups', component: GroupsComponent, canActivate: [AuthGuard]  },
       { path: 'login', component: LoginComponent },
       { path: 'createuser', component: CreateUserComponent },

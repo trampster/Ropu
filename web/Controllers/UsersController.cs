@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -24,6 +25,13 @@ namespace web.Controllers
         public IEnumerable<IUser> Users()
         {
             return _usersService.Users;
+        }
+
+        [HttpGet("{userId}")]
+        [Authorize(Roles="Admin,User")]
+        public IUser UserById(uint userId)
+        {
+            return _usersService.Get(userId);
         }
 
         [AllowAnonymous]  

@@ -4,7 +4,7 @@
 
 <table class='table table-striped' *ngIf="users">
   <tbody>
-    <tr *ngFor="let user of users">
+    <tr *ngFor="let user of users"  (click)="showUser(user);">
       <td><img src="api/Image/{{ user.imageHash }}"  height=32 width=32></td>
       <td>{{ user.name }}</td>
     </tr>

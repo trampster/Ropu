@@ -72,7 +72,7 @@ namespace Ropu.Web.Services
             {
                 db.StringSet(nextUserIdKey, 0);
             }
-            int id = (int)db.StringGet(nextUserIdKey);
+            uint id = (uint)db.StringGet(nextUserIdKey);
             db.StringIncrement(nextUserIdKey);
 
             // record the new id
@@ -141,6 +141,13 @@ namespace Ropu.Web.Services
                 return userCredentials;
             }
             return null;
+        }
+
+        public IUser Get(uint userId)
+        {
+            IDatabase db = _connectionMultiplexer.GetDatabase();
+            var user = db.StringGet($"Users:{userId}");
+            return JsonConvert.DeserializeObject<User>(user);
         }
     }
 }

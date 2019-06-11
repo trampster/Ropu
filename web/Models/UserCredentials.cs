@@ -4,7 +4,7 @@ namespace Ropu.Web.Models
 {
     public class UserCredentials
     {
-        public int Id
+        public uint Id
         {
             get;
             set;

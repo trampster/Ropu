@@ -34,20 +34,20 @@ namespace web.Controllers
   
             if (user != null)  
             {  
-                var tokenString = GenerateJSONWebToken(user.Email, user.Roles);  
+                var tokenString = GenerateJSONWebToken(user.Id, user.Roles);  
                 response = Ok(new { token = tokenString });  
             }  
   
             return response;  
         }  
   
-        string GenerateJSONWebToken(string email, IEnumerable<string> roles)  
+        string GenerateJSONWebToken(uint userId, IEnumerable<string> roles)  
         {  
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));  
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);  
   
             var claims = new List<Claim>();
-            claims.Add(new Claim(ClaimTypes.Email, email));
+            claims.Add(new Claim(ClaimTypes.NameIdentifier, userId.ToString()));
             foreach(var role in roles)
             {
                 claims.Add(new Claim(ClaimTypes.Role, role));

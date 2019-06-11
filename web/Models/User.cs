@@ -2,7 +2,7 @@ namespace Ropu.Web.Models
 {
     public class User : IUser
     {
-        public int Id
+        public uint Id
         {
             get;
             set;
