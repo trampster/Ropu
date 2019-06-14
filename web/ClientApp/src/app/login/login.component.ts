@@ -2,6 +2,7 @@ import { HttpClient, HttpHeaders} from '@angular/common/http';
 import { Component, Inject } from '@angular/core';
 import { Router } from "@angular/router";
 import { NgForm } from '@angular/forms';
+import { AuthService } from '../auth.service';
 
 @Component({
   selector: 'login',
@@ -10,7 +11,11 @@ import { NgForm } from '@angular/forms';
 export class LoginComponent {
   invalidLogin: boolean;
 
-  constructor(private router: Router, private http: HttpClient, @Inject('BASE_URL') private baseUrl: string) 
+  constructor(
+    private router: Router, 
+    private http: HttpClient, 
+    @Inject('BASE_URL') private baseUrl: string,
+    private authService: AuthService) 
   { 
 
   }
@@ -26,8 +31,10 @@ export class LoginComponent {
       localStorage.setItem("jwt", token);
       this.invalidLogin = false;
       this.router.navigate(["/"]);
+      this.authService.refresh();
     }, err => {
       this.invalidLogin = true;
+      this.authService.refresh();
     });
   }
 

@@ -15,6 +15,7 @@ export class AuthGuard implements CanActivate {
       console.log(this.jwtHelper.decodeToken(token));
       return true;
     }
+    localStorage.remoteItem("jwt");
     this.router.navigate(["login"]);
     return false;
   }

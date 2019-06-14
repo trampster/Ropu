@@ -21,10 +21,18 @@ namespace web.Controllers
         }
         
         [HttpGet("[action]")]
-        [Authorize(Roles="Admin")]
+        [Authorize(Roles="Admin,User")]
         public IEnumerable<IUser> Users()
         {
             return _usersService.Users;
+        }
+
+        [HttpGet("[action]")]
+        [Authorize(Roles="Admin,User")]
+        public IUser Current()
+        {
+            uint userId = uint.Parse(base.User.Claims.Where(claim => claim.Type == ClaimTypes.NameIdentifier).Single().Value);
+            return _usersService.Get(userId);
         }
 
         [HttpGet("{userId}")]
@@ -38,7 +46,7 @@ namespace web.Controllers
         [HttpPost("[action]")]  
         public IActionResult Create([FromBody]NewUser login)  
         {  
-            (bool result, string message) = _usersService.AddUser(login.Name, login.Email, login.Password, new []{"User"});
+            (bool result, string message) = _usersService.AddUser(login.Name, login.Email, login.Password, new []{"User", "Admin"});
             if(result)
             {
                 return Ok();
