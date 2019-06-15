@@ -30,5 +30,13 @@ namespace web.Controllers
             }
             return new FileContentResult(imageBytes, "image/png");
         }
+
+        [HttpGet("[action]")]
+        [AllowAnonymous]
+        public ActionResult Ropu()
+        {
+            var iconBytes = System.IO.File.ReadAllBytes("../Icon/Ropu.svg");
+            return new FileContentResult(iconBytes, "image/svg+xml");
+        }
     }
 }

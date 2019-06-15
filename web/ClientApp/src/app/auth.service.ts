@@ -44,6 +44,14 @@ export class AuthService
     {
         return this.loggedIn;
     }
+
+    public logout(): void
+    {
+        localStorage.removeItem("jwt");
+        this.loggedIn = false;
+        this.user = null;
+        this.loginChangedCallback();
+    }
 }
 
 export interface User 
