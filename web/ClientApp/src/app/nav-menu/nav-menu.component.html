@@ -3,7 +3,7 @@
     <div class="container">
       <!-- <a class="navbar-brand" [routerLink]='["/"]'>Ropu</a> -->
       <a class="navbar-brand" href="#">
-        <img src="/api/Image/Ropu" width="30" height="30" class="d-inline-block align-top" alt="">
+        <img src="/api/Image/Ropu" width="32" height="32" class="d-inline-block align-top" alt="">
         Ropu
       </a>
       <div *ngIf="loggedIn" class="navbar-collapse collapse d-sm-inline-flex flex-sm-row-reverse" [ngClass]='{"show": isExpanded}'>
@@ -15,7 +15,10 @@
             <a class="nav-link text-dark" [routerLink]='["/groups"]'>Groups</a>
           </li>
           <li *ngIf="loggedIn" class="nav-item dropdown">
-            <a class="nav-link text-dark dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">{{ user.name }}</a>
+            <a class="nav-link text-dark dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
+                <img src="/api/image/{{ user.imageHash }}" width="32" height="32" class="d-inline-block align-top" alt="">
+                {{ user.name }}
+            </a>
             <div class="dropdown-menu">
                 <a class="dropdown-item" (click)="myInfo();">My Info</a>
                 <div class="dropdown-divider"></div>
