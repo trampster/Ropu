@@ -4,6 +4,13 @@ a.navbar-brand {
   word-break: break-all;
 }
 
+.navbar-nav .nav-link {
+  padding-top: 0;
+  padding-bottom: 0;
+  height: 50px;
+  line-height: 50px;
+}
+
 html {
   font-size: 14px;
 }
