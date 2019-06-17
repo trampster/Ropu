@@ -31,11 +31,11 @@ namespace Ropu.Web.Services
         {
             IDatabase db = _connectionMultiplexer.GetDatabase();
 
-            AddUser("Batmap", "batmap@dc.com", "password1", new []{"Admin"});
-            AddUser("Superman", "souperman@dc.com", "password2", new []{"Admin"});
-            AddUser("Green Lantin", "green.lantin@dc.com", "password3", new []{"Admin"});
-            AddUser("Flash", "flash", "password4@dc.com", new []{"Admin"});
-            AddUser("Wonder Woman", "wonder.woman@dc.com", "password5", new []{"Admin"});
+            AddUser("Batmap", "batmap@dc.com", "password1", new []{"User"});
+            AddUser("Superman", "souperman@dc.com", "password2", new []{"User"});
+            AddUser("Green Lantin", "green.lantin@dc.com", "password3", new []{"User"});
+            AddUser("Flash", "flash", "password4@dc.com", new []{"User"});
+            AddUser("Wonder Woman", "wonder.woman@dc.com", "password5", new []{"User"});
         }
 
         public (bool, string) AddUser(string name, string email, string password, string[] roles)

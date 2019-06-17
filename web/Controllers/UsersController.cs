@@ -42,6 +42,21 @@ namespace web.Controllers
             return _usersService.Get(userId);
         }
 
+        [HttpGet("{userId}/CanEdit")]
+        [Authorize(Roles="Admin,User")]
+        public bool CanEdit(uint userId)
+        {
+            if(this.User.IsInRole("Admin"))
+            {
+                return true;
+            }
+            if(this.User.HasClaim(claim => claim.Type == ClaimTypes.NameIdentifier && claim.Value == userId.ToString()))
+            {
+                return true;
+            }
+            return false;
+        }
+
         [AllowAnonymous]  
         [HttpPost("[action]")]  
         public IActionResult Create([FromBody]NewUser login)  

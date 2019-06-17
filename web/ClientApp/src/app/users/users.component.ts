@@ -17,7 +17,6 @@ export class UsersComponent {
 
   showUser(user: User) 
   {
-    console.error('show user');
     this.router.navigate(['/user/' + user.id]);
   }
 }
