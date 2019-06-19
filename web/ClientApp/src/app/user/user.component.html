@@ -9,16 +9,16 @@
                 </button>
             </div>
             <div class="modal-body">
-                <form>
+                <form [formGroup] = "nameFormData" (ngSubmit)="editUser(nameFormData.value)">
                     <div class="form-group">
-                        <label for="recipient-name" class="col-form-label">Name:</label>
-                        <input type="text" class="form-control" id="recipient-name" value="{{ user.name }}">
+                        <label for="name" class="col-form-label">Name:</label>
+                        <input type="text" id="name" name="name" class = "form-control" placeholder="name" formControlName="name" >
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" type="submit">Change</button>
                     </div>
                 </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary">Change</button>
             </div>
         </div>
     </div>

@@ -67,6 +67,22 @@ namespace web.Controllers
                 return Ok();
             }
             return BadRequest(message);  
-        } 
+        }
+
+        [HttpPost("[action]")]
+        [Authorize(Roles="Admin,User")]
+        public IActionResult Edit([FromBody]User user)
+        {
+            if(!CanEdit(user.Id))
+            {
+                return Forbid();
+            }
+            (bool result, string message) =_usersService.Edit(user);
+            if(!result)
+            {
+                return BadRequest(message);
+            }
+            return Ok();
+        }
     }
 }

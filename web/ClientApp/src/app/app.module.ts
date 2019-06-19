@@ -1,7 +1,7 @@
 import { AuthGuard } from './guards/auth-guard.service';
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { RouterModule } from '@angular/router';
 
@@ -13,7 +13,6 @@ import { UserComponent } from './user/user.component';
 import { GroupsComponent } from './groups/groups.component';
 import { LoginComponent } from './login/login.component';
 import { CreateUserComponent } from './create-user/create-user.component';
-
 
 import { HTTP_INTERCEPTORS } from '@angular/common/http';
 import { AuthInterceptor } from './Intercepters/AuthInterceptor';
@@ -33,6 +32,7 @@ import { AuthInterceptor } from './Intercepters/AuthInterceptor';
     BrowserModule.withServerTransition({ appId: 'ng-cli-universal' }),
     HttpClientModule,
     FormsModule,
+    ReactiveFormsModule,
     RouterModule.forRoot([
       { path: '', component: HomeComponent, pathMatch: 'full' },
       { path: 'users', component: UsersComponent, canActivate: [AuthGuard]  },

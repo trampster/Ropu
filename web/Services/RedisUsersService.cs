@@ -60,8 +60,8 @@ namespace Ropu.Web.Services
             IDatabase db = _connectionMultiplexer.GetDatabase();
 
             //see if we already have it
-            var idByUsernameKey = $"IdByEmail:{email}";
-            if(db.KeyExists(idByUsernameKey))
+            var idByEmailKey = $"IdByEmail:{email}";
+            if(db.KeyExists(idByEmailKey))
             {
                 return (false, "User already exists with that email");
             }
@@ -76,7 +76,7 @@ namespace Ropu.Web.Services
             db.StringIncrement(nextUserIdKey);
 
             // record the new id
-            db.StringSet(idByUsernameKey, id);
+            db.StringSet(idByEmailKey, id);
 
             //add user table
             var usersKey = $"Users:{id}";
@@ -109,6 +109,22 @@ namespace Ropu.Web.Services
             var userCredentialsKey = $"UsersCredentials:{userCredentials.Email}";
             db.StringSet(userCredentialsKey, JsonConvert.SerializeObject(userCredentials));
 
+            return (true, "");
+        }
+
+        public (bool, string) Edit(IUser user)
+        {
+            IDatabase db = _connectionMultiplexer.GetDatabase();
+            var usersKey = $"Users:{user.Id}";
+            if(!db.KeyExists(usersKey))
+            {
+                return (false, "User does not exist.");
+            }
+            var json = JsonConvert.SerializeObject(user);
+            if(!db.StringSet(usersKey, json))
+            {
+                return (false, "Failed to persist user");
+            }
             return (true, "");
         }
 

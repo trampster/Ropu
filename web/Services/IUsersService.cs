@@ -16,5 +16,7 @@ namespace Ropu.Web.Services
         (bool, string) AddUser(string name, string email, string password, string[] roles);
 
         IUser Get(uint id);
+
+        (bool, string) Edit(IUser user);
     }
 }
