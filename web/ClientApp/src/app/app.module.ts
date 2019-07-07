@@ -13,6 +13,7 @@ import { UserComponent } from './user/user.component';
 import { GroupsComponent } from './groups/groups.component';
 import { LoginComponent } from './login/login.component';
 import { CreateUserComponent } from './create-user/create-user.component';
+import { EditUserComponent } from './edit-user/edit-user.component';
 
 import { HTTP_INTERCEPTORS } from '@angular/common/http';
 import { AuthInterceptor } from './Intercepters/AuthInterceptor';
@@ -26,7 +27,8 @@ import { AuthInterceptor } from './Intercepters/AuthInterceptor';
     GroupsComponent,
     LoginComponent,
     CreateUserComponent,
-    UserComponent
+    UserComponent,
+    EditUserComponent
   ],
   imports: [
     BrowserModule.withServerTransition({ appId: 'ng-cli-universal' }),
@@ -40,6 +42,7 @@ import { AuthInterceptor } from './Intercepters/AuthInterceptor';
       { path: 'groups', component: GroupsComponent, canActivate: [AuthGuard]  },
       { path: 'login', component: LoginComponent },
       { path: 'createuser', component: CreateUserComponent },
+      { path: 'edituser/:userid', component: EditUserComponent },
     ])
   ],
   providers: [

@@ -62,7 +62,7 @@ namespace web.Controllers
                 return new JwtSecurityTokenHandler().WriteToken(token);  
         }  
   
-        UserCredentials AuthenticateUser(Credentials login)  
+        RedisUser AuthenticateUser(Credentials login)  
         {
             return _userService.AuthenticateUser(login);
         }  

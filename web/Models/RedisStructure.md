@@ -18,13 +18,7 @@
 * Redis Type - sorted set
 * Logical Type - int
 
-# UsersCredentials:{email}
-* Description - UserCredentials by email
-* Redis Type - string
-* Logical Type - json of UserCredentials (Email, PasswordHash, Roles)
-
 # Image:{imagehash}
 * Description - Image lookup by SHA256 hash
 * Redis Type - string
 * Logical Type - byte[] of image
-

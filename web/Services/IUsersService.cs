@@ -11,12 +11,14 @@ namespace Ropu.Web.Services
         }
 
 
-        UserCredentials AuthenticateUser(Credentials credentials);
+        RedisUser AuthenticateUser(Credentials credentials);
 
         (bool, string) AddUser(string name, string email, string password, string[] roles);
 
         IUser Get(uint id);
 
-        (bool, string) Edit(IUser user);
+        EditableUser GetFull(uint id);
+
+        (bool, string) Edit(EditableUser user);
     }
 }

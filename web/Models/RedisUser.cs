@@ -2,9 +2,21 @@ using System.Collections.Generic;
 
 namespace Ropu.Web.Models
 {
-    public class UserCredentials
+    public class RedisUser : IUser
     {
         public uint Id
+        {
+            get;
+            set;
+        }
+
+        public string Name
+        {
+            get;
+            set;
+        }
+
+        public string ImageHash
         {
             get;
             set;
@@ -16,13 +28,13 @@ namespace Ropu.Web.Models
             set;
         }
 
-        public string PasswordHash
+        public List<string> Roles
         {
             get;
             set;
         }
 
-        public List<string> Roles
+        public string PasswordHash
         {
             get;
             set;

@@ -15,6 +15,10 @@ namespace Ropu.Web.Services
         readonly PasswordHasher _passwordHasher;
         readonly IImageService _imageService;
 
+        const string NextUserIdKey = "NextUserId";
+        const string IdByEmailKey = "IdByEmail";
+        const string UsersKey = "Users";
+
         public RedisUsersService(
             ConnectionMultiplexer connectionMultiplexer, 
             PasswordHasher passwordHasher,
@@ -30,15 +34,57 @@ namespace Ropu.Web.Services
         void AddUsers()
         {
             IDatabase db = _connectionMultiplexer.GetDatabase();
+            if(db.KeyExists(NextUserIdKey))
+            {
+                return;
+            }
 
-            AddUser("Batmap", "batmap@dc.com", "password1", new []{"User"});
-            AddUser("Superman", "souperman@dc.com", "password2", new []{"User"});
-            AddUser("Green Lantin", "green.lantin@dc.com", "password3", new []{"User"});
-            AddUser("Flash", "flash", "password4@dc.com", new []{"User"});
-            AddUser("Wonder Woman", "wonder.woman@dc.com", "password5", new []{"User"});
+            var transaction = db.CreateTransaction();
+            var conditionResults = new List<ConditionResult>();
+
+            (bool result, string message) = AddUser(db, transaction, conditionResults, "Batman", "batman@dc.com", "password1", new []{"User"});
+            if(!result) throw new Exception($"Failed to add user msg {message}.");
+
+            (result, message) = AddUser(db, transaction, conditionResults, "Superman", "souperman@dc.com", "password2", new []{"User"});
+            if(!result) throw new Exception($"Failed to add user msg {message}.");
+
+            (result, message) = AddUser(db, transaction, conditionResults, "Green Lantin", "green.lantin@dc.com", "password3", new []{"User"});
+            if(!result) throw new Exception($"Failed to add user msg {message}.");
+
+            (result, message) = AddUser(db, transaction, conditionResults, "Flash", "password4@dc.com", "password4", new []{"User"});
+            if(!result) throw new Exception($"Failed to add user msg {message}.");
+
+            (result, message) = AddUser(db, transaction, conditionResults, "Wonder Woman", "wonder.woman@dc.com", "password5", new []{"User"});
+            if(!result) throw new Exception($"Failed to add user msg {message}.");
+
+            if(!transaction.Execute())
+            {
+                for(int index = 0; index < conditionResults.Count; index++)
+                {
+                    if(!conditionResults[index].WasSatisfied)
+                    {
+                        throw new Exception($"Failed to add users, due to failure of condition {index+1}.");
+                    }
+                }
+                throw new Exception($"Failed to add users");
+            }
         }
 
         public (bool, string) AddUser(string name, string email, string password, string[] roles)
+        {
+            IDatabase db = _connectionMultiplexer.GetDatabase();
+            var transaction = db.CreateTransaction();
+            var list = new List<ConditionResult>();
+            (bool result, string message) = AddUser(db, transaction, list, name, email, password, roles);
+            if(!result) return (result, message);
+            if(!transaction.Execute())
+            {
+                return (false, "Failed to add user");
+            }
+            return (true, "");
+        }
+
+        (bool, string) AddUser(IDatabase db, ITransaction transaction, List<ConditionResult> conditionResults, string name, string email, string password, string[] roles)
         {
             if(string.IsNullOrEmpty(name))
             {
@@ -57,37 +103,43 @@ namespace Ropu.Web.Services
                 return (false, "Email is invalid");
             }
 
-            IDatabase db = _connectionMultiplexer.GetDatabase();
-
             //see if we already have it
-            var idByEmailKey = $"IdByEmail:{email}";
+            var idByEmailKey = $"{IdByEmailKey}:{email}";
             if(db.KeyExists(idByEmailKey))
             {
                 return (false, "User already exists with that email");
             }
 
+            conditionResults.Add(transaction.AddCondition(Condition.KeyNotExists(idByEmailKey)));
+
             //find the next id to use
-            const string nextUserIdKey = "NextUserId";
-            if(!db.KeyExists(nextUserIdKey))
+            uint id = 0;
+            if(!db.KeyExists(NextUserIdKey))
             {
-                db.StringSet(nextUserIdKey, 0);
+                db.StringSetAsync(NextUserIdKey, id);
             }
-            uint id = (uint)db.StringGet(nextUserIdKey);
-            db.StringIncrement(nextUserIdKey);
+            else
+            {
+                id = (uint)db.StringIncrement(NextUserIdKey); //this isn't in the transaction
+            }
 
             // record the new id
-            db.StringSet(idByEmailKey, id);
+            conditionResults.Add(transaction.AddCondition(Condition.KeyNotExists(idByEmailKey)));
+            transaction.StringSetAsync(idByEmailKey, id);
 
             //add user table
-            var usersKey = $"Users:{id}";
-            var user = new User()
+            var usersKey = $"{UsersKey}:{id}";
+            var user = new RedisUser()
             {
                 Id = id, 
                 Name=name,
-                ImageHash=_imageService.DefaultUserImageHash
+                ImageHash=_imageService.DefaultUserImageHash,
+                Roles = roles.ToList(),
+                PasswordHash = _passwordHasher.HashPassword(password),
+                Email = email
             };
             var json = JsonConvert.SerializeObject(user);
-            db.StringSet(usersKey, json);
+            transaction.StringSetAsync(usersKey, json);
 
             //add to sorted set (for paging)
             var lowerName = name.ToLowerInvariant();
@@ -96,35 +148,64 @@ namespace Ropu.Web.Services
                 ((long)lowerName[1] << 32) + 
                 ((long)lowerName[2] << 16) + 
                 ((long)lowerName[3]);
-            db.SortedSetAdd("Users", id, score);
-
-            //add to user credentials
-            var userCredentials = new UserCredentials()
-            {
-                Id = id,
-                Email = email,
-                PasswordHash = _passwordHasher.HashPassword(password),
-                Roles = roles.ToList()
-            };
-            var userCredentialsKey = $"UsersCredentials:{userCredentials.Email}";
-            db.StringSet(userCredentialsKey, JsonConvert.SerializeObject(userCredentials));
+            conditionResults.Add(transaction.AddCondition(Condition.SortedSetNotContains(UsersKey, id)));
+            transaction.SortedSetAddAsync(UsersKey, id, score);
 
             return (true, "");
         }
 
-        public (bool, string) Edit(IUser user)
+        public (bool, string) Edit(EditableUser user)
         {
             IDatabase db = _connectionMultiplexer.GetDatabase();
+
+            var transaction = db.CreateTransaction();
+
             var usersKey = $"Users:{user.Id}";
-            if(!db.KeyExists(usersKey))
+
+            var existingUserJson = db.StringGet(usersKey);
+            if(existingUserJson.IsNull)
             {
-                return (false, "User does not exist.");
+                return (false, "Failed to find user to edit");
             }
-            var json = JsonConvert.SerializeObject(user);
-            if(!db.StringSet(usersKey, json))
+            var existingUser = JsonConvert.DeserializeObject<RedisUser>(existingUserJson);
+
+            transaction.AddCondition(Condition.KeyExists(usersKey));
+            var json = JsonConvert.SerializeObject(new RedisUser()
             {
-                return (false, "Failed to persist user");
+                Id = user.Id,
+                Name = user.Name,
+                ImageHash = user.ImageHash,
+                Email = user.Email,
+                Roles = user.Roles == null ? existingUser.Roles : user.Roles,
+                PasswordHash = user.Password == null ? 
+                    existingUser.PasswordHash : 
+                    _passwordHasher.HashPassword(user.Password)
+            });
+            transaction.StringSetAsync(usersKey, json);
+
+            bool result = true;
+            string message = "";
+            (result, message) = ChangeEmail(db, transaction, existingUser, user);
+            if(!result) return (result, message);
+
+            if(!transaction.Execute())
+            {
+                return (false, "Failed to update user");
             }
+            return (true, "");
+        }
+
+        (bool, string) ChangeEmail(IDatabase db, ITransaction transaction, RedisUser existing, EditableUser edited)
+        {           
+            if(existing.Email == edited.Email)
+            {
+                return (true, ""); //not edited
+            }
+
+            //IdByEmail
+            transaction.KeyDeleteAsync($"{IdByEmailKey}:{existing.Email}");
+            transaction.StringSetAsync($"{IdByEmailKey}:{edited.Email}", existing.Id);
+
             return (true, "");
         }
 
@@ -135,26 +216,34 @@ namespace Ropu.Web.Services
                 IDatabase db = _connectionMultiplexer.GetDatabase();
                 foreach(int userId in db.SortedSetRangeByScore("Users"))
                 {
-                    var user = db.StringGet($"Users:{userId}");
+                    var user = db.StringGet($"{UsersKey}:{userId}");
                     yield return JsonConvert.DeserializeObject<User>(user);
                 }
             }
         }
 
-        public UserCredentials AuthenticateUser(Credentials credentials)
+        public RedisUser AuthenticateUser(Credentials credentials)
         {
             IDatabase db = _connectionMultiplexer.GetDatabase();
-            var result = db.StringGet($"UsersCredentials:{credentials.Email}");
+
+            var idResult = db.StringGet($"{IdByEmailKey}:{credentials.Email}");
+            if(idResult.IsNull)
+            {
+                return null;
+            }
+            uint id = (uint)idResult;
+
+            var result = db.StringGet($"{UsersKey}:{id}");
             if(result.IsNull)
             {
                 return null;
             }
-            var userCredentials = JsonConvert.DeserializeObject<UserCredentials>(result);
+            var user = JsonConvert.DeserializeObject<RedisUser>(result);
             
-            if(_passwordHasher.VerifyHash(credentials.Password, userCredentials.PasswordHash))
+            if(_passwordHasher.VerifyHash(credentials.Password, user.PasswordHash))
             {
-                userCredentials.PasswordHash = null; //they don't need it so best to limit access
-                return userCredentials;
+                user.PasswordHash = null; //they don't need it so best to limit access
+                return user;
             }
             return null;
         }
@@ -162,8 +251,29 @@ namespace Ropu.Web.Services
         public IUser Get(uint userId)
         {
             IDatabase db = _connectionMultiplexer.GetDatabase();
-            var user = db.StringGet($"Users:{userId}");
-            return JsonConvert.DeserializeObject<User>(user);
+            var user = db.StringGet($"{UsersKey}:{userId}");
+            var redisUser = JsonConvert.DeserializeObject<RedisUser>(user);
+            //clear sensitive information
+            redisUser.PasswordHash = null;
+            redisUser.Roles = null;
+            redisUser.Email = null;
+            return redisUser;
+        }
+
+        public EditableUser GetFull(uint id)
+        {
+            IDatabase db = _connectionMultiplexer.GetDatabase();
+            var userJson = db.StringGet($"{UsersKey}:{id}");
+            var redisUser = JsonConvert.DeserializeObject<RedisUser>(userJson);
+
+            return new EditableUser()
+            {
+                Name = redisUser.Name,
+                Email = redisUser.Email,
+                ImageHash = redisUser.ImageHash,
+                Id = redisUser.Id,
+                Roles = redisUser.Roles
+            };
         }
     }
 }

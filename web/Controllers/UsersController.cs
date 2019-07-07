@@ -42,6 +42,17 @@ namespace web.Controllers
             return _usersService.Get(userId);
         }
 
+        [HttpGet("{userId}/Full")]
+        [Authorize(Roles="Admin,User")]
+        public EditableUser FullUserById(uint userId)
+        {
+            if(!CanEdit(userId))
+            {
+                return null;
+            }
+            return _usersService.GetFull(userId);
+        }
+
         [HttpGet("{userId}/CanEdit")]
         [Authorize(Roles="Admin,User")]
         public bool CanEdit(uint userId)
@@ -71,7 +82,7 @@ namespace web.Controllers
 
         [HttpPost("[action]")]
         [Authorize(Roles="Admin,User")]
-        public IActionResult Edit([FromBody]User user)
+        public IActionResult Edit([FromBody]EditableUser user)
         {
             if(!CanEdit(user.Id))
             {
