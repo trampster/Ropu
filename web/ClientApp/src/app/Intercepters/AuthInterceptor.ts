@@ -5,14 +5,17 @@ import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent } from "@angular/c
 import { Observable } from "rxjs";
 
 @Injectable()
-export class AuthInterceptor implements HttpInterceptor {
+export class AuthInterceptor implements HttpInterceptor
+{
 
     intercept(req: HttpRequest<any>,
-              next: HttpHandler): Observable<HttpEvent<any>> {
+        next: HttpHandler): Observable<HttpEvent<any>>
+    {
 
         const idToken = localStorage.getItem("jwt");
 
-        if (idToken) {
+        if (idToken)
+        {
             const cloned = req.clone({
                 headers: req.headers.set("Authorization",
                     "Bearer " + idToken)
@@ -20,7 +23,8 @@ export class AuthInterceptor implements HttpInterceptor {
 
             return next.handle(cloned);
         }
-        else {
+        else
+        {
             return next.handle(req);
         }
     }

@@ -19,40 +19,40 @@ import { HTTP_INTERCEPTORS } from '@angular/common/http';
 import { AuthInterceptor } from './Intercepters/AuthInterceptor';
 
 @NgModule({
-  declarations: [
-    AppComponent,
-    NavMenuComponent,
-    HomeComponent,
-    UsersComponent,
-    GroupsComponent,
-    LoginComponent,
-    CreateUserComponent,
-    UserComponent,
-    EditUserComponent
-  ],
-  imports: [
-    BrowserModule.withServerTransition({ appId: 'ng-cli-universal' }),
-    HttpClientModule,
-    FormsModule,
-    ReactiveFormsModule,
-    RouterModule.forRoot([
-      { path: '', component: HomeComponent, pathMatch: 'full' },
-      { path: 'users', component: UsersComponent, canActivate: [AuthGuard]  },
-      { path: 'user/:userid', component: UserComponent, canActivate: [AuthGuard]  },
-      { path: 'groups', component: GroupsComponent, canActivate: [AuthGuard]  },
-      { path: 'login', component: LoginComponent },
-      { path: 'createuser', component: CreateUserComponent },
-      { path: 'edituser/:userid', component: EditUserComponent },
-    ])
-  ],
-  providers: [
-    AuthGuard, 
-    {
-      provide: HTTP_INTERCEPTORS,
-      useClass: AuthInterceptor,
-      multi: true
-    }
-  ],
-  bootstrap: [AppComponent]
+    declarations: [
+        AppComponent,
+        NavMenuComponent,
+        HomeComponent,
+        UsersComponent,
+        GroupsComponent,
+        LoginComponent,
+        CreateUserComponent,
+        UserComponent,
+        EditUserComponent
+    ],
+    imports: [
+        BrowserModule.withServerTransition({ appId: 'ng-cli-universal' }),
+        HttpClientModule,
+        FormsModule,
+        ReactiveFormsModule,
+        RouterModule.forRoot([
+            { path: '', component: HomeComponent, pathMatch: 'full' },
+            { path: 'users', component: UsersComponent, canActivate: [AuthGuard] },
+            { path: 'user/:userid', component: UserComponent, canActivate: [AuthGuard] },
+            { path: 'groups', component: GroupsComponent, canActivate: [AuthGuard] },
+            { path: 'login', component: LoginComponent },
+            { path: 'createuser', component: CreateUserComponent },
+            { path: 'edituser/:userid', component: EditUserComponent },
+        ])
+    ],
+    providers: [
+        AuthGuard,
+        {
+            provide: HTTP_INTERCEPTORS,
+            useClass: AuthInterceptor,
+            multi: true
+        }
+    ],
+    bootstrap: [AppComponent]
 })
 export class AppModule { }

@@ -1,8 +1,8 @@
 import { Injectable, Inject } from '@angular/core';
-import { HttpClient} from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 
 @Injectable({
-  providedIn: 'root'
+    providedIn: 'root'
 })
 export class AuthService 
 {
@@ -11,7 +11,7 @@ export class AuthService
     public loginChangedCallback: () => void;
 
     constructor(
-        private http: HttpClient, 
+        private http: HttpClient,
         @Inject('BASE_URL') private baseUrl: string) { }
 
     public registerLoginChangedCallback(callback: () => void): void

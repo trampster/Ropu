@@ -5,42 +5,49 @@ import { AuthService } from '../auth.service';
 import { User } from '../auth.service';
 
 @Component({
-  selector: 'app-nav-menu',
-  templateUrl: './nav-menu.component.html',
-  styleUrls: ['./nav-menu.component.css']
+    selector: 'app-nav-menu',
+    templateUrl: './nav-menu.component.html',
+    styleUrls: ['./nav-menu.component.css']
 })
-export class NavMenuComponent {
-  public user: User;
-  public loggedIn: boolean;
+export class NavMenuComponent
+{
+    public user: User;
+    public loggedIn: boolean;
 
-  constructor(
-    private router: Router,
-    private http: HttpClient,
-    @Inject('BASE_URL') private baseUrl: string,
-    private authService: AuthService) {
-    authService.registerLoginChangedCallback(() => this.onLoginChanged());
-    authService.refresh();
+    constructor(
+        private router: Router,
+        private http: HttpClient,
+        @Inject('BASE_URL') private baseUrl: string,
+        private authService: AuthService)
+    {
+        authService.registerLoginChangedCallback(() => this.onLoginChanged());
+        authService.refresh();
 
-  }
-
-  onLoginChanged(): void {
-    this.loggedIn = this.authService.isLoggedIn();
-
-    if (this.loggedIn) {
-      this.user = this.authService.getUser();
     }
-  }
 
-  onSignIn() {
-    this.router.navigate(['/login']);
-  }
+    onLoginChanged(): void
+    {
+        this.loggedIn = this.authService.isLoggedIn();
 
-  myInfo() {
-    this.router.navigate(['/user/' + this.user.id]);
-  }
+        if (this.loggedIn)
+        {
+            this.user = this.authService.getUser();
+        }
+    }
 
-  signOut() {
-    this.authService.logout();
-    this.router.navigate(["/"]);
-  }
+    onSignIn()
+    {
+        this.router.navigate(['/login']);
+    }
+
+    myInfo()
+    {
+        this.router.navigate(['/user/' + this.user.id]);
+    }
+
+    signOut()
+    {
+        this.authService.logout();
+        this.router.navigate(["/"]);
+    }
 }
