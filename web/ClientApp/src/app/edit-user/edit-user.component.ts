@@ -43,14 +43,20 @@ export class EditUserComponent
         this.user.name = user.name;
         console.debug("edit User" + user.name);
 
-        this.http.post<FullUserInfo>(this.baseUrl + 'api/Users/Edit', JSON.stringify(this.user), {
-            headers: new HttpHeaders({
+        this.http.post<FullUserInfo>(this.baseUrl + 'api/Users/Edit', JSON.stringify(this.user),
+        {
+            headers: new HttpHeaders(
+            {
                 "Content-Type": "application/json"
             })
-        }).subscribe(result => { },
-            error => console.error(error));
+        }).subscribe(result => 
+        {
+            if(this.authService.getUser().id == this.user.id)
+            {
+                this.authService.refresh();
+            }
+        }, error => console.error(error));
     }
-
 }
 
 interface FullUserInfo

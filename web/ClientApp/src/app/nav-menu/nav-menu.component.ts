@@ -22,7 +22,6 @@ export class NavMenuComponent
     {
         authService.registerLoginChangedCallback(() => this.onLoginChanged());
         authService.refresh();
-
     }
 
     onLoginChanged(): void
