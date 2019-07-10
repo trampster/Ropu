@@ -27,50 +27,9 @@ namespace Ropu.Web.Services
             _connectionMultiplexer = connectionMultiplexer;
             _passwordHasher = passwordHasher;
             _imageService = imageService;
-
-            AddUsers();
         }
 
-        void AddUsers()
-        {
-            IDatabase db = _connectionMultiplexer.GetDatabase();
-            if(db.KeyExists(NextUserIdKey))
-            {
-                return;
-            }
-
-            var transaction = db.CreateTransaction();
-            var conditionResults = new List<ConditionResult>();
-
-            (bool result, string message) = AddUser(db, transaction, conditionResults, "Batman", "batman@dc.com", "password1", new []{"User"});
-            if(!result) throw new Exception($"Failed to add user msg {message}.");
-
-            (result, message) = AddUser(db, transaction, conditionResults, "Superman", "souperman@dc.com", "password2", new []{"User"});
-            if(!result) throw new Exception($"Failed to add user msg {message}.");
-
-            (result, message) = AddUser(db, transaction, conditionResults, "Green Lantin", "green.lantin@dc.com", "password3", new []{"User"});
-            if(!result) throw new Exception($"Failed to add user msg {message}.");
-
-            (result, message) = AddUser(db, transaction, conditionResults, "Flash", "password4@dc.com", "password4", new []{"User"});
-            if(!result) throw new Exception($"Failed to add user msg {message}.");
-
-            (result, message) = AddUser(db, transaction, conditionResults, "Wonder Woman", "wonder.woman@dc.com", "password5", new []{"User"});
-            if(!result) throw new Exception($"Failed to add user msg {message}.");
-
-            if(!transaction.Execute())
-            {
-                for(int index = 0; index < conditionResults.Count; index++)
-                {
-                    if(!conditionResults[index].WasSatisfied)
-                    {
-                        throw new Exception($"Failed to add users, due to failure of condition {index+1}.");
-                    }
-                }
-                throw new Exception($"Failed to add users");
-            }
-        }
-
-        public (bool, string) AddUser(string name, string email, string password, string[] roles)
+        public (bool, string) AddUser(string name, string email, string password, List<string> roles)
         {
             IDatabase db = _connectionMultiplexer.GetDatabase();
             var transaction = db.CreateTransaction();
@@ -84,7 +43,7 @@ namespace Ropu.Web.Services
             return (true, "");
         }
 
-        (bool, string) AddUser(IDatabase db, ITransaction transaction, List<ConditionResult> conditionResults, string name, string email, string password, string[] roles)
+        (bool, string) AddUser(IDatabase db, ITransaction transaction, List<ConditionResult> conditionResults, string name, string email, string password, List<string> roles)
         {
             if(string.IsNullOrEmpty(name))
             {
@@ -274,6 +233,12 @@ namespace Ropu.Web.Services
                 Id = redisUser.Id,
                 Roles = redisUser.Roles
             };
+        }
+
+        public int Count()
+        {
+            IDatabase db = _connectionMultiplexer.GetDatabase();
+            return (int)db.SortedSetLength(UsersKey);
         }
     }
 }

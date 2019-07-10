@@ -71,8 +71,14 @@ namespace web.Controllers
         [AllowAnonymous]  
         [HttpPost("[action]")]  
         public IActionResult Create([FromBody]NewUser login)  
-        {  
-            (bool result, string message) = _usersService.AddUser(login.Name, login.Email, login.Password, new []{"User", "Admin"});
+        { 
+            var roles = new List<string>();
+            roles.Add("User");
+            if(_usersService.Count() == 0)
+            {
+                roles.Add("Admin");
+            }
+            (bool result, string message) = _usersService.AddUser(login.Name, login.Email, login.Password, roles);
             if(result)
             {
                 return Ok();
