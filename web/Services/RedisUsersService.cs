@@ -102,11 +102,12 @@ namespace Ropu.Web.Services
 
             //add to sorted set (for paging)
             var lowerName = name.ToLowerInvariant();
+            int length = name.Length;
             long score = 
-                ((long)lowerName[0] << 48) + 
-                ((long)lowerName[1] << 32) + 
-                ((long)lowerName[2] << 16) + 
-                ((long)lowerName[3]);
+                length == 0 ? 0 : ((long)lowerName[0] << 48) + 
+                length > 1 ? 0 : ((long)lowerName[1] << 32) + 
+                length > 2 ? 0 : ((long)lowerName[2] << 16) + 
+                length > 3 ? 0 : ((long)lowerName[3]);
             conditionResults.Add(transaction.AddCondition(Condition.SortedSetNotContains(UsersKey, id)));
             transaction.SortedSetAddAsync(UsersKey, id, score);
 
