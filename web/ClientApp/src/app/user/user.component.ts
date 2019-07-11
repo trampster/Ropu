@@ -52,4 +52,6 @@ interface User
     name: string;
     id: number;
     imageHash: string;
+    email: string;
+    roles: string[]
 }

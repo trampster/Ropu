@@ -39,18 +39,15 @@ namespace web.Controllers
         [Authorize(Roles="Admin,User")]
         public IUser UserById(uint userId)
         {
-            return _usersService.Get(userId);
-        }
-
-        [HttpGet("{userId}/Full")]
-        [Authorize(Roles="Admin,User")]
-        public EditableUser FullUserById(uint userId)
-        {
+            var user = _usersService.GetFull(userId);
+            user.Password = null;
+            user.PasswordHash = null;
             if(!CanEdit(userId))
             {
-                return null;
+                user.Email = null;
+                user.Roles = null;
             }
-            return _usersService.GetFull(userId);
+            return user;
         }
 
         [HttpGet("{userId}/CanEdit")]

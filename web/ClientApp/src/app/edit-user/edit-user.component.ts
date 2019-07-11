@@ -26,7 +26,7 @@ export class EditUserComponent
         this.a.params.subscribe(params =>
         {
             this.id = this.a.snapshot.params.userid;
-            this.http.get<FullUserInfo>(this.baseUrl + 'api/Users/' + this.id + '/Full').subscribe(result =>
+            this.http.get<FullUserInfo>(this.baseUrl + 'api/Users/' + this.id).subscribe(result =>
             {
                 this.user = result;
                 this.loaded = true;
