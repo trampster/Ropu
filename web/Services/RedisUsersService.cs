@@ -104,10 +104,10 @@ namespace Ropu.Web.Services
             var lowerName = name.ToLowerInvariant();
             int length = name.Length;
             long score = 
-                length == 0 ? 0 : ((long)lowerName[0] << 48) + 
-                length > 1 ? 0 : ((long)lowerName[1] << 32) + 
-                length > 2 ? 0 : ((long)lowerName[2] << 16) + 
-                length > 3 ? 0 : ((long)lowerName[3]);
+                ((length < 1) ? 0 : ((long)lowerName[0] << 48)) + 
+                ((length < 2) ? 0 : ((long)lowerName[1] << 32)) + 
+                ((length < 3) ? 0 : ((long)lowerName[2] << 16)) + 
+                ((length < 4) ? 0 : ((long)lowerName[3]));
             conditionResults.Add(transaction.AddCondition(Condition.SortedSetNotContains(UsersKey, id)));
             transaction.SortedSetAddAsync(UsersKey, id, score);
 
