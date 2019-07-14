@@ -21,18 +21,40 @@ export class EditUserComponent
         this.loaded = false;
     }
 
+    hasRole(user: UserInfo, role: string) : boolean
+    {
+        let roles = user.roles;
+        for(var i = 0; i < roles.length; i++) 
+        {
+            if (roles[i] == role) 
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     ngOnInit()
     {
         this.a.params.subscribe(params =>
         {
             this.id = this.a.snapshot.params.userid;
-            this.http.get<FullUserInfo>(this.baseUrl + 'api/Users/' + this.id).subscribe(result =>
+            this.http.get<UserInfo>(this.baseUrl + 'api/Users/' + this.id).subscribe(result =>
             {
-                this.user = result;
+                this.user = new FullUserInfo();
+                this.user.name = result.name;
+                this.user.email = result.email;
+                this.user.id = result.id;
+                this.user.imageHash = result.imageHash;
+                this.user.isAdmin = this.hasRole(result, "Admin");
+                this.user.isUser = this.hasRole(result, "User");
+
                 this.loaded = true;
                 this.nameFormData = new FormGroup({
                     name: new FormControl(this.user.name),
                     email: new FormControl(this.user.email),
+                    isAdmin: new FormControl(this.user.isAdmin),
+                    isUser: new FormControl(this.user.isUser),
                 });
             }, error => console.error(error));
         });
@@ -43,7 +65,24 @@ export class EditUserComponent
         this.user.name = user.name;
         console.debug("edit User" + user.name);
 
-        this.http.post<FullUserInfo>(this.baseUrl + 'api/Users/Edit', JSON.stringify(this.user),
+        let userInfo = new UserInfo();
+        userInfo.id = this.user.id;
+        userInfo.name = user.name;
+        userInfo.email = user.email;
+        userInfo.imageHash = this.user.imageHash; //TODO: change this when we add editing the image
+        userInfo.roles = [];
+        if(user.isAdmin)
+        {
+            userInfo.roles.push("Admin");
+        }
+        if(user.isUser)
+        {
+            userInfo.roles.push("User");
+        }
+
+        console.error(userInfo);
+
+        this.http.post<UserInfo>(this.baseUrl + 'api/Users/Edit', JSON.stringify(userInfo),
         {
             headers: new HttpHeaders(
             {
@@ -59,10 +98,21 @@ export class EditUserComponent
     }
 }
 
-interface FullUserInfo
+class UserInfo
 {
     id: number;
     name: string;
     imageHash: string;
     email: string;
+    roles: string[];
+}
+
+class FullUserInfo
+{
+    id: number;
+    name: string;
+    imageHash: string;
+    email: string;
+    isAdmin: boolean;
+    isUser: boolean;
 }
