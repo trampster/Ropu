@@ -7,5 +7,7 @@ namespace Ropu.Web.Services
         {
             get;
         }
+
+        string Add(byte[] imageBytes);
     }
 }

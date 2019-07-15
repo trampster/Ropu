@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Ropu.Web.Models;
 using Ropu.Web.Services;
@@ -37,6 +39,17 @@ namespace web.Controllers
         {
             var iconBytes = System.IO.File.ReadAllBytes("../Icon/Ropu.svg");
             return new FileContentResult(iconBytes, "image/svg+xml");
+        }
+
+        [HttpPost("[action]")]
+        public async Task<ActionResult<string>> Upload(IFormFile image)
+        {
+            using (var memoryStream = new MemoryStream())
+            {
+                await image.CopyToAsync(memoryStream);
+                var imageBytes = memoryStream.ToArray();
+                return _imageService.Add(imageBytes);
+            }
         }
     }
 }
