@@ -6,7 +6,8 @@
 
         <label for="email" class="col-form-label">Email:</label>
         <input type="text" id="email" name="email" class = "form-control" placeholder="email" formControlName="email" >
-
+        <label for="file" class="col-form-label">Image:</label><br/>
+        <input type="file" (change)="onFileChanged($event)"><br/>
         <label for="roles" class="col-form-label">Roles:</label><br/>
         <label>
             <input type="checkbox" id="isAdmin" name="isAdmin" formControlName="isAdmin" >
@@ -16,6 +17,7 @@
             <input type="checkbox" id="isUser" name="isUser" formControlName="isUser" >
             User
         </label><br/>
+
     </div>
     <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>

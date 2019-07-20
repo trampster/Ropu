@@ -41,14 +41,25 @@ namespace web.Controllers
             return new FileContentResult(iconBytes, "image/svg+xml");
         }
 
+        public class ImageResult
+        {
+            public string Hash
+            {
+                get;
+                set;
+            }
+        }
+
         [HttpPost("[action]")]
-        public async Task<ActionResult<string>> Upload(IFormFile image)
+        public async Task<ActionResult<ImageResult>> Upload(IFormFile image)
         {
             using (var memoryStream = new MemoryStream())
             {
                 await image.CopyToAsync(memoryStream);
                 var imageBytes = memoryStream.ToArray();
-                return _imageService.Add(imageBytes);
+                
+                var hash = _imageService.Add(imageBytes);
+                return new ImageResult{Hash = hash};
             }
         }
     }

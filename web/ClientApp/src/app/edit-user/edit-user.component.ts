@@ -21,10 +21,10 @@ export class EditUserComponent
         this.loaded = false;
     }
 
-    hasRole(user: UserInfo, role: string) : boolean
+    hasRole(user: UserInfo, role: string): boolean
     {
         let roles = user.roles;
-        for(var i = 0; i < roles.length; i++) 
+        for (var i = 0; i < roles.length; i++) 
         {
             if (roles[i] == role) 
             {
@@ -71,11 +71,11 @@ export class EditUserComponent
         userInfo.email = user.email;
         userInfo.imageHash = this.user.imageHash; //TODO: change this when we add editing the image
         userInfo.roles = [];
-        if(user.isAdmin)
+        if (user.isAdmin)
         {
             userInfo.roles.push("Admin");
         }
-        if(user.isUser)
+        if (user.isUser)
         {
             userInfo.roles.push("User");
         }
@@ -83,19 +83,37 @@ export class EditUserComponent
         console.error(userInfo);
 
         this.http.post<UserInfo>(this.baseUrl + 'api/Users/Edit', JSON.stringify(userInfo),
-        {
-            headers: new HttpHeaders(
             {
-                "Content-Type": "application/json"
-            })
-        }).subscribe(result => 
-        {
-            if(this.authService.getUser().id == this.user.id)
+                headers: new HttpHeaders(
+                    {
+                        "Content-Type": "application/json"
+                    })
+            }).subscribe(result => 
             {
-                this.authService.refresh();
-            }
-        }, error => console.error(error));
+                if (this.authService.getUser().id == this.user.id)
+                {
+                    this.authService.refresh();
+                }
+            }, error => console.error(error));
     }
+
+    onFileChanged(event) : void
+    {
+        const file = event.target.files[0];
+        const uploadData = new FormData();
+        uploadData.append('image', file, "name");
+        this.http.post<ImageResult>(this.baseUrl + 'api/Image/Upload', uploadData)
+            .subscribe(result => 
+            {
+                console.info("Upload Result" + result.hash);
+                this.user.imageHash = result.hash;
+            }, error => console.error(error));
+    }
+}
+
+class ImageResult
+{
+    hash: string;
 }
 
 class UserInfo
