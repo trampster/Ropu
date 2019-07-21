@@ -3,6 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../auth.service';
 import { FormGroup, FormControl } from '@angular/forms';
+import {Location} from '@angular/common';
 
 @Component({
     selector: 'app-user-component',
@@ -16,7 +17,12 @@ export class EditUserComponent
     editable: boolean;
     nameFormData: FormGroup;
 
-    constructor(private a: ActivatedRoute, private http: HttpClient, @Inject('BASE_URL') private baseUrl: string, private authService: AuthService)
+    constructor(
+        private a: ActivatedRoute, 
+        private http: HttpClient, 
+        @Inject('BASE_URL') private baseUrl: string, 
+        private authService: AuthService,
+        private location: Location)
     {
         this.loaded = false;
     }
@@ -94,6 +100,7 @@ export class EditUserComponent
                 {
                     this.authService.refresh();
                 }
+                this.location.back();
             }, error => console.error(error));
     }
 
