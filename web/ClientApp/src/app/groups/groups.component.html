@@ -3,15 +3,9 @@
 <p *ngIf="!groups"><em>Loading...</em></p>
 
 <table class='table table-striped' *ngIf="groups">
-  <thead>
-    <tr>
-      <th>Id</th>
-      <th>Name</th>
-    </tr>
-  </thead>
   <tbody>
     <tr *ngFor="let group of groups">
-      <td>{{ group.id }}</td>
+      <td><img src="api/Image/{{ group.imageHash }}"  height=32 width=32></td>
       <td>{{ group.name }}</td>
     </tr>
   </tbody>

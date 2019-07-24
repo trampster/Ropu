@@ -17,8 +17,8 @@ namespace Ropu.Web.Services
 
         void AddDefaultImages()
         {
-            var hash = Add(File.ReadAllBytes("../Icon/knot32.png"));
-            DefaultUserImageHash = hash;
+            DefaultGroupImageHash = Add(File.ReadAllBytes("../Icon/knot32.png"));
+            DefaultUserImageHash = Add(File.ReadAllBytes("../Icon/rope32.png"));
         }
 
         public string DefaultUserImageHash
@@ -33,6 +33,21 @@ namespace Ropu.Web.Services
             {
                 IDatabase db = _connectionMultiplexer.GetDatabase();
                 db.StringSet($"ImageHash:defaultUser", value);
+            }
+        }
+
+        public string DefaultGroupImageHash
+        {
+            get
+            {
+                IDatabase db = _connectionMultiplexer.GetDatabase();
+                var defaultGroupImageHash = db.StringGet($"ImageHash:defaultGroup");
+                return defaultGroupImageHash;
+            }
+            private set
+            {
+                IDatabase db = _connectionMultiplexer.GetDatabase();
+                db.StringSet($"ImageHash:defaultGroup", value);
             }
         }
 

@@ -22,3 +22,25 @@
 * Description - Image lookup by SHA256 hash
 * Redis Type - string
 * Logical Type - byte[] of image
+
+
+
+# NextGroupId
+* Description - Holds the next Group ID to use
+* Redis Type - string
+* Logical Type - int
+
+# Groups:{id}
+* Description - Lookup Group json by Group ID
+* Redis Type - string
+* Logical Type - json (Group)
+
+# GroupIdByName:{name}
+* Description - Lookup Group ID by name
+* Redis Type - string
+* Logical Type - int
+
+# Groups
+* Description - sorted set of group ids (by name) for paging
+* Redis Type - sorted set
+* Logical Type - int

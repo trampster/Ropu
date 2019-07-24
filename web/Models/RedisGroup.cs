@@ -1,6 +1,14 @@
+using System.Collections.Generic;
+
 namespace Ropu.Web.Models
 {
-    public class Group : IGroup
+    public enum GroupType
+    {
+        Open, //anyone can join
+        Invite, //you have to be invited
+    }
+
+    public class RedisGroup : IGroup
     {
         public uint Id
         {
@@ -9,6 +17,12 @@ namespace Ropu.Web.Models
         }
 
         public string Name
+        {
+            get;
+            set;
+        }
+
+        public string ImageHash
         {
             get;
             set;

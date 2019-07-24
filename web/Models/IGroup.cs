@@ -2,8 +2,10 @@ namespace Ropu.Web.Models
 {
     public interface IGroup
     {
-        int Id{get;}
+        uint Id {get;}
 
         string Name {get;}
+
+        GroupType GroupType {get;}
     }
 }

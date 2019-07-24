@@ -52,7 +52,9 @@ namespace web
                 .AddSingleton<ConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect("localhost"))
                 .AddSingleton<IImageService, ImageService>()
                 .AddSingleton<IUsersService, RedisUsersService>()
-                .AddSingleton<PasswordHasher, PasswordHasher>();
+                .AddSingleton<PasswordHasher, PasswordHasher>()
+                .AddSingleton<RedisService, RedisService>()
+                .AddSingleton<IGroupsService, RedisGroupsService>();
 
             services.AddMvc();
         }

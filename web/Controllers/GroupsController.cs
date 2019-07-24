@@ -14,9 +14,9 @@ namespace web.Controllers
     {
         readonly IGroupsService _groupsService;
 
-        public GroupsController()
+        public GroupsController(IGroupsService groupsService)
         {
-            _groupsService = new HardcodedGroupsService();
+            _groupsService = groupsService;
         }
         
         [HttpGet("[action]")]
@@ -24,6 +24,18 @@ namespace web.Controllers
         public IEnumerable<IGroup> Groups()
         {
             return _groupsService.Groups;
+        }
+
+        [HttpPost("[action]")]  
+        [Authorize(Roles="Admin,User")]
+        public IActionResult Create([FromBody]Group group)  
+        { 
+            (bool result, string message) = _groupsService.AddGroup(group.Name, group.GroupType);
+            if(result)
+            {
+                return Ok();
+            }
+            return BadRequest(message);  
         }
     }
 }

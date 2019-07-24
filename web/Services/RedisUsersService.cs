@@ -11,7 +11,7 @@ namespace Ropu.Web.Services
 {
     public class RedisUsersService : IUsersService
     {
-        readonly ConnectionMultiplexer _connectionMultiplexer;
+        readonly RedisService _redisService;
         readonly PasswordHasher _passwordHasher;
         readonly IImageService _imageService;
 
@@ -20,18 +20,18 @@ namespace Ropu.Web.Services
         const string UsersKey = "Users";
 
         public RedisUsersService(
-            ConnectionMultiplexer connectionMultiplexer, 
+            RedisService redisService, 
             PasswordHasher passwordHasher,
             IImageService imageService)
         {
-            _connectionMultiplexer = connectionMultiplexer;
+            _redisService = redisService;
             _passwordHasher = passwordHasher;
             _imageService = imageService;
         }
 
         public (bool, string) AddUser(string name, string email, string password, List<string> roles)
         {
-            IDatabase db = _connectionMultiplexer.GetDatabase();
+            IDatabase db = _redisService.GetDatabase();
             var transaction = db.CreateTransaction();
             var list = new List<ConditionResult>();
             (bool result, string message) = AddUser(db, transaction, list, name, email, password, roles);
@@ -101,13 +101,7 @@ namespace Ropu.Web.Services
             transaction.StringSetAsync(usersKey, json);
 
             //add to sorted set (for paging)
-            var lowerName = name.ToLowerInvariant();
-            int length = name.Length;
-            long score = 
-                ((length < 1) ? 0 : ((long)lowerName[0] << 48)) + 
-                ((length < 2) ? 0 : ((long)lowerName[1] << 32)) + 
-                ((length < 3) ? 0 : ((long)lowerName[2] << 16)) + 
-                ((length < 4) ? 0 : ((long)lowerName[3]));
+            long score = _redisService.CalculateStringScore(name);
             conditionResults.Add(transaction.AddCondition(Condition.SortedSetNotContains(UsersKey, id)));
             transaction.SortedSetAddAsync(UsersKey, id, score);
 
@@ -116,7 +110,7 @@ namespace Ropu.Web.Services
 
         public (bool, string) Edit(EditableUser user)
         {
-            IDatabase db = _connectionMultiplexer.GetDatabase();
+            IDatabase db = _redisService.GetDatabase();
 
             var transaction = db.CreateTransaction();
 
@@ -173,7 +167,7 @@ namespace Ropu.Web.Services
         {
             get
             {
-                IDatabase db = _connectionMultiplexer.GetDatabase();
+                IDatabase db = _redisService.GetDatabase();
                 foreach(int userId in db.SortedSetRangeByScore("Users"))
                 {
                     var user = db.StringGet($"{UsersKey}:{userId}");
@@ -184,7 +178,7 @@ namespace Ropu.Web.Services
 
         public RedisUser AuthenticateUser(Credentials credentials)
         {
-            IDatabase db = _connectionMultiplexer.GetDatabase();
+            IDatabase db = _redisService.GetDatabase();
 
             var idResult = db.StringGet($"{IdByEmailKey}:{credentials.Email}");
             if(idResult.IsNull)
@@ -210,7 +204,7 @@ namespace Ropu.Web.Services
 
         public IUser Get(uint userId)
         {
-            IDatabase db = _connectionMultiplexer.GetDatabase();
+            IDatabase db = _redisService.GetDatabase();
             var user = db.StringGet($"{UsersKey}:{userId}");
             var redisUser = JsonConvert.DeserializeObject<RedisUser>(user);
             //clear sensitive information
@@ -222,7 +216,7 @@ namespace Ropu.Web.Services
 
         public EditableUser GetFull(uint id)
         {
-            IDatabase db = _connectionMultiplexer.GetDatabase();
+            IDatabase db = _redisService.GetDatabase();
             var userJson = db.StringGet($"{UsersKey}:{id}");
             var redisUser = JsonConvert.DeserializeObject<RedisUser>(userJson);
 
@@ -238,7 +232,7 @@ namespace Ropu.Web.Services
 
         public int Count()
         {
-            IDatabase db = _connectionMultiplexer.GetDatabase();
+            IDatabase db = _redisService.GetDatabase();
             return (int)db.SortedSetLength(UsersKey);
         }
     }

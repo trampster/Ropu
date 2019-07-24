@@ -7,6 +7,10 @@ namespace Ropu.Web.Services
         {
             get;
         }
+        string DefaultGroupImageHash
+        {
+            get;
+        }
 
         string Add(byte[] imageBytes);
     }

@@ -9,5 +9,7 @@ namespace Ropu.Web.Services
         {
             get;
         }
+
+        (bool, string) AddGroup(string name, GroupType groupType);
     }
 }
