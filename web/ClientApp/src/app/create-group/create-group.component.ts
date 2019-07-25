@@ -30,6 +30,7 @@ export class CreateGroupComponent
         }).subscribe(response =>
         {
             this.invalidGroup = false;
+            this.router.navigate(["/groups"]);
         }, err =>
         {
             console.error(err);

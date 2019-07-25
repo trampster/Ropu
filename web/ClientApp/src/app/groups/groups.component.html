@@ -2,6 +2,7 @@
 
 <p *ngIf="!groups"><em>Loading...</em></p>
 
+<button class="btn btn-primary float-right mb-2" (click)="add()">Add</button>
 <table class='table table-striped' *ngIf="groups">
   <tbody>
     <tr *ngFor="let group of groups">
