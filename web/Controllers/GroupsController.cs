@@ -26,6 +26,13 @@ namespace web.Controllers
             return _groupsService.Groups;
         }
 
+        [HttpGet("{groupId}")]
+        [Authorize(Roles="Admin,User")]
+        public IGroup GroupById(uint groupId)
+        {
+            return _groupsService.Get(groupId);
+        }
+
         [HttpPost("[action]")]  
         [Authorize(Roles="Admin,User")]
         public IActionResult Create([FromBody]Group group)  

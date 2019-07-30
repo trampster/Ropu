@@ -6,6 +6,11 @@ namespace Ropu.Web.Models
 
         string Name {get;}
 
+        string ImageHash
+        {
+            get;
+        }
+
         GroupType GroupType {get;}
     }
 }

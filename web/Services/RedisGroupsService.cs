@@ -83,6 +83,13 @@ namespace Ropu.Web.Services
             return (true, "");
         }
 
+        public IGroup Get(uint groupId)
+        {
+            IDatabase db = _redisService.GetDatabase();
+            var group = db.StringGet($"{GroupsKey}:{groupId}");
+            return JsonConvert.DeserializeObject<RedisGroup>(group);
+        }
+
         public IEnumerable<IGroup> Groups
         {
             get
@@ -90,8 +97,8 @@ namespace Ropu.Web.Services
                 IDatabase db = _redisService.GetDatabase();
                 foreach(int groupId in db.SortedSetRangeByScore("Groups"))
                 {
-                    var user = db.StringGet($"{GroupsKey}:{groupId}");
-                    yield return JsonConvert.DeserializeObject<RedisGroup>(user);
+                    var group = db.StringGet($"{GroupsKey}:{groupId}");
+                    yield return JsonConvert.DeserializeObject<RedisGroup>(group);
                 }
             }
         }

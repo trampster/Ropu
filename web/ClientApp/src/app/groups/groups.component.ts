@@ -25,6 +25,11 @@ export class GroupsComponent
     {
         this.router.navigate(["/creategroup"]);
     }
+
+    showGroup(user: Group) 
+    {
+        this.router.navigate(['/group/' + user.id]);
+    }
 }
 
 interface Group

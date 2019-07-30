@@ -19,5 +19,11 @@ namespace Ropu.Web.Models
             get;
             set;
         }
+
+        public string ImageHash
+        {
+            get;
+            set;
+        }
     }
 }
