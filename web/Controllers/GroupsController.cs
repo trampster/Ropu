@@ -44,5 +44,17 @@ namespace web.Controllers
             }
             return BadRequest(message);  
         }
+
+        [HttpPost("[action]")]
+        [Authorize(Roles="Admin,User")]
+        public IActionResult Edit([FromBody]Group group)
+        {
+            (bool result, string message) = _groupsService.Edit(group);
+            if(!result)
+            {
+                return BadRequest(message);
+            }
+            return Ok();
+        }
     }
 }

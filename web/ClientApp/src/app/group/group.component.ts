@@ -18,7 +18,7 @@ export class GroupComponent
     constructor(private a: ActivatedRoute, private router: Router, private http: HttpClient, @Inject('BASE_URL') private baseUrl: string, private authService: AuthService)
     {
         this.loaded = false;
-        this.editable = false;
+        this.editable = true;
     }
 
     ngOnInit()
@@ -32,11 +32,6 @@ export class GroupComponent
                 this.group = result;
                 this.loaded = true;
             }, error => console.error(error));
-
-            // this.http.get<boolean>(this.baseUrl + 'api/Groups/' + this.id + '/CanEdit').subscribe(result =>
-            // {
-            //     this.editable = result;
-            // }, error => console.error(error));
         });
     }
 

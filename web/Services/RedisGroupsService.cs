@@ -90,6 +90,38 @@ namespace Ropu.Web.Services
             return JsonConvert.DeserializeObject<RedisGroup>(group);
         }
 
+        public (bool result, string message) Edit(Group group)
+        {
+            IDatabase db = _redisService.GetDatabase();
+
+            var transaction = db.CreateTransaction();
+
+            var groupsKey = $"Groups:{group.Id}";
+            
+            var existingGroupJson = db.StringGet(groupsKey);
+            if(existingGroupJson.IsNull)
+            {
+                return (false, "Failed to find group to edit");
+            }
+
+            var existingGroup = JsonConvert.DeserializeObject<RedisGroup>(existingGroupJson);
+
+            transaction.AddCondition(Condition.KeyExists(groupsKey));
+            var json = JsonConvert.SerializeObject(new RedisGroup()
+            {
+                Id = group.Id,
+                Name = group.Name,
+                ImageHash = group.ImageHash,
+            });
+            transaction.StringSetAsync(groupsKey, json);
+
+            if(!transaction.Execute())
+            {
+                return (false, "Failed to update group");
+            }
+            return (true, "");
+        }
+
         public IEnumerable<IGroup> Groups
         {
             get

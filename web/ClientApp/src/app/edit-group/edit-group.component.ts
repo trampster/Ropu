@@ -9,7 +9,7 @@ import {Location} from '@angular/common';
     selector: 'app-group-component',
     templateUrl: './edit-group.component.html'
 })
-export class GroupUserComponent
+export class EditGroupComponent
 {
     public id: string;
     public group: Group;
@@ -31,7 +31,7 @@ export class GroupUserComponent
     {
         this.a.params.subscribe(params =>
         {
-            this.id = this.a.snapshot.params.userid;
+            this.id = this.a.snapshot.params.groupid;
             this.http.get<Group>(this.baseUrl + 'api/Groups/' + this.id).subscribe(result =>
             {
                 this.group = result;
@@ -48,7 +48,7 @@ export class GroupUserComponent
     {
         this.group.name = group.name;
 
-        this.http.post<Group>(this.baseUrl + 'api/Groups/Edit', JSON.stringify(group),
+        this.http.post<Group>(this.baseUrl + 'api/Groups/Edit', JSON.stringify(this.group),
             {
                 headers: new HttpHeaders(
                 {
