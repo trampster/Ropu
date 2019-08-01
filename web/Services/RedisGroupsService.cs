@@ -115,9 +115,62 @@ namespace Ropu.Web.Services
             });
             transaction.StringSetAsync(groupsKey, json);
 
+            if(existingGroup.Name != group.Name)
+            {
+                var oldLookup = $"{GroupIdByNameKey}:{existingGroup.Name}";
+                transaction.AddCondition(Condition.KeyExists(oldLookup));
+                transaction.KeyDeleteAsync(oldLookup);
+
+                var newLookup = $"{GroupIdByNameKey}:{group.Name}";
+                transaction.AddCondition(Condition.KeyExists(newLookup));
+                transaction.StringSetAsync(newLookup, group.Id);
+
+                //sorted set (for paging)
+                long score = _redisService.CalculateStringScore(group.Name);
+                transaction.AddCondition(Condition.SortedSetContains(GroupsKey, group.Id));
+                transaction.SortedSetRemoveAsync(GroupsKey, group.Id);
+                transaction.SortedSetAddAsync(GroupsKey, group.Id, score);
+            }
+
+            
+
             if(!transaction.Execute())
             {
                 return (false, "Failed to update group");
+            }
+            return (true, "");
+        }
+
+        public (bool result, string message) Delete(uint id)
+        {
+            IDatabase db = _redisService.GetDatabase();
+
+            var transaction = db.CreateTransaction();
+
+            var groupsKey = $"Groups:{id}";
+            
+            var existingGroupJson = db.StringGet(groupsKey);
+            if(existingGroupJson.IsNull)
+            {
+                return (false, "Failed to find group to edit");
+            }
+
+            var existingGroup = JsonConvert.DeserializeObject<RedisGroup>(existingGroupJson);
+
+            transaction.AddCondition(Condition.KeyExists(groupsKey));
+            transaction.KeyDeleteAsync(groupsKey);
+
+            var idByNameKey = $"{GroupIdByNameKey}:{existingGroup.Name}";
+
+            transaction.AddCondition(Condition.KeyExists(idByNameKey));
+            transaction.KeyDeleteAsync(idByNameKey);
+
+            transaction.AddCondition(Condition.SortedSetContains(GroupsKey, id));
+            transaction.SortedSetRemoveAsync(GroupsKey, id);
+
+            if(!transaction.Execute())
+            {
+                return (false, "Failed to delete group");
             }
             return (true, "");
         }

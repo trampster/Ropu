@@ -39,6 +39,19 @@ export class GroupComponent
     {
         this.router.navigate(['/editgroup/' + group.id]);
     }
+
+    deleteGroup(group: Group)
+    {
+        if(!confirm("Are you sure to delete group " + group.name + "?")) 
+        {
+            return;
+        }
+
+        this.http.delete(this.baseUrl + 'api/Groups/' + this.id + '/Delete').subscribe(result =>
+        {
+            this.router.navigate(['/groups']);
+        }, error => console.error(error));
+    }
 }
 
 interface Group

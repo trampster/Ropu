@@ -56,5 +56,17 @@ namespace web.Controllers
             }
             return Ok();
         }
+
+        [HttpDelete("{id}/Delete")]
+        [Authorize(Roles="Admin,User")]
+        public IActionResult Delete(uint id)
+        {
+            (bool result, string message) = _groupsService.Delete(id);
+            if(!result)
+            {
+                return BadRequest(message);
+            }
+            return Ok();
+        }
     }
 }

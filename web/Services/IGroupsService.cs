@@ -13,6 +13,9 @@ namespace Ropu.Web.Services
         (bool, string) AddGroup(string name, GroupType groupType);
 
         IGroup Get(uint groupId);
+
         (bool result, string message) Edit(Group group);
+        
+        (bool result, string message) Delete(uint group);
     }
 }
