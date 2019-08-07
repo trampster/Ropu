@@ -12,3 +12,8 @@ Group PPT System.
 ## Build and Run Client 
 * cd ClientUI
 * dotnet run --configuration Release -n {unit-id} -b {Core IP Address}
+
+## Build Snap
+* dotnet publish -c Release -o Install --self-contained -r linux-x64
+* chmod 775 ClientUI/Install/ClientUI
+* snapcraft
