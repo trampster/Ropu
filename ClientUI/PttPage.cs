@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using Eto.Drawing;
 using Eto.Forms;
+using Ropu.ClientUI.Services;
 
 namespace Ropu.ClientUI
 {
@@ -20,6 +21,7 @@ namespace Ropu.ClientUI
         TransmittingIndicator _transmittingIndicator;
         TransmittingIndicator _receivingIndicator;
         readonly PttCircle _pttCircle;
+        readonly ImageService _imageService;
 
         bool _buttonDown = false;
 
@@ -50,8 +52,9 @@ namespace Ropu.ClientUI
             ButtonDown();
         }
         
-        public PttPage()
+        public PttPage(ImageService imageService)
         {
+            _imageService = imageService;
             Paint += PaintHandler;
             this.MouseDown += (sender, args) =>
             {
@@ -79,15 +82,15 @@ namespace Ropu.ClientUI
 
             _callGroupDrawable = new ImageLabel(_fontFamily);
             _callGroupDrawable.Text = "A Team";
-            _callGroupDrawable.Image = new Bitmap("../Icon/knot32.png");
+            _callGroupDrawable.Image = _imageService.Knot;
 
             _talkerDrawable = new ImageLabel(_fontFamily);
             _talkerDrawable.Text = "Franky";
-            _talkerDrawable.Image = new Bitmap("../Icon/rope32.png");
+            _talkerDrawable.Image = _imageService.Rope;
 
             _idleGroupDrawable = new IdleGroup(_fontFamily);
             _idleGroupDrawable.GroupName = "A Team";
-            _idleGroupDrawable.Image = new Bitmap("../Icon/knot32.png");
+            _idleGroupDrawable.Image = _imageService.Knot;
 
             _transmittingIndicator = new TransmittingIndicator();
             _transmittingAnimationAction = AnimateTransmitting;

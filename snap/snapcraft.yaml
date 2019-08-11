@@ -31,7 +31,7 @@ apps:
 parts:
   ropu:
     # See 'snapcraft plugins'
-    after: [desktop-gnome-platform, alsa-mixin]
+    after: [desktop-gnome-platform]
     source: ClientUI/Install
     source-type: local
     plugin: dump
@@ -52,34 +52,11 @@ parts:
       - libsasl2-2
       - libwind0-heimdal
       - libgtk3.0-cil
+      - libasound2
+      - libopus0
+      - libortp9
 
-  alsa-mixin:
-    source: https://github.com/diddledan/snapcraft-alsa.git
-    plugin: nil
-    override-pull: |
-        cat > asound.conf <<EOF
-        pcm.!default {
-            type pulse
-            fallback "sysdefault"
-            hint {
-                show on
-                description \"Default ALSA Output (currently PulseAudio Sound Server)\"
-            }
-        }
-        ctl.!default {
-            type pulse
-            fallback "sysdefault"
-        }
-        EOF
-    override-build: "install -m644 -D -t $SNAPCRAFT_PART_INSTALL/etc asound.conf"
-    build-packages:
-    - libasound2-dev
-    stage-packages:
-    - libasound2
-    - libasound2-plugins
-    after:
-    - alsa-lib-mixin
-    - alsa-plugins-mixin
+
 
   desktop-gnome-platform:
     source: https://github.com/ubuntu/snapcraft-desktop-helpers.git
@@ -113,7 +90,5 @@ plugs:
     target: $SNAP/data-dir/sounds
 
 layout:
-  "/etc/asound.conf":
-      symlink: "$SNAP/etc/asound.conf"
-  "/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib":
-      symlink: "$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib"
+  /usr/share/alsa:
+    bind: $SNAP/usr/share/alsa

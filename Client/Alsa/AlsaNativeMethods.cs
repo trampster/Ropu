@@ -226,6 +226,9 @@ namespace Ropu.Client.Alsa
         public static extern int snd_pcm_hw_params_set_period_size(IntPtr pcm, IntPtr hwParams, uint val, int dir);
 
         [DllImport("asound.so.2")]
+        public static extern int snd_pcm_hw_params_set_period_size_near (IntPtr pcm, IntPtr hwParams, ref uint val, ref int dir);
+
+        [DllImport("asound.so.2")]
         public static extern int snd_pcm_hw_params_set_periods(IntPtr pcm, IntPtr hwParams, uint val, int dir);
 
         /// <summary>

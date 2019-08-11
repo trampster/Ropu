@@ -61,8 +61,13 @@ namespace Ropu.Client.Alsa
                     throw new Exception($"Could not get required sample rate of {8000} instead got {rate}");
                 }
                 hardwareParams.Channels = 1;
-                hardwareParams.SetPeriodSize(160, 0);
-
+                
+                uint periodSize = 160;
+                hardwareParams.SetPeriodSizeNear(ref periodSize, ref dir);
+                if(periodSize != 160)
+                {
+                    Console.WriteLine($"Requested Alsa PeriodSize 160 but got {periodSize}");
+                }
 
                 uint periods = 2;
                 hardwareParams.SetPeriodsNear(ref periods, ref dir);

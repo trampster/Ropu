@@ -17,3 +17,4 @@ Group PPT System.
 * dotnet publish -c Release -o Install --self-contained -r linux-x64
 * chmod 775 ClientUI/Install/ClientUI
 * snapcraft
+* snap install --devmode ropu_0.1_amd64.snap

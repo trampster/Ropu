@@ -85,6 +85,15 @@ namespace Ropu.Client.Alsa
             }
         }
 
+        public void SetPeriodSizeNear(ref uint periodSize, ref int dir)
+        {
+            int error = AlsaNativeMethods.snd_pcm_hw_params_set_period_size_near(_pcmPtr, _hardwareParamsPtr, ref periodSize, ref dir);
+            if(error < 0)
+            {
+                throw new AlsaNativeError(error, nameof(AlsaNativeMethods.snd_pcm_hw_params_set_period_size_near));
+            }
+        }
+
         public void SetPeriods(uint periods, int dir)
         {
             int error = AlsaNativeMethods.snd_pcm_hw_params_set_periods(_pcmPtr, _hardwareParamsPtr, periods, dir);

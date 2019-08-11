@@ -14,6 +14,7 @@ using Ropu.Shared.Groups;
 using Ropu.Client.Opus;
 using System.Linq;
 using Ropu.Client.JitterBuffer;
+using Ropu.ClientUI.Services;
 
 namespace Ropu.ClientUI
 {
@@ -243,12 +244,12 @@ namespace Ropu.ClientUI
     public class MainForm : Form
     {
         readonly PttPage _pttCircle;
-        public MainForm (MainViewModel mainViewModel)
+        public MainForm (MainViewModel mainViewModel, PttPage pttPage)
         {
             Title = "Ropu Client";
             ClientSize = new Size(300, 500);
 
-            _pttCircle = new PttPage();
+            _pttCircle = pttPage;
             _pttCircle.BindDataContext(c => c.ButtonDownCommand, (MainViewModel model) => model.PttDownCommand);
             _pttCircle.BindDataContext(c => c.ButtonUpCommand, (MainViewModel model) => model.PttUpCommand);
             _pttCircle.PttColorBinding.BindDataContext<MainViewModel>(m => m.PttColor);
@@ -306,9 +307,11 @@ namespace Ropu.ClientUI
 
             var groupsClient = new HardcodedGroupsClient();
             var usersClient = new HardcodedUsersClient();
+            var imageService = new ImageService();
+            var pttPage = new PttPage(imageService);
 
-            var mainForm = new MainForm(new MainViewModel(ropuClient, settings, groupsClient, usersClient));
-            mainForm.Icon = new Icon("../Icon/Ropu.ico");
+            var mainForm = new MainForm(new MainViewModel(ropuClient, settings, groupsClient, usersClient), pttPage);
+            mainForm.Icon = imageService.Ropu;
             application.Run(mainForm);
         }
     }
