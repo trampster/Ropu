@@ -306,9 +306,9 @@ namespace Ropu.ClientUI
 
             var application = new RopuApplication(ropuClient);
 
-            var groupsClient = new HardcodedGroupsClient();
-            var usersClient = new HardcodedUsersClient();
             var imageService = new ImageService();
+            var groupsClient = new HardcodedGroupsClient(imageService.ImageFolder);
+            var usersClient = new HardcodedUsersClient();
             var pttPage = new PttPage(imageService);
 
             var mainForm = new MainForm(new MainViewModel(ropuClient, settings, groupsClient, usersClient), pttPage);

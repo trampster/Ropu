@@ -18,7 +18,7 @@ namespace Ropu.LoadBalancer
             Console.WriteLine();
 
             var fileManager = new FileManager();
-            var groupsClient = new HardcodedGroupsClient();
+            var groupsClient = new HardcodedGroupsClient("../Icon");
             var loadBalancerProtocol = new LoadBalancerProtocol(new PortFinder(), 5069);
             var controller = new LoadBalancerRunner(loadBalancerProtocol, groupsClient, fileManager);
             await controller.Run();

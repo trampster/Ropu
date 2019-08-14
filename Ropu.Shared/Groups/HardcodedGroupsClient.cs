@@ -8,10 +8,12 @@ namespace Ropu.Shared.Groups
 {
     public class HardcodedGroupsClient : IGroupsClient
     {
-        public Dictionary<ushort, IGroup> _groupLookup;
+        readonly Dictionary<ushort, IGroup> _groupLookup;
+        readonly string _imageFolder;
 
-        public HardcodedGroupsClient()
+        public HardcodedGroupsClient(string imageFolder)
         {
+            _imageFolder = imageFolder;
             _groupLookup = new Dictionary<ushort, IGroup>();
             AddTestGroup(4242, "Avengers", 1000, 2000);
             AddTestGroup(1234, "Justice L", 2000, 3000);
@@ -67,7 +69,7 @@ namespace Ropu.Shared.Groups
             else
             {
                 Console.WriteLine($"Failed to find group icon at {iconPath} using default icon instead.");
-                group.Image = File.ReadAllBytes("../Icon/knot32.png");
+                group.Image = File.ReadAllBytes(Path.Combine(_imageFolder, "knot32.png"));
             }
             _groupLookup.Add(groupId, group);
 

@@ -27,7 +27,7 @@ namespace Ropu.ServingNode
             var mediaProtocol = new RopuProtocol(portFinder, StartingServingNodePort);
             var loadBalancerProtocol = new LoadBalancerProtocol(portFinder, StartingLoadBalancerPort);
             var serviceDiscovery = new ServiceDiscovery();
-            var groupsClient = new HardcodedGroupsClient();
+            var groupsClient = new HardcodedGroupsClient("../Icon");
             var registra = new Registra(groupsClient);
             var servingNodes = new ServingNodes(100);
             var groupCallControllerLookup = new GroupCallControllerLookup();
