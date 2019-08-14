@@ -50,7 +50,7 @@ namespace Ropu.Client.PulseAudio
         public void PlayAudio(short[] buffer)
         {
             int error = 0;
-            int result = PulseAudioNativeMethods.pa_simple_write(_paSimple, buffer, buffer.Length, ref error);
+            int result = PulseAudioNativeMethods.pa_simple_write(_paSimple, buffer, buffer.Length*2, ref error);
             if(error != 0 || result != 0)
             {
                 throw new Exception($"Failed to write audio to PulseAudio Error: {error} Result: {result} ");
@@ -60,7 +60,7 @@ namespace Ropu.Client.PulseAudio
         public void ReadAudio(short[] buffer)
         {
             int error = 0;
-            int result = PulseAudioNativeMethods.pa_simple_read(_paSimple, buffer, buffer.Length, ref error);
+            int result = PulseAudioNativeMethods.pa_simple_read(_paSimple, buffer, buffer.Length*2, ref error);
             if(error != 0 || result != 0)
             {
                 IntPtr msgPtr = PulseAudioNativeMethods.pa_strerror(error);
