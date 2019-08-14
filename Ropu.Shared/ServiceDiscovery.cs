@@ -13,14 +13,12 @@ namespace Ropu.Shared
 
         public IPAddress GetMyAddress()
         {
-            foreach (var address in Dns.GetHostEntry(Dns.GetHostName()).AddressList)
+            using (Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0))
             {
-                if (address.AddressFamily == AddressFamily.InterNetwork && address.GetAddressBytes()[3] != 1)
-                {
-                    return address;
-                }
+                socket.Connect("8.8.8.8", 65530);
+                IPEndPoint endPoint = socket.LocalEndPoint as IPEndPoint;
+                return endPoint.Address;
             }
-            throw new Exception("Failed to find my IP Address");
         }
     }
 
