@@ -10,7 +10,7 @@ confinement: devmode # use 'strict' once you have the right plugs and slots
 
 slots:
   # for GtkApplication registration
-  sharp:
+  ropu:
     interface: dbus
     bus: session
     name: org.gnome.ropu
@@ -19,7 +19,7 @@ apps:
   ropu:
     command: bin/desktop-launch $SNAP/ClientUI
     plugs:
-      - alsa
+      - pulseaudio
       - network
       - desktop
       - desktop-legacy
@@ -56,8 +56,6 @@ parts:
       - libopus0
       - libortp9
 
-
-
   desktop-gnome-platform:
     source: https://github.com/ubuntu/snapcraft-desktop-helpers.git
     source-depth: 1
@@ -88,7 +86,3 @@ plugs:
     default-provider: gtk-common-themes:sounds-themes
     interface: content
     target: $SNAP/data-dir/sounds
-
-layout:
-  /usr/share/alsa:
-    bind: $SNAP/usr/share/alsa
