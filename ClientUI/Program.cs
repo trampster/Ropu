@@ -15,6 +15,7 @@ using Ropu.Client.Opus;
 using System.Linq;
 using Ropu.Client.JitterBuffer;
 using Ropu.ClientUI.Services;
+using Ropu.Client.PulseAudio;
 
 namespace Ropu.ClientUI
 {
@@ -288,19 +289,19 @@ namespace Ropu.ClientUI
             var protocolSwitch = new ProtocolSwitch(controlPortStarting, new PortFinder());
             var servingNodeClient = new ServingNodeClient(protocolSwitch);
 
-            IAudioSource audioSource =
+            IAudioSource audioSource = 
                 settings.FileMediaSource != null ?
-                (IAudioSource)new FileAudioSource(settings.FileMediaSource) :
-                (IAudioSource)new AlsaAudioSource();
+                (IAudioSource) new FileAudioSource(settings.FileMediaSource) :
+                (IAudioSource) new PulseAudioSimple(StreamDirection.Record, "RopuInput");
 
-            var audioPlayer = new AlsaAudioPlayer(true);
+            var audioPlayer = new PulseAudioSimple(StreamDirection.Playback, "RopuOutput");
             var audioCodec = new OpusCodec();
             var jitterBuffer = new AdaptiveJitterBuffer(2, 50);
             var mediaClient = new MediaClient(protocolSwitch, audioSource, audioPlayer, audioCodec, jitterBuffer, settings);
             var callManagementProtocol = new LoadBalancerProtocol(new PortFinder(), 5079);
 
             IPEndPoint loadBalancerEndpoint = new IPEndPoint(settings.LoadBalancerIPAddress, loadBalancerPort);
-            var beepPlayer = new BeepPlayer(new AlsaAudioPlayer(false));
+            var beepPlayer = new BeepPlayer(new PulseAudioSimple(StreamDirection.Record, "RopuBeeps"));
             var ropuClient = new RopuClient(protocolSwitch, servingNodeClient, mediaClient, callManagementProtocol, loadBalancerEndpoint, settings, beepPlayer);
 
             var application = new RopuApplication(ropuClient);
