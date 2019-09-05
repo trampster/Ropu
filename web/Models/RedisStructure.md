@@ -41,6 +41,16 @@
 * Logical Type - int
 
 # Groups
-* Description - sorted set of group ids (by name) for paging
+* Description - sorted set of group ids (sorted by name) for paging
+* Redis Type - sorted set
+* Logical Type - int
+
+# GroupMembers:{groupId}
+* Description - set of group member ids (sorted by name) for paging
+* Redis Type - sorted set
+* Logical Type - int
+
+# UsersGroups:{userId}
+* Description - set of group ids (sorted by group name) for paging
 * Redis Type - sorted set
 * Logical Type - int

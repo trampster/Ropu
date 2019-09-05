@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Ropu.Web.Models;
 using Ropu.Web.Services;
 
@@ -13,10 +14,14 @@ namespace web.Controllers
     public class GroupsController : Controller
     {
         readonly IGroupsService _groupsService;
+        readonly GroupMembersipService _groupMembershipService;
+        readonly ILogger _logger;
 
-        public GroupsController(IGroupsService groupsService)
+        public GroupsController(IGroupsService groupsService, GroupMembersipService groupMembersipService, ILogger<GroupsController> logger)
         {
             _groupsService = groupsService;
+            _groupMembershipService = groupMembersipService;
+            _logger = logger;
         }
         
         [HttpGet("[action]")]
@@ -64,6 +69,19 @@ namespace web.Controllers
             (bool result, string message) = _groupsService.Delete(id);
             if(!result)
             {
+                return BadRequest(message);
+            }
+            return Ok();
+        }
+
+        [HttpPost("{groupId}/Join/{userId}")]
+        [Authorize(Roles="Admin,User")]
+        public IActionResult Join(ushort groupId, uint userId)
+        {
+            (bool result, string message) = _groupMembershipService.AddGroupMember(groupId, userId);
+            if(!result)
+            {
+                _logger.LogError($"Failed to joing group with message {message}");
                 return BadRequest(message);
             }
             return Ok();

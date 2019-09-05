@@ -19,6 +19,8 @@ namespace Ropu.Web.Services
         const string IdByEmailKey = "IdByEmail";
         const string UsersKey = "Users";
 
+        public event EventHandler<(string name, uint userId)> NameChanged;
+
         public RedisUsersService(
             RedisService redisService, 
             PasswordHasher passwordHasher,
@@ -110,43 +112,39 @@ namespace Ropu.Web.Services
 
         public (bool, string) Edit(EditableUser user)
         {
-            IDatabase db = _redisService.GetDatabase();
-
-            var transaction = db.CreateTransaction();
-
-            var usersKey = $"Users:{user.Id}";
-
-            var existingUserJson = db.StringGet(usersKey);
-            if(existingUserJson.IsNull)
+            return _redisService.RunInTransaction("Failed to update user", (db, transaction) =>
             {
-                return (false, "Failed to find user to edit");
-            }
-            var existingUser = JsonConvert.DeserializeObject<RedisUser>(existingUserJson);
+                var usersKey = $"Users:{user.Id}";
 
-            transaction.AddCondition(Condition.KeyExists(usersKey));
-            var json = JsonConvert.SerializeObject(new RedisUser()
-            {
-                Id = user.Id,
-                Name = user.Name,
-                ImageHash = user.ImageHash,
-                Email = user.Email,
-                Roles = user.Roles == null ? existingUser.Roles : user.Roles,
-                PasswordHash = user.Password == null ? 
-                    existingUser.PasswordHash : 
-                    _passwordHasher.HashPassword(user.Password)
+                var existingUserJson = db.StringGet(usersKey);
+                if(existingUserJson.IsNull)
+                {
+                    return (false, "Failed to find user to edit");
+                }
+                var existingUser = JsonConvert.DeserializeObject<RedisUser>(existingUserJson);
+
+                transaction.AddCondition(Condition.KeyExists(usersKey));
+                var newUser = new RedisUser()
+                {
+                    Id = user.Id,
+                    Name = user.Name,
+                    ImageHash = user.ImageHash,
+                    Email = user.Email,
+                    Roles = user.Roles == null ? existingUser.Roles : user.Roles,
+                    PasswordHash = user.Password == null ? 
+                        existingUser.PasswordHash : 
+                        _passwordHasher.HashPassword(user.Password)
+                };
+                var json = JsonConvert.SerializeObject(newUser);
+                transaction.StringSetAsync(usersKey, json);
+
+                if(existingUser.Name != newUser.Name)
+                {
+                    NameChanged?.Invoke(this, (newUser.Name, newUser.Id));
+                }
+
+                return ChangeEmail(db, transaction, existingUser, user);
             });
-            transaction.StringSetAsync(usersKey, json);
-
-            bool result = true;
-            string message = "";
-            (result, message) = ChangeEmail(db, transaction, existingUser, user);
-            if(!result) return (result, message);
-
-            if(!transaction.Execute())
-            {
-                return (false, "Failed to update user");
-            }
-            return (true, "");
         }
 
         (bool, string) ChangeEmail(IDatabase db, ITransaction transaction, RedisUser existing, EditableUser edited)

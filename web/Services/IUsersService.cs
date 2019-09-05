@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Ropu.Web.Models;
 
@@ -5,11 +6,12 @@ namespace Ropu.Web.Services
 {
     public interface IUsersService
     {
+        event EventHandler<(string name, uint userId)> NameChanged;
+
         IEnumerable<IUser> Users
         {
             get;
         }
-
 
         RedisUser AuthenticateUser(Credentials credentials);
 

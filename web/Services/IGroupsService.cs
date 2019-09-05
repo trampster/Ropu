@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Ropu.Web.Models;
 
@@ -5,6 +6,8 @@ namespace Ropu.Web.Services
 {
     public interface IGroupsService
     {
+        event EventHandler<(string name, ushort groupId)> NameChanged;
+
         IEnumerable<IGroup> Groups
         {
             get;

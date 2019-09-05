@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using Ropu.Web.Models;
@@ -22,6 +23,9 @@ namespace Ropu.Web.Services
             _redisService = redisService;
             _imageService = imageService;
         }
+
+
+        public event EventHandler<(string name, ushort groupId)> NameChanged;
 
         public (bool, string) AddGroup(string name, GroupType groupType)
         {
@@ -92,53 +96,48 @@ namespace Ropu.Web.Services
 
         public (bool result, string message) Edit(Group group)
         {
-            IDatabase db = _redisService.GetDatabase();
-
-            var transaction = db.CreateTransaction();
-
-            var groupsKey = $"Groups:{group.Id}";
-            
-            var existingGroupJson = db.StringGet(groupsKey);
-            if(existingGroupJson.IsNull)
+            return _redisService.RunInTransaction("Failed to edit group", (db, transaction) =>
             {
-                return (false, "Failed to find group to edit");
-            }
+                var groupsKey = $"Groups:{group.Id}";
+                
+                var existingGroupJson = db.StringGet(groupsKey);
+                if(existingGroupJson.IsNull)
+                {
+                    return (false, "Failed to find group to edit");
+                }
 
-            var existingGroup = JsonConvert.DeserializeObject<RedisGroup>(existingGroupJson);
+                var existingGroup = JsonConvert.DeserializeObject<RedisGroup>(existingGroupJson);
 
-            transaction.AddCondition(Condition.KeyExists(groupsKey));
-            var json = JsonConvert.SerializeObject(new RedisGroup()
-            {
-                Id = group.Id,
-                Name = group.Name,
-                ImageHash = group.ImageHash,
+                transaction.AddCondition(Condition.KeyExists(groupsKey));
+                var json = JsonConvert.SerializeObject(new RedisGroup()
+                {
+                    Id = group.Id,
+                    Name = group.Name,
+                    ImageHash = group.ImageHash,
+                });
+                transaction.StringSetAsync(groupsKey, json);
+
+                if(existingGroup.Name != group.Name)
+                {
+                    var oldLookup = $"{GroupIdByNameKey}:{existingGroup.Name}";
+                    transaction.AddCondition(Condition.KeyExists(oldLookup));
+                    transaction.KeyDeleteAsync(oldLookup);
+
+                    var newLookup = $"{GroupIdByNameKey}:{group.Name}";
+                    transaction.AddCondition(Condition.KeyExists(newLookup));
+                    transaction.StringSetAsync(newLookup, group.Id);
+
+                    //sorted set (for paging)
+                    long score = _redisService.CalculateStringScore(group.Name);
+                    transaction.AddCondition(Condition.SortedSetContains(GroupsKey, group.Id));
+                    transaction.SortedSetRemoveAsync(GroupsKey, group.Id);
+                    transaction.SortedSetAddAsync(GroupsKey, group.Id, score);
+
+                    NameChanged?.Invoke(this, (group.Name, (ushort)group.Id));
+                }
+
+                return (true, "");
             });
-            transaction.StringSetAsync(groupsKey, json);
-
-            if(existingGroup.Name != group.Name)
-            {
-                var oldLookup = $"{GroupIdByNameKey}:{existingGroup.Name}";
-                transaction.AddCondition(Condition.KeyExists(oldLookup));
-                transaction.KeyDeleteAsync(oldLookup);
-
-                var newLookup = $"{GroupIdByNameKey}:{group.Name}";
-                transaction.AddCondition(Condition.KeyExists(newLookup));
-                transaction.StringSetAsync(newLookup, group.Id);
-
-                //sorted set (for paging)
-                long score = _redisService.CalculateStringScore(group.Name);
-                transaction.AddCondition(Condition.SortedSetContains(GroupsKey, group.Id));
-                transaction.SortedSetRemoveAsync(GroupsKey, group.Id);
-                transaction.SortedSetAddAsync(GroupsKey, group.Id, score);
-            }
-
-            
-
-            if(!transaction.Execute())
-            {
-                return (false, "Failed to update group");
-            }
-            return (true, "");
         }
 
         public (bool result, string message) Delete(uint id)

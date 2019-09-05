@@ -54,7 +54,8 @@ namespace web
                 .AddSingleton<IUsersService, RedisUsersService>()
                 .AddSingleton<PasswordHasher, PasswordHasher>()
                 .AddSingleton<RedisService, RedisService>()
-                .AddSingleton<IGroupsService, RedisGroupsService>();
+                .AddSingleton<IGroupsService, RedisGroupsService>()
+                .AddSingleton<GroupMembersipService>();
 
             services.AddMvc();
         }
@@ -98,6 +99,7 @@ namespace web
                     spa.UseAngularCliServer(npmScript: "start");
                 }
             });
+
         }
     }
 }

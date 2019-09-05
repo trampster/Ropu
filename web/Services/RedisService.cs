@@ -1,3 +1,5 @@
+using System;
+using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 
 namespace Ropu.Web.Services
@@ -5,9 +7,11 @@ namespace Ropu.Web.Services
     public class RedisService
     {
         readonly ConnectionMultiplexer _connectionMultiplexer;
+        readonly ILogger _logger;
 
-        public RedisService(ConnectionMultiplexer connectionMultiplexer)
+        public RedisService(ConnectionMultiplexer connectionMultiplexer, ILogger<RedisService> logger)
         {
+            _logger = logger;
             _connectionMultiplexer = connectionMultiplexer;
         }
 
@@ -27,5 +31,33 @@ namespace Ropu.Web.Services
                 ((length < 4) ? 0 : ((long)item[3]));
             return score;
         }
+
+        [ThreadStatic]
+        static ITransaction _transaction;
+        [ThreadStatic]
+        static IDatabase _database;
+
+        public (bool, string) RunInTransaction(string failureMessage, Func<IDatabase, ITransaction, (bool,string)> toRun)
+        {
+            if(_transaction != null)
+            {
+                throw new Exception("Transaction already in progress");
+            }
+            _database = GetDatabase();
+            _transaction = _database.CreateTransaction();
+            (bool result, string message) = toRun(_database, _transaction);
+            if(!result) return (result, message);
+            result = _transaction.Execute();
+            _transaction = null;
+            _database = null;
+            if(!result)
+            {
+                return (false, failureMessage);
+            }
+            return (true, "");
+        }
+
+        public ITransaction CurrentTransaction => _transaction;
+        public IDatabase CurrentDatabase => _database;
     }
 }

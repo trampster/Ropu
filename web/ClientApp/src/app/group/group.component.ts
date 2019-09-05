@@ -15,7 +15,12 @@ export class GroupComponent
     loaded: boolean;
     editable: boolean;
 
-    constructor(private a: ActivatedRoute, private router: Router, private http: HttpClient, @Inject('BASE_URL') private baseUrl: string, private authService: AuthService)
+    constructor(
+        private a: ActivatedRoute, 
+        private router: Router, 
+        private http: HttpClient, 
+        @Inject('BASE_URL') private baseUrl: string, 
+        private authService: AuthService)
     {
         this.loaded = false;
         this.editable = true;
@@ -50,6 +55,13 @@ export class GroupComponent
         this.http.delete(this.baseUrl + 'api/Groups/' + this.id + '/Delete').subscribe(result =>
         {
             this.router.navigate(['/groups']);
+        }, error => console.error(error));
+    }
+
+    joinGroup(group: Group)
+    {
+        this.http.post('api/Groups/' + this.id + '/Join/' + this.authService.getUser().id, null).subscribe(result =>
+        {
         }, error => console.error(error));
     }
 }
