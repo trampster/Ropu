@@ -12,6 +12,8 @@ export class GroupComponent
 {
     public id: string;
     public group: Group;
+    public members: User[];
+
     loaded: boolean;
     editable: boolean;
 
@@ -38,6 +40,16 @@ export class GroupComponent
                 this.loaded = true;
             }, error => console.error(error));
         });
+
+        this.getMembers();
+    }
+
+    getMembers()
+    {
+        this.http.get<User[]>(this.baseUrl + 'api/Groups/' + this.id + '/Members').subscribe(result =>
+        {
+            this.members = result;
+        }, error => console.error(error));
     }
 
     editGroup(group: Group) 
@@ -64,9 +76,21 @@ export class GroupComponent
         {
         }, error => console.error(error));
     }
+
+    showUser(user: User) 
+    {
+        this.router.navigate(['/user/' + user.id]);
+    }
 }
 
 interface Group
+{
+    name: string;
+    id: number;
+    imageHash: string;
+}
+
+interface User
 {
     name: string;
     id: number;

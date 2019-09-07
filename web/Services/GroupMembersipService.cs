@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
+using Ropu.Web.Models;
 using StackExchange.Redis;
 
 namespace Ropu.Web.Services
@@ -78,6 +80,23 @@ namespace Ropu.Web.Services
                 transaction.SortedSetRemoveAsync(key, userId);
                 transaction.SortedSetAddAsync(key, userId, _redisService.CalculateStringScore(newName));
             }
+        }
+
+        public List<IUser> GetGroupMembers(ushort groupId)
+        {
+            var database = _redisService.GetDatabase();
+            var groupMembersKey = GroupMembersKey(groupId);
+            var redisValues = database.SortedSetRangeByScore(groupMembersKey);
+            if(redisValues == null)
+            {
+                return null;
+            }
+            var list = new List<IUser>();
+            foreach(uint userId in redisValues)
+            {
+                list.Add(_usersService.Get(userId));
+            }
+            return list;
         }
 
         void ChangeGroupName(ushort groupId, string newName)

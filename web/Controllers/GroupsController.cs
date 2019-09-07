@@ -81,10 +81,23 @@ namespace web.Controllers
             (bool result, string message) = _groupMembershipService.AddGroupMember(groupId, userId);
             if(!result)
             {
-                _logger.LogError($"Failed to joing group with message {message}");
+                _logger.LogError($"Failed to join group with message {message}");
                 return BadRequest(message);
             }
             return Ok();
+        }
+
+        [HttpGet("{groupId}/Members")]
+        public List<IUser> Members(ushort groupId)
+        {
+            var members = _groupMembershipService.GetGroupMembers(groupId);
+            if(members == null)
+            {
+                var message = "Failed to get group members";
+                _logger.LogError(message);
+                return null;
+            }
+            return members;
         }
     }
 }

@@ -18,7 +18,12 @@
             Join
         </button>
     </div>
-    <div class="d-flex justify-content-center">
-        
-    </div>
+    <table class='table table-striped' *ngIf="members">
+        <tbody>
+          <tr *ngFor="let user of members" (click)="showUser(user);">
+            <td><img src="api/Image/{{ user.imageHash }}"  height=32 width=32></td>
+            <td>{{ user.name }}</td>
+          </tr>
+        </tbody>
+    </table>
 </div>
