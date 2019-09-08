@@ -26,9 +26,9 @@ export class GroupsComponent
         this.router.navigate(["/creategroup"]);
     }
 
-    showGroup(user: Group) 
+    showGroup(group: Group) 
     {
-        this.router.navigate(['/group/' + user.id]);
+        this.router.navigate(['/group/' + group.id]);
     }
 }
 

@@ -5,6 +5,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Ropu.Web.Models;
 using Ropu.Web.Services;
 
@@ -14,10 +15,14 @@ namespace web.Controllers
     public class UsersController : Controller
     {
         readonly IUsersService _usersService;
+        readonly GroupMembersipService _groupMembershipService;
+        readonly ILogger _logger;
 
-        public UsersController(IUsersService userService)
+        public UsersController(IUsersService userService, GroupMembersipService groupMembersipService, ILogger<UsersController> logger)
         {
             _usersService = userService;
+            _groupMembershipService = groupMembersipService;
+            _logger = logger;
         }
         
         [HttpGet("[action]")]
@@ -97,6 +102,19 @@ namespace web.Controllers
                 return BadRequest(message);
             }
             return Ok();
+        }
+
+        [HttpGet("{userId}/Groups")]
+        public List<IGroup> Groups(uint userId)
+        {
+            var groups = _groupMembershipService.GetUsersGroups(userId);
+            if(groups == null)
+            {
+                var message = "Failed to get group members";
+                _logger.LogError(message);
+                return null;
+            }
+            return groups;
         }
     }
 }

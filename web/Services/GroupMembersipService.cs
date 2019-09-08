@@ -99,6 +99,24 @@ namespace Ropu.Web.Services
             return list;
         }
 
+        public List<IGroup> GetUsersGroups(uint userId)
+        {
+            var database = _redisService.GetDatabase();
+            var usersGroupsKey = UsersGroupsKey(userId);
+            var redisValues = database.SortedSetRangeByScore(usersGroupsKey);
+            if(redisValues == null)
+            {
+                return null;
+            }
+            var list = new List<IGroup>();
+            foreach(var groupRedisValue in redisValues)
+            {
+                ushort groupId = (ushort)(uint)groupRedisValue;
+                list.Add(_groupsService.Get(groupId));
+            }
+            return list;
+        }
+
         void ChangeGroupName(ushort groupId, string newName)
         {
             var db = _redisService.CurrentDatabase;

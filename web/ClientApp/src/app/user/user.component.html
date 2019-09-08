@@ -18,4 +18,13 @@
             Edit
         </button>
     </div>
+    <br>
+    <table class='table table-striped' *ngIf="groups">
+        <tbody>
+            <tr *ngFor="let group of groups" (click)="showGroup(group);">
+            <td><img src="api/Image/{{ group.imageHash }}"  height=32 width=32></td>
+            <td>{{ group.name }}</td>
+            </tr>
+        </tbody>
+    </table>
 </div>
