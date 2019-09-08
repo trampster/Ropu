@@ -87,6 +87,19 @@ namespace web.Controllers
             return Ok();
         }
 
+        [HttpDelete("{groupId}/Leave/{userId}")]
+        [Authorize(Roles="Admin,User")]
+        public IActionResult Leave(ushort groupId, uint userId)
+        {
+            (bool result, string message) = _groupMembershipService.RemoveGroupMember(groupId, userId);
+            if(!result)
+            {
+                _logger.LogError($"Failed to leave group with message {message}");
+                return BadRequest(message);
+            }
+            return Ok();
+        }
+
         [HttpGet("{groupId}/Members")]
         public List<IUser> Members(ushort groupId)
         {

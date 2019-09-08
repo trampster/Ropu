@@ -52,6 +52,23 @@ export class GroupComponent
         }, error => console.error(error));
     }
 
+    isMember() : boolean
+    {
+        if(this.members)
+        {
+            let id = this.authService.getUser().id;
+            for (let member of this.members) 
+            {
+                if(member.id == id)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        return false;
+    }
+
     editGroup(group: Group) 
     {
         this.router.navigate(['/editgroup/' + group.id]);
@@ -74,6 +91,15 @@ export class GroupComponent
     {
         this.http.post('api/Groups/' + this.id + '/Join/' + this.authService.getUser().id, null).subscribe(result =>
         {
+            this.getMembers();
+        }, error => console.error(error));
+    }
+
+    leaveGroup(group: Group)
+    {
+        this.http.delete('api/Groups/' + this.id + '/Leave/' + this.authService.getUser().id).subscribe(result =>
+        {
+            this.getMembers();
         }, error => console.error(error));
     }
 
