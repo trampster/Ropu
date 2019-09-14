@@ -3,18 +3,18 @@
         "Name": "LoadBalancer",
         "Folder": "../LoadBalancer/",
         "Command": "dotnet",
-        "Args": "run"
+        "Args": "run -- -u core@ropu.com -p core"
     },
     {
         "Name": "ServingNode",
         "Folder": "../ServingNode/",
         "Command": "dotnet",
-        "Args": "run"
+        "Args": "run -- -u core@ropu.com -p core"
     },
     {
         "Name": "CallController",
         "Folder": "../CallController/",
         "Command": "dotnet",
-        "Args": "run"
+        "Args": "run -- -u core@ropu.com -p core"
     }
 ]

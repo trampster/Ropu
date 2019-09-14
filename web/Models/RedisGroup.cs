@@ -1,16 +1,11 @@
 using System.Collections.Generic;
+using Ropu.Shared.WebModels;
 
 namespace Ropu.Web.Models
 {
-    public enum GroupType
-    {
-        Open, //anyone can join
-        Invite, //you have to be invited
-    }
-
     public class RedisGroup : IGroup
     {
-        public uint Id
+        public ushort Id
         {
             get;
             set;

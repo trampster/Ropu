@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Newtonsoft.Json;
+using Ropu.Shared.WebModels;
 using Ropu.Web.Models;
 using StackExchange.Redis;
 

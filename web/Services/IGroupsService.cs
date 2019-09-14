@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Ropu.Shared.WebModels;
 using Ropu.Web.Models;
 
 namespace Ropu.Web.Services
@@ -9,6 +10,11 @@ namespace Ropu.Web.Services
         event EventHandler<(string name, ushort groupId)> NameChanged;
 
         IEnumerable<IGroup> Groups
+        {
+            get;
+        }
+
+        IEnumerable<ushort> GroupIds
         {
             get;
         }

@@ -1,4 +1,4 @@
-namespace Ropu.Web.Models
+namespace Ropu.Shared.WebModels
 {
     public interface IUser
     {

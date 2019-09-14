@@ -23,11 +23,11 @@ namespace Ropu.ServingNode
             _registeredGroupMembersLookup = new SnapshotSet<IPEndPoint>[ushort.MaxValue];
         }
 
-        readonly object _registerLock = new object();
+        readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1,1);
 
-        public void Register(Registration registration)
+        public async Task Register(Registration registration)
         {
-            lock(_registerLock)
+            await Lock(async () =>
             {
                 Console.WriteLine($"Received registration from User ID: {registration.UserId} at {registration.EndPoint}");
 
@@ -43,7 +43,7 @@ namespace Ropu.ServingNode
                             _registrations[index] = registration;
                             if(existingRegistration.EndPoint != registration.EndPoint)
                             {
-                                foreach(var groupId in _groupsClient.GetUsersGroups(registration.UserId))
+                                foreach(var groupId in await _groupsClient.GetUsersGroups(registration.UserId))
                                 {
                                     var endpoints = LookupGroupEndpoints(groupId);
                                     Console.WriteLine($"Changing endpoint for user: {registration.UserId} in group {groupId}");
@@ -58,14 +58,40 @@ namespace Ropu.ServingNode
                 {
                     _registrations.Add(registration);
                 
-                    foreach(var groupId in _groupsClient.GetUsersGroups(registration.UserId))
+                    foreach(var groupId in await _groupsClient.GetUsersGroups(registration.UserId))
                     {
                         var endpoints = LookupGroupEndpoints(groupId);
                         Console.WriteLine($"Adding user: {registration.UserId} to group {groupId}");
                         endpoints.Add(registration.EndPoint);
                     }
                 }
+            });
+        }
+
+        async Task Lock(Func<Task> action)
+        {
+            await _semaphoreSlim.WaitAsync();
+            try
+            {
+                await action();
             }
+            finally
+            {
+                _semaphoreSlim.Release();
+            }  
+        }
+
+        async Task<T> Lock<T>(Func<Task<T>> action)
+        {
+            await _semaphoreSlim.WaitAsync();
+            try
+            {
+                return await action();
+            }
+            finally
+            {
+                _semaphoreSlim.Release();
+            }  
         }
 
         SnapshotSet<IPEndPoint> LookupGroupEndpoints(ushort groupId)
@@ -98,22 +124,28 @@ namespace Ropu.ServingNode
                 foreach(var registration in toRemove)
                 {
                     Console.WriteLine($"Removing expired registration for User ID: {registration.UserId} at {registration.EndPoint}");
-                    RemoveRegistration(registration);
+                    await RemoveRegistration(registration);
                 }
             }
         }
 
         public SnapshotSet<IPEndPoint> GetUserEndPoints(ushort groupId)
         {
-            lock(_registerLock)
+            _semaphoreSlim.Wait();
+            try
             {
                 return LookupGroupEndpoints(groupId);
+            }
+            finally
+            {
+                _semaphoreSlim.Release();
             }
         }
 
         public bool UpdateRegistration(uint userId)
         {
-            lock(_registerLock)
+            _semaphoreSlim.Wait();
+            try
             {
                 if(_registrationLookup.TryGetValue(userId, out var registration))
                 {
@@ -122,24 +154,28 @@ namespace Ropu.ServingNode
                 }
                 return false; //not registered
             }
+            finally
+            {
+                _semaphoreSlim.Release();
+            }
         }
 
-        void RemoveRegistration(Registration registration)
+        async Task RemoveRegistration(Registration registration)
         {
             _registrationLookup.Remove(registration.UserId);
             _registrations.Remove(registration);
-            foreach(var groupId in _groupsClient.GetUsersGroups(registration.UserId))
+            foreach(var groupId in await _groupsClient.GetUsersGroups(registration.UserId))
             {
                 _registeredGroupMembersLookup[groupId].Remove(registration.EndPoint);
             }
         }
 
-        public void Deregister(uint userId)
+        public async Task Deregister(uint userId)
         {
             if(_registrationLookup.TryGetValue(userId, out var registration))
             {
                 Console.WriteLine($"Deregister registration for User ID: {userId} at {registration.EndPoint}");
-                RemoveRegistration(registration);
+                await RemoveRegistration(registration);
             }
         }
     }

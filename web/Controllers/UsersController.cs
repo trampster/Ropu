@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Ropu.Shared.WebModels;
 using Ropu.Web.Models;
 using Ropu.Web.Services;
 
@@ -110,7 +111,20 @@ namespace web.Controllers
             var groups = _groupMembershipService.GetUsersGroups(userId);
             if(groups == null)
             {
-                var message = "Failed to get group members";
+                var message = "Failed to get user's groups";
+                _logger.LogError(message);
+                return null;
+            }
+            return groups;
+        }
+
+        [HttpGet("{userId}/GroupIds")]
+        public IEnumerable<uint> GroupIds(uint userId)
+        {
+            var groups = _groupMembershipService.GetUsersGroupIds(userId);
+            if(groups == null)
+            {
+                var message = "Failed to get user's group ids";
                 _logger.LogError(message);
                 return null;
             }

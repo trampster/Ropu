@@ -1,14 +1,20 @@
-namespace Ropu.Shared.Groups
+namespace Ropu.Shared.WebModels
 {
     public class User : IUser
     {
+        public uint Id
+        {
+            get;
+            set;
+        }
+
         public string Name
         {
             get;
             set;
         }
 
-        public byte[] Image
+        public string ImageHash
         {
             get;
             set;

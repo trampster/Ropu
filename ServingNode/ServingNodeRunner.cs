@@ -49,10 +49,10 @@ namespace Ropu.ServingNode
             await TaskCordinator.WaitAll(callManagementTask, mediaTask, registerTask, regisrationExpiryTask);
         }
 
-        public void Registration(uint userId, IPEndPoint endPoint)
+        public async Task Registration(uint userId, IPEndPoint endPoint)
         {
             var registration = new Registration(userId, endPoint);
-            _registra.Register(registration);
+            await _registra.Register(registration);
 
             _ropuProtocol.SendRegisterResponse(registration, endPoint);
         }
@@ -177,9 +177,9 @@ namespace Ropu.ServingNode
             _ropuProtocol.SendHeartbeatResponse(endPoint);
         }
 
-        public void Deregister(uint userId, IPEndPoint endPoint)
+        public async Task Deregister(uint userId, IPEndPoint endPoint)
         {
-            _registra.Deregister(userId);
+            await _registra.Deregister(userId);
             _ropuProtocol.SendDeregisterResponse(endPoint);
         }
 

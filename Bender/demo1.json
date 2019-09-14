@@ -1,14 +1,14 @@
 [
     {
-        "Name": "Avenger1",
+        "Name": "Hulk",
         "Folder": "../ClientUI/",
         "Command": "dotnet",
-        "Args": "run --configuration Release -- -n 1004 -l /home/daniel/Music/oliver-twist-001.wav -b 192.168.1.6"
+        "Args": "run --configuration Release -- -u hulk@marvel.com -p hulk  -l /home/daniel/Music/oliver-twist-001.wav -b 192.168.1.111"
     },
     {
-        "Name": "Deadpool",
+        "Name": "IronMan",
         "Folder": "../ClientUI/",
         "Command": "dotnet",
-        "Args": "run --configuration Release -- -n 2000 -l /home/daniel/Music/oliver-twist-001.wav -b 192.168.1.6"
+        "Args": "run --configuration Release -- -u ironman@marvel.com -p ironman  -l /home/daniel/Music/oliver-twist-001.wav -b 192.168.1.111"
     }
 ]

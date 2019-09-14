@@ -1,7 +1,11 @@
+using System.Threading.Tasks;
+using Ropu.Shared.WebModels;
+
 namespace Ropu.Shared.Groups
 {
     public interface IUsersClient
     {
-        IUser Get(uint userId);
+        Task<IUser> Get(uint userId);
+        Task<IUser> GetCurrentUser();
     }
 }

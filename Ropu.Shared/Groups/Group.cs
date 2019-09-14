@@ -1,16 +1,13 @@
 using System.Collections.Generic;
+using Ropu.Shared.WebModels;
 
 namespace Ropu.Shared.Groups
 {
     public class Group : IGroup
     {
-        readonly HashSet<uint> _groupMembers;
-        readonly ushort _id;
 
-        public Group(ushort id)
+        public Group()
         {
-            _id = id;
-            _groupMembers = new HashSet<uint>();
         }
 
         public string Name
@@ -19,29 +16,25 @@ namespace Ropu.Shared.Groups
             set;
         }
 
-        public void Add(uint unitId)
+        public ushort Id
         {
-            _groupMembers.Add(unitId);
+            get;
+            set;
         }
-
-        public bool HasMember(uint userId)
-        {
-            return _groupMembers.Contains(userId);
-        }
-
-        public IEnumerable<uint> GroupMembers
-        {
-            get
-            {
-                return _groupMembers;
-            }
-        }
-
-        public ushort Id => _id;
-
-        public int MemberCount => _groupMembers.Count;
 
         public byte[] Image
+        {
+            get;
+            set;
+        }
+
+        public string ImageHash
+        {
+            get;
+            set;
+        }
+
+        public GroupType GroupType
         {
             get;
             set;

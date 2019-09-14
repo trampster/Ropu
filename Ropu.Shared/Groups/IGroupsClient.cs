@@ -1,22 +1,15 @@
 using System.Collections.Generic;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace Ropu.Shared.Groups
 {
     public interface IGroupsClient
     {
-        IEnumerable<IGroup> Groups
-        {
-            get;
-        }
+        Task<IEnumerable<ushort>> GetGroups();
 
-        IGroup Get(ushort groupId);
+        Task<Group> Get(ushort groupId);
 
-        int GroupCount
-        {
-            get;
-        }
-
-        IEnumerable<ushort> GetUsersGroups(uint userId);
+        Task<ushort[]> GetUsersGroups(uint userId);
     }
 }

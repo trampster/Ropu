@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Ropu.Shared.WebModels;
 
 namespace Ropu.Web.Models
 {

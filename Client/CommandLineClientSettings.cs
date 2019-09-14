@@ -14,13 +14,13 @@ namespace Ropu.Client
         public bool ParseArgs(string[] args)
         {
             bool showHelp = false;
-            string userIdString = "";
             bool fakeMedia = false;
             string loadBalancerAddress = null;
 
             var optionSet = new OptionSet () 
             {
-                { "n|userid=", "the {User ID} of this client",  v => userIdString = v },
+                { "u|user=", "the {email} of this client",  v => Email = v },
+                { "p|password=", "the {password} of this client",  v => Password = v },
                 { "f|fake-media", "Don't do any media processing", v =>  fakeMedia = v != null },
                 { "l|file-media=", "use file as media source", v =>  FileMediaSource = v },
                 { "b|load-balancer=", "IP Address of load balancer", v => loadBalancerAddress = v},
@@ -35,14 +35,6 @@ namespace Ropu.Client
                 return false;
             }
 
-            if(userIdString != "")
-            {
-                if(!uint.TryParse(userIdString, out _userId))
-                {
-                    Console.Error.WriteLine("User ID must be a number");
-                    return false;
-                }
-            }
 
             if(FileMediaSource != null && !File.Exists(FileMediaSource))
             {
@@ -75,6 +67,19 @@ namespace Ropu.Client
             Console.WriteLine ("Options:");
             optionaSet.WriteOptionDescriptions (Console.Out);
         }
+
+        public string Email
+        {
+            get;
+            set;
+        }
+
+        public string Password
+        {
+            get;
+            set;
+        }
+
         public uint UserId
         {
             get => _userId;

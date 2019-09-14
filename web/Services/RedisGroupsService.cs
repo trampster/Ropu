@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using Ropu.Shared.WebModels;
 using Ropu.Web.Models;
 using StackExchange.Redis;
 
@@ -71,7 +72,7 @@ namespace Ropu.Web.Services
             var usersKey = $"{GroupsKey}:{id}";
             var group = new RedisGroup()
             {
-                Id = id,
+                Id = (ushort)id,
                 Name = name,
                 GroupType = groupType,
                 ImageHash = _imageService.DefaultGroupImageHash
@@ -125,13 +126,13 @@ namespace Ropu.Web.Services
 
                     var newLookup = $"{GroupIdByNameKey}:{group.Name}";
                     transaction.AddCondition(Condition.KeyExists(newLookup));
-                    transaction.StringSetAsync(newLookup, group.Id);
+                    transaction.StringSetAsync(newLookup, (uint)group.Id);
 
                     //sorted set (for paging)
                     long score = _redisService.CalculateStringScore(group.Name);
-                    transaction.AddCondition(Condition.SortedSetContains(GroupsKey, group.Id));
-                    transaction.SortedSetRemoveAsync(GroupsKey, group.Id);
-                    transaction.SortedSetAddAsync(GroupsKey, group.Id, score);
+                    transaction.AddCondition(Condition.SortedSetContains(GroupsKey, (uint)group.Id));
+                    transaction.SortedSetRemoveAsync(GroupsKey, (uint)group.Id);
+                    transaction.SortedSetAddAsync(GroupsKey, (uint)group.Id, score);
 
                     NameChanged?.Invoke(this, (group.Name, (ushort)group.Id));
                 }
@@ -183,6 +184,18 @@ namespace Ropu.Web.Services
                 {
                     var group = db.StringGet($"{GroupsKey}:{groupId}");
                     yield return JsonConvert.DeserializeObject<RedisGroup>(group);
+                }
+            }
+        }
+
+        public IEnumerable<ushort> GroupIds
+        {
+            get
+            {
+                IDatabase db = _redisService.GetDatabase();
+                foreach(int groupId in db.SortedSetRangeByScore("Groups"))
+                {
+                    yield return (ushort)groupId;
                 }
             }
         }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
+using Ropu.Shared.WebModels;
 using Ropu.Web.Models;
 using StackExchange.Redis;
 
@@ -99,6 +100,21 @@ namespace Ropu.Web.Services
             return list;
         }
 
+        public IEnumerable<uint> GetGroupMemberIds(ushort groupId)
+        {
+            var database = _redisService.GetDatabase();
+            var groupMembersKey = GroupMembersKey(groupId);
+            var redisValues = database.SortedSetRangeByScore(groupMembersKey);
+            if(redisValues == null)
+            {
+                yield break;
+            }
+            foreach(uint userId in redisValues)
+            {
+                yield return userId;
+            }
+        }
+
         public List<IGroup> GetUsersGroups(uint userId)
         {
             var database = _redisService.GetDatabase();
@@ -115,6 +131,21 @@ namespace Ropu.Web.Services
                 list.Add(_groupsService.Get(groupId));
             }
             return list;
+        }
+
+        public IEnumerable<uint> GetUsersGroupIds(uint userId)
+        {
+            var database = _redisService.GetDatabase();
+            var usersGroupsKey = UsersGroupsKey(userId);
+            var redisValues = database.SortedSetRangeByScore(usersGroupsKey);
+            if(redisValues == null)
+            {
+                yield break;
+            }
+            foreach(var groupRedisValue in redisValues)
+            {
+                yield return (ushort)(uint)groupRedisValue;
+            }
         }
 
         void ChangeGroupName(ushort groupId, string newName)

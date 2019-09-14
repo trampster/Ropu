@@ -1,8 +1,8 @@
-namespace Ropu.Web.Models
+namespace Ropu.Shared.WebModels
 {
     public interface IGroup
     {
-        uint Id {get;}
+        ushort Id {get;}
 
         string Name {get;}
 

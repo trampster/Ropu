@@ -39,6 +39,7 @@ namespace Ropu.LoadBalancer
 
         public async Task Run()
         {
+            await _callControllers.Initialize();
             var callManagement = _loadBalancerProtocol.Run();
             var removeExpired = RemoveExpiredControllers();
 

@@ -1,8 +1,10 @@
+using Ropu.Shared.WebModels;
+
 namespace Ropu.Web.Models
 {
     public class Group : IGroup
     {
-        public uint Id
+        public ushort Id
         {
             get;
             set;

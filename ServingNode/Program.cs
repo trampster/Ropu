@@ -9,6 +9,7 @@ using Ropu.Shared;
 using Ropu.Shared.LoadBalancing;
 using Ropu.Shared.Groups;
 using System.Collections.Concurrent;
+using Ropu.Shared.Web;
 
 namespace Ropu.ServingNode
 {
@@ -23,11 +24,23 @@ namespace Ropu.ServingNode
             Console.WriteLine("Copyright (c) Daniel Hughes");
             Console.WriteLine();
 
+            var settings = new CommandLineSettings();
+            if(!settings.ParseArgs(args))
+            {
+                return;
+            }
+
             var portFinder = new PortFinder();
             var mediaProtocol = new RopuProtocol(portFinder, StartingServingNodePort);
             var loadBalancerProtocol = new LoadBalancerProtocol(portFinder, StartingLoadBalancerPort);
             var serviceDiscovery = new ServiceDiscovery();
-            var groupsClient = new HardcodedGroupsClient("../Icon");
+            var credentialsProvider = new CredentialsProvider()
+            {
+                Email = settings.Email,
+                Password = settings.Password
+            };
+            var webClient = new RopuWebClient("https://localhost:5001", credentialsProvider); 
+            var groupsClient = new GroupsClient(webClient);
             var registra = new Registra(groupsClient);
             var servingNodes = new ServingNodes(100);
             var groupCallControllerLookup = new GroupCallControllerLookup();

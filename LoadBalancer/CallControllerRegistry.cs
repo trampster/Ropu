@@ -34,9 +34,14 @@ namespace Ropu.LoadBalancer
             _groupLookup = new IPEndPoint[MaxGroups];
             _controllers = new RegisteredCallController[MaxControllers];
             _groupsClient = groupsClient;
-            foreach(var group in _groupsClient.Groups)
+            
+        }
+
+        public async Task Initialize()
+        {
+            foreach(var group in await _groupsClient.GetGroups())
             {
-                _unassignedGroups.Enqueue(group.Id);
+                _unassignedGroups.Enqueue(group);
             }
         }
 

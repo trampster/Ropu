@@ -1,6 +1,6 @@
-namespace Ropu.Web.Models
+namespace Ropu.Shared.Web
 {
-    public class Credentials
+    public class CredentialsProvider
     {
         public string Email
         {

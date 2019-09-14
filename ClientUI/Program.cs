@@ -16,6 +16,8 @@ using System.Linq;
 using Ropu.Client.JitterBuffer;
 using Ropu.ClientUI.Services;
 using Ropu.Client.PulseAudio;
+using Ropu.Shared.Web;
+using System.Threading.Tasks;
 
 namespace Ropu.ClientUI
 {
@@ -26,8 +28,9 @@ namespace Ropu.ClientUI
         readonly IClientSettings _clientSettings;
         readonly IGroupsClient _groupsClient;
         readonly IUsersClient _usersClient;
+        readonly ImageClient _imageClient;
 
-        public MainViewModel(RopuClient ropuClient, IClientSettings clientSettings, IGroupsClient groupsClient, IUsersClient usersClient)
+        public MainViewModel(RopuClient ropuClient, IClientSettings clientSettings, IGroupsClient groupsClient, IUsersClient usersClient, ImageClient imageClient)
         {
             _ropuClient = ropuClient;
             _ropuClient.StateChanged += (sender, args) => 
@@ -36,11 +39,19 @@ namespace Ropu.ClientUI
             };
             _groupsClient = groupsClient;
             _usersClient = usersClient;
+            _imageClient = imageClient;
+
             _clientSettings = clientSettings;
 
             _state = _ropuClient.State.ToString();
-            _ropuClient.IdleGroup = _groupsClient.GetUsersGroups(clientSettings.UserId).First();
-            var idleGroup =_groupsClient.Get(_ropuClient.IdleGroup);
+
+        }
+
+        public async Task Initialize()
+        {
+            _ropuClient.IdleGroup = (await _groupsClient.GetUsersGroups(_clientSettings.UserId))[0];
+
+            var idleGroup = await _groupsClient.Get(_ropuClient.IdleGroup);
             _idleGroup = idleGroup.Name;
             _idleGroupImage = idleGroup.Image;
         }
@@ -60,7 +71,7 @@ namespace Ropu.ClientUI
             }
         }
 
-        void ChangeState()
+        async Task ChangeState()
         {
             var state = _ropuClient.State;
             State = state.ToString();
@@ -88,17 +99,20 @@ namespace Ropu.ClientUI
 
             Transmitting = state == StateId.InCallTransmitting;
 
-            var callGroup = InCall(state) ? _groupsClient.Get(_ropuClient.CallGroup) : null;
+            var callGroup = InCall(state) ? await _groupsClient.Get(_ropuClient.CallGroup) : null;
             CallGroup = callGroup?.Name;
             CallGroupImage = callGroup?.Image;
 
             CircleText = InCall(state) ? 
-                _groupsClient.Get(_ropuClient.CallGroup).Name : 
-                _groupsClient.Get(_ropuClient.IdleGroup).Name;
+                (await _groupsClient.Get(_ropuClient.CallGroup)).Name : 
+                (await _groupsClient.Get(_ropuClient.IdleGroup)).Name;
 
-            var user = state == StateId.InCallReceiving ? _usersClient.Get(_ropuClient.Talker.Value) : null;
+            var user = state == StateId.InCallReceiving ? await _usersClient.Get(_ropuClient.Talker.Value) : null;
             Talker = user?.Name;
-            TalkerImage = user?.Image;
+            if(user != null)
+            {
+                TalkerImage = await _imageClient.GetImage(user.ImageHash);
+            }
         }
 
         string _state = "";
@@ -268,10 +282,14 @@ namespace Ropu.ClientUI
 
             Content = _pttCircle;
             DataContext = mainViewModel;
+
+            this.Shown += async (sender, args) => 
+            {
+                await mainViewModel.Initialize();
+            };
         }
 
 
-        [STAThread]
         static void Main(string[] args)
         {
             const ushort controlPortStarting = 5061;
@@ -283,8 +301,6 @@ namespace Ropu.ClientUI
             {
                 return;
             }
-
-
 
             var protocolSwitch = new ProtocolSwitch(controlPortStarting, new PortFinder());
             var servingNodeClient = new ServingNodeClient(protocolSwitch);
@@ -307,11 +323,21 @@ namespace Ropu.ClientUI
             var application = new RopuApplication(ropuClient);
 
             var imageService = new ImageService();
-            var groupsClient = new HardcodedGroupsClient(imageService.ImageFolder);
-            var usersClient = new HardcodedUsersClient();
+            var credentialsProvider = new CredentialsProvider()
+            {
+                Email = settings.Email,
+                Password = settings.Password
+            };
+            //TODO: get web address from config
+            var webClient = new RopuWebClient("https://localhost:5001/", credentialsProvider);
+            var groupsClient = new GroupsClient(webClient);
+            var usersClient = new UsersClient(webClient);
+            settings.UserId = usersClient.GetCurrentUser().Result.Id;
+            var imageClient = new ImageClient(webClient);
             var pttPage = new PttPage(imageService);
 
-            var mainForm = new MainForm(new MainViewModel(ropuClient, settings, groupsClient, usersClient), pttPage);
+
+            var mainForm = new MainForm(new MainViewModel(ropuClient, settings, groupsClient, usersClient, imageClient), pttPage);
             mainForm.Icon = imageService.Ropu;
             application.Run(mainForm);
         }

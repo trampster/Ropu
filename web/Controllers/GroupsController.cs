@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Ropu.Shared.WebModels;
 using Ropu.Web.Models;
 using Ropu.Web.Services;
 
@@ -29,6 +30,13 @@ namespace web.Controllers
         public IEnumerable<IGroup> Groups()
         {
             return _groupsService.Groups;
+        }
+
+        [HttpGet("[action]")]
+        [Authorize(Roles="Admin,User")]
+        public IEnumerable<ushort> GroupIds()
+        {
+            return _groupsService.GroupIds;
         }
 
         [HttpGet("{groupId}")]
@@ -107,6 +115,19 @@ namespace web.Controllers
             if(members == null)
             {
                 var message = "Failed to get group members";
+                _logger.LogError(message);
+                return null;
+            }
+            return members;
+        }
+
+        [HttpGet("{groupId}/MemberIds")]
+        public IEnumerable<uint> MemberIds(ushort groupId)
+        {
+            var members = _groupMembershipService.GetGroupMemberIds(groupId);
+            if(members == null)
+            {
+                var message = "Failed to get group member IDs";
                 _logger.LogError(message);
                 return null;
             }
