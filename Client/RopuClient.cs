@@ -89,7 +89,7 @@ namespace Ropu.Client
                 Entry = async token => 
                 { 
                     _callGroup = IdleGroup;
-                    _registeredUserId = _clientSettings.UserId;
+                    _registeredUserId = _clientSettings.UserId.Value;
                     if(_heartbeatTask == null)
                     {
                         _heartbeatTask = Heartbeat(_heartbeatCancellationTokenSource.Token);
@@ -170,7 +170,7 @@ namespace Ropu.Client
             {
                 Entry = token => 
                 {
-                    _servingNodeClient.SendFloorRequest(_callGroup, _clientSettings.UserId);
+                    _servingNodeClient.SendFloorRequest(_callGroup, _clientSettings.UserId.Value);
                     var ignore = _mediaClient.StartSendingAudio(_callGroup);
                     return new Task(() => {});
                 },
@@ -190,7 +190,7 @@ namespace Ropu.Client
             {
                 Entry = token => 
                 {
-                    _servingNodeClient.SendFloorReleased(_callGroup, _clientSettings.UserId);
+                    _servingNodeClient.SendFloorReleased(_callGroup, _clientSettings.UserId.Value);
                     return new Task(() => {});
                 }   
             };
@@ -282,7 +282,7 @@ namespace Ropu.Client
                 bool heartbeatReceived = false;
                 for(int attemptNumber = 0; attemptNumber < 3; attemptNumber++)
                 {
-                    _servingNodeClient.SendHeartbeat(_clientSettings.UserId);
+                    _servingNodeClient.SendHeartbeat(_clientSettings.UserId.Value);
                     heartbeatReceived = await WaitForEvent(token, _heartbeatResetEvent, 1000);
                     if(token.IsCancellationRequested) return;
                     if(heartbeatReceived)
@@ -328,7 +328,7 @@ namespace Ropu.Client
 
                 Console.WriteLine($"Got serving node at {_protocolSwitch.ServingNodeEndpoint}");
 
-                _servingNodeClient.Register(_clientSettings.UserId);
+                _servingNodeClient.Register(_clientSettings.UserId.Value);
                 if(await WaitForCancel(token, 2000))
                 {
                     return;
@@ -370,7 +370,7 @@ namespace Ropu.Client
             Console.WriteLine($"sending StartGroupCall for group {_callGroup} {_protocolSwitch.ServingNodeEndpoint}");
             while(!token.IsCancellationRequested)
             {
-                _servingNodeClient.StartGroupCall(_clientSettings.UserId, _callGroup);
+                _servingNodeClient.StartGroupCall(_clientSettings.UserId.Value, _callGroup);
                 await WaitForCancel(token, 1000);
             }
         }

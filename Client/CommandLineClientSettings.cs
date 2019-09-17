@@ -7,7 +7,7 @@ namespace Ropu.Client
 {
     public class CommandLineClientSettings : IClientSettings
     {
-        uint _userId = 1234;
+        uint? _userId = null;
 
         public event EventHandler UserIdChanged;
 
@@ -80,7 +80,7 @@ namespace Ropu.Client
             set;
         }
 
-        public uint UserId
+        public uint? UserId
         {
             get => _userId;
             set

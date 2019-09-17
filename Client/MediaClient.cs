@@ -67,7 +67,7 @@ namespace Ropu.Client
                     {
                         return; //nothing available
                     }
-                    SendMediaPacket(groupId, _sequenceNumber, _clientSettings.UserId, audio);
+                    SendMediaPacket(groupId, _sequenceNumber, _clientSettings.UserId.Value, audio);
                     _sequenceNumber++;
                 }
                 _audioSource.Stop();

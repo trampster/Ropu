@@ -6,8 +6,8 @@ namespace Ropu.ClientUI
 {
     public class ClientSettings : IClientSettings
     {
-        uint _userId;
-        public uint UserId
+        uint? _userId;
+        public uint? UserId
         {
             get => _userId;
             set
