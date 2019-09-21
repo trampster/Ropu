@@ -3,12 +3,12 @@
         "Name": "Hulk",
         "Folder": "../ClientUI/",
         "Command": "dotnet",
-        "Args": "run --configuration Release -- -u hulk@marvel.com -p hulk  -l /home/daniel/Music/oliver-twist-001.wav -b 192.168.1.111"
+        "Args": "run --configuration Release -- -w https://localhost:5001"
     },
     {
         "Name": "IronMan",
         "Folder": "../ClientUI/",
         "Command": "dotnet",
-        "Args": "run --configuration Release -- -u ironman@marvel.com -p ironman  -l /home/daniel/Music/oliver-twist-001.wav -b 192.168.1.111"
+        "Args": "run --configuration Release -- -w https://localhost:5001"
     }
 ]

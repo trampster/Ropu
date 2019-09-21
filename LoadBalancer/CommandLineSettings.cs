@@ -13,6 +13,7 @@ namespace Ropu.LoadBalancer
             {
                 { "u|user=", "the {email} of this client",  v => Email = v },
                 { "p|password=", "the {password} of this client",  v => Password = v },
+                { "i|ipendpoint=", "the public endpoint", v => PublicIPEndpoint = v},
                 { "h|help",  "show this message and exit", v => showHelp = v != null }
             };
             
@@ -26,6 +27,11 @@ namespace Ropu.LoadBalancer
             if(Password == null) 
             {
                 Console.Error.WriteLine("password command line arg is required");
+                showHelp = true;
+            }
+            if(PublicIPEndpoint == null) 
+            {
+                Console.Error.WriteLine("ipaddress command line arg is required");
                 showHelp = true;
             }
 
@@ -53,6 +59,12 @@ namespace Ropu.LoadBalancer
         }
 
         public string Password
+        {
+            get;
+            set;
+        }
+
+        public string PublicIPEndpoint
         {
             get;
             set;

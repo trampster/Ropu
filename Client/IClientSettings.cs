@@ -7,8 +7,6 @@ namespace Ropu.Client
     {
         uint? UserId{get;set;}
 
-        event EventHandler UserIdChanged;
-
         bool FakeMedia
         {
             get;
@@ -20,12 +18,5 @@ namespace Ropu.Client
             get;
             set;
         }
-
-        IPAddress LoadBalancerIPAddress
-        {
-            get;
-            set;
-        }
-
     }
 }

@@ -33,7 +33,7 @@ namespace web.Controllers
         }
 
         [HttpGet("[action]")]
-        [Authorize(Roles="Admin,User")]
+        [Authorize(Roles="Admin,User,Service")]
         public IEnumerable<ushort> GroupIds()
         {
             return _groupsService.GroupIds;

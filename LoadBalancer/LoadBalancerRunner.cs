@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -7,8 +6,9 @@ using System.Threading.Tasks;
 using Ropu.LoadBalancer.FileServer;
 using Ropu.Shared;
 using Ropu.Shared.LoadBalancing;
-using Ropu.Shared.ControlProtocol;
 using Ropu.Shared.Groups;
+using Ropu.Shared.Web;
+using Ropu.Shared.WebModels;
 
 namespace Ropu.LoadBalancer
 {
@@ -19,17 +19,23 @@ namespace Ropu.LoadBalancer
         readonly CallControllerRegistry _callControllers;
         readonly IGroupsClient _groupsClient;
         readonly FileManager _fileManager;
+        readonly RopuWebClient _webClient;
+        CommandLineSettings _settings;
         volatile bool _closing = false;
 
         public LoadBalancerRunner(
             LoadBalancerProtocol loadBalancerProtocol, 
             IGroupsClient groupsClient, 
-            FileManager fileManager)
+            FileManager fileManager,
+            RopuWebClient webClient,
+            CommandLineSettings settings)
         {
+            _settings = settings;
             _fileManager = fileManager;
             _loadBalancerProtocol = loadBalancerProtocol;
             _loadBalancerProtocol.SetServerMessageHandler(this);
             _groupsClient = groupsClient;
+            _webClient = webClient;
 
             _servingNodes = new ControllerRegistry<RegisteredServingNode>();
 
@@ -42,8 +48,26 @@ namespace Ropu.LoadBalancer
             await _callControllers.Initialize();
             var callManagement = _loadBalancerProtocol.Run();
             var removeExpired = RemoveExpiredControllers();
+            var webdateWeb = UpdateWeb();
 
-            await TaskCordinator.WaitAll(callManagement, removeExpired);
+            await TaskCordinator.WaitAll(callManagement, removeExpired, webdateWeb);
+        }
+
+        async Task UpdateWeb()
+        {
+            while(!_closing)
+            {  
+                var response = await _webClient.Post("api/Services/UpdateLoadBalancer", new LoadBalancerInfo()
+                {
+                    IPEndPoint = _settings.PublicIPEndpoint
+                });
+
+                if(response.StatusCode != HttpStatusCode.OK)
+                {
+                    Console.Error.WriteLine($"Failed to update the web with the load balancer status {response.ReasonPhrase}");
+                }
+                await Task.Delay(5000);
+            }
         }
 
         async Task RemoveExpiredControllers()

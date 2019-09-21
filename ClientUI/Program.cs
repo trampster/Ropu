@@ -19,7 +19,6 @@ namespace Ropu.ClientUI
         static void Main(string[] args)
         {
             const ushort controlPortStarting = 5061;
-            const int loadBalancerPort = 5069;
 
             var settings = new CommandLineClientSettings();
 
@@ -42,20 +41,17 @@ namespace Ropu.ClientUI
             var mediaClient = new MediaClient(protocolSwitch, audioSource, audioPlayer, audioCodec, jitterBuffer, settings);
             var callManagementProtocol = new LoadBalancerProtocol(new PortFinder(), 5079);
 
-            IPEndPoint loadBalancerEndpoint = new IPEndPoint(settings.LoadBalancerIPAddress, loadBalancerPort);
             var beepPlayer = new BeepPlayer(new PulseAudioSimple(StreamDirection.Record, "RopuBeeps"));
-            var ropuClient = new RopuClient(protocolSwitch, servingNodeClient, mediaClient, callManagementProtocol, loadBalancerEndpoint, settings, beepPlayer);
+            var credentialsProvider = new CredentialsProvider();
+            var webClient = new RopuWebClient("https://localhost:5001/", credentialsProvider);
+
+            var ropuClient = new RopuClient(protocolSwitch, servingNodeClient, mediaClient, callManagementProtocol, settings, beepPlayer, webClient);
 
             var application = new RopuApplication(ropuClient);
 
             var imageService = new ImageService();
-            var credentialsProvider = new CredentialsProvider()
-            {
-                Email = settings.Email,
-                Password = settings.Password
-            };
+
             //TODO: get web address from config
-            var webClient = new RopuWebClient("https://localhost:5001/", credentialsProvider);
             var groupsClient = new GroupsClient(webClient);
             var usersClient = new UsersClient(webClient);
             //settings.UserId = usersClient.GetCurrentUser().Result.Id;

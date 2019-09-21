@@ -13,13 +13,10 @@ namespace Ropu.ClientUI
             set
             {
                 _userId = value;
-                UserIdChanged?.Invoke(this, EventArgs.Empty);
             }
         }
 
         public bool FakeMedia { get; set; }
         public string FileMediaSource { get; set; }
-        public IPAddress LoadBalancerIPAddress { get; set; }
-        public event EventHandler UserIdChanged;
     }
 }

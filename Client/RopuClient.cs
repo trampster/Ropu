@@ -1,13 +1,13 @@
 using System;
-using System.Collections.Generic;
 using System.Net;
-using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Ropu.Client.StateModel;
 using Ropu.Shared;
 using Ropu.Shared.LoadBalancing;
 using Ropu.Shared.ControlProtocol;
+using Ropu.Shared.Web;
+using System.Globalization;
 
 namespace Ropu.Client
 {
@@ -36,7 +36,7 @@ namespace Ropu.Client
         LoadBalancerProtocol _loadBalancerProtocol;
 
         readonly Ropu.Shared.Timer _retryTimer;
-        readonly IPEndPoint _loadBalancerEndPoint;
+        IPEndPoint _loadBalancerEndPoint;
         uint _registeredUserId = 0;
 
         public event EventHandler<EventArgs> StateChanged;
@@ -54,23 +54,20 @@ namespace Ropu.Client
         CancellationTokenSource _heartbeatCancellationTokenSource = new CancellationTokenSource();
         ManualResetEvent _heartbeatOnEvent = new ManualResetEvent(false);
         readonly IBeepPlayer _beepPlayer;
+        readonly RopuWebClient _webClient;
 
         public RopuClient(
             ProtocolSwitch protocolSwitch, 
             ServingNodeClient servingNodeClient, 
             IMediaClient mediaClient,
             LoadBalancerProtocol loadBalancerProtocol,
-            IPEndPoint loadBalancerEndPoint,
             IClientSettings clientSettings,
-            IBeepPlayer beepPlayer)
+            IBeepPlayer beepPlayer,
+            RopuWebClient webClient)
         {
+            _webClient = webClient;
             _beepPlayer = beepPlayer;
             _clientSettings = clientSettings;
-            _clientSettings.UserIdChanged += (sender, args) =>
-            { 
-                _stateManager.HandleEvent(EventId.UserIdChanged);
-            };
-            _loadBalancerEndPoint = loadBalancerEndPoint;
             _loadBalancerProtocol = loadBalancerProtocol;
             _protocolSwitch = protocolSwitch;
             _servingNodeClient = servingNodeClient;
@@ -205,7 +202,6 @@ namespace Ropu.Client
             
             _stateManager.AddTransitionToAll(EventId.HeartbeatFailed, () => _unregistered, stateId => stateId != StateId.Unregistered);
             _stateManager.AddTransitionToAll(EventId.NotRegistered, () => _unregistered, stateId => stateId != StateId.Unregistered);
-            _stateManager.AddTransitionToAll(EventId.UserIdChanged, () => _deregistering, stateId => stateId != StateId.Unregistered);
             _stateManager.AddTransitionToAll(EventId.CallEnded, () => _registered, stateId => stateId != StateId.Unregistered && stateId != StateId.Start && stateId != StateId.Deregistering);
             _stateManager.AddTransitionToAll(EventId.FloorIdle, () => _inCallIdle, IsRegistered);
             _stateManager.AddTransitionToAll(EventId.FloorTaken, () => _inCallReceiveing, IsRegistered);
@@ -237,11 +233,55 @@ namespace Ropu.Client
 
         public async Task Run()
         {
+            await GetLoadBalancerIPEndpoint();
             var protocolSwitchTask = _protocolSwitch.Run();
             var loadBalancerTask = _loadBalancerProtocol.Run();
             var playAudioTask = _mediaClient.PlayAudio();
             _stateManager.SetState(_unregistered, _start);
             await TaskCordinator.WaitAll(protocolSwitchTask, loadBalancerTask, playAudioTask);
+        }
+
+        public async Task GetLoadBalancerIPEndpoint()
+        {
+            while(true)
+            {
+                var response = await _webClient.Get<string>("api/Services/LoadBalancerIPEndpoint");
+                if(response.StatusCode != HttpStatusCode.OK)
+                {
+                    Console.Error.WriteLine($"Failed to get LoadBalancer IP Endpoint with status {response.StatusCode}");
+                    await Task.Delay(5000);
+                    continue;
+                }
+
+                string endPoint = await response.GetString();
+                if(endPoint == null)
+                {
+                    Console.Error.WriteLine($"Failed to get LoadBalancer IP Endpoint.");
+                    await Task.Delay(5000);
+                    continue;
+                }
+
+                _loadBalancerEndPoint = ParseIPEndPoint(endPoint);
+                return;
+            }
+        }
+
+        //remove once we upgrade dotnet core which has IPEndPoint.Parse
+        public static IPEndPoint ParseIPEndPoint(string endPoint)
+        {
+            string[] ep = endPoint.Split(':');
+            if(ep.Length != 2) throw new FormatException("Invalid endpoint format");
+            IPAddress ip;
+            if(!IPAddress.TryParse(ep[0], out ip))
+            {
+                throw new FormatException("Invalid ip-adress");
+            }
+            int port;
+            if(!int.TryParse(ep[1], NumberStyles.None, NumberFormatInfo.CurrentInfo, out port))
+            {
+                throw new FormatException("Invalid port");
+            }
+            return new IPEndPoint(ip, port);
         }
 
         readonly ManualResetEvent _heartbeatResetEvent = new ManualResetEvent(false);

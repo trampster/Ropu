@@ -33,7 +33,7 @@ namespace Ropu.LoadBalancer
             var webClient = new RopuWebClient("https://localhost:5001/", credentialsProvider);
             var groupsClient = new GroupsClient(webClient);
             var loadBalancerProtocol = new LoadBalancerProtocol(new PortFinder(), 5069);
-            var controller = new LoadBalancerRunner(loadBalancerProtocol, groupsClient, fileManager);
+            var controller = new LoadBalancerRunner(loadBalancerProtocol, groupsClient, fileManager, webClient, settings);
             Console.WriteLine("Before Run");
             await controller.Run();
         }   

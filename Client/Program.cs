@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Net;
-using System.Net.Sockets;
-using System.Threading.Tasks;
 using Ropu.Client.Alsa;
 using Ropu.Client.JitterBuffer;
 using Ropu.Shared;
-using Ropu.Shared.Groups;
 using Ropu.Shared.LoadBalancing;
+using Ropu.Shared.Web;
 
 namespace Ropu.Client
 {
@@ -38,9 +34,17 @@ namespace Ropu.Client
             
             _mediaClient = BuildMediaClient(protocolSwitch, settings);
 
-            IPEndPoint loadBalancerEndpoint = new IPEndPoint(settings.LoadBalancerIPAddress, LoadBalancerPort);
+            //IPEndPoint loadBalancerEndpoint = new IPEndPoint(settings.LoadBalancerIPAddress, LoadBalancerPort);
             var beepPlayer = BuildBeepPlayer(settings);
-            _ropuClient = new RopuClient(protocolSwitch, servingNodeClient, _mediaClient, callManagementProtocol, loadBalancerEndpoint, settings, beepPlayer);
+
+            var credentials = new CredentialsProvider()
+            {
+                Email = settings.Email,
+                Password = settings.Password
+            };
+            var webClient = new RopuWebClient("asdf", credentials);
+
+            _ropuClient = new RopuClient(protocolSwitch, servingNodeClient, _mediaClient, callManagementProtocol, settings, beepPlayer, webClient);
             var ropuClientTask = _ropuClient.Run();
 
             //var consoleTask = TaskCordinator.RunLong(HandleCommands);

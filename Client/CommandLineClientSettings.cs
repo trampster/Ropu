@@ -9,13 +9,10 @@ namespace Ropu.Client
     {
         uint? _userId = null;
 
-        public event EventHandler UserIdChanged;
-
         public bool ParseArgs(string[] args)
         {
             bool showHelp = false;
             bool fakeMedia = false;
-            string loadBalancerAddress = null;
 
             var optionSet = new OptionSet () 
             {
@@ -23,11 +20,17 @@ namespace Ropu.Client
                 { "p|password=", "the {password} of this client",  v => Password = v },
                 { "f|fake-media", "Don't do any media processing", v =>  fakeMedia = v != null },
                 { "l|file-media=", "use file as media source", v =>  FileMediaSource = v },
-                { "b|load-balancer=", "IP Address of load balancer", v => loadBalancerAddress = v},
+                { "w|web-address=", "Address of the Ropu Web", v =>  WebAddress = v },
                 { "h|help",  "show this message and exit", v => showHelp = v != null }
             };
             
             optionSet.Parse(args);
+
+            if(WebAddress == null)
+            {
+                Console.Error.WriteLine("Web address is required");
+                showHelp = true;
+            }
 
             if(showHelp)
             {
@@ -35,25 +38,11 @@ namespace Ropu.Client
                 return false;
             }
 
-
             if(FileMediaSource != null && !File.Exists(FileMediaSource))
             {
                 Console.Error.WriteLine($"Could not find file {FileMediaSource}");
                 return false;
             }
-
-            if(loadBalancerAddress == null)
-            {
-                Console.Error.WriteLine($"You must specify the Load Balancer IP Address");
-                return false;
-            }
-
-            if(!IPAddress.TryParse(loadBalancerAddress, out IPAddress loadBalancerIPAddress))
-            {
-                Console.Error.WriteLine($"Load Balancer address is invalid");
-                return false;
-            }
-            LoadBalancerIPAddress = loadBalancerIPAddress;
 
             FakeMedia = fakeMedia;
 
@@ -86,7 +75,6 @@ namespace Ropu.Client
             set
             {
                 _userId = value;
-                UserIdChanged?.Invoke(this, EventArgs.Empty);
             }
         }
 
@@ -102,7 +90,7 @@ namespace Ropu.Client
             set;
         }
 
-        public IPAddress LoadBalancerIPAddress
+        public string WebAddress
         {
             get;
             set;

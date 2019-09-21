@@ -12,10 +12,9 @@ namespace Ropu.ClientUI
             _ropuClient = ropuClient;
         }
 
-        protected override async void OnInitialized(EventArgs e)
+        protected override void OnInitialized(EventArgs e)
         {
             base.OnInitialized(e);
-            await _ropuClient.Run();
         }
     }
 }

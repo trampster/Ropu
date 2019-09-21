@@ -19,10 +19,16 @@ namespace Ropu.Shared.Web
             var json = await _response.Content.ReadAsStringAsync();
             return JsonConvert.DeserializeObject<T>(json);
         }
+
         public async Task<byte[]> GetBytes()
         {
             var bytes = await _response.Content.ReadAsByteArrayAsync();
             return bytes;
+        }
+
+        public async Task<string> GetString()
+        {
+            return await _response.Content.ReadAsStringAsync();
         }
     }
 }

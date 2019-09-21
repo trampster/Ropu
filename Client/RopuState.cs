@@ -23,7 +23,6 @@ namespace Ropu.Client
         CallStartFailed,
         HeartbeatFailed,
         NotRegistered,
-        UserIdChanged,
         DeregistrationResponseReceived,
         PttDown,
         PttUp,

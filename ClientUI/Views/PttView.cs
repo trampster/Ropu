@@ -7,7 +7,7 @@ namespace Ropu.ClientUI.Views
     public class PttView : Panel
     {
         readonly PttPage _pttCircle;
-        public PttView (PttViewModel mainViewModel, PttPage pttPage)
+        public PttView (PttViewModel pttViewModel, PttPage pttPage)
         {
             _pttCircle = pttPage;
             _pttCircle.BindDataContext(c => c.ButtonDownCommand, (PttViewModel model) => model.PttDownCommand);
@@ -26,11 +26,11 @@ namespace Ropu.ClientUI.Views
             _pttCircle.ReceivingAnimationColor = PttViewModel.Red;
 
             Content = _pttCircle;
-            DataContext = mainViewModel;
+            DataContext = pttViewModel;
 
             this.Shown += async (sender, args) => 
             {
-                await mainViewModel.Initialize();
+                await pttViewModel.Initialize();
             };
         }
     }

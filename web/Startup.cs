@@ -55,7 +55,8 @@ namespace web
                 .AddSingleton<PasswordHasher, PasswordHasher>()
                 .AddSingleton<RedisService, RedisService>()
                 .AddSingleton<IGroupsService, RedisGroupsService>()
-                .AddSingleton<GroupMembersipService>();
+                .AddSingleton<GroupMembersipService>()
+                .AddSingleton<ServicesService>();
 
             services.AddMvc();
         }

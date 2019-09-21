@@ -42,6 +42,8 @@ namespace Ropu.ClientUI.ViewModels
             var idleGroup = await _groupsClient.Get(_ropuClient.IdleGroup);
             _idleGroup = idleGroup.Name;
             _idleGroupImage = idleGroup.Image;
+
+            await _ropuClient.Run();
         }
 
         bool InCall(StateId state)
@@ -232,15 +234,6 @@ namespace Ropu.ClientUI.ViewModels
         {
             PttState = "PTT Up";
             _ropuClient.PttUp();
-        });
-
-        public ICommand UserIdCommand => new ActionCommand(() => 
-        {
-            bool valid = uint.TryParse(UserId, out uint userId);
-            UserIdError =  valid ? "" : "Invalid";
-            if(!valid) return;
-            UserIdError = "";
-            _clientSettings.UserId = userId;
         });
     }
 }

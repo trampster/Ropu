@@ -54,6 +54,7 @@ export class EditUserComponent
                 this.user.imageHash = result.imageHash;
                 this.user.isAdmin = this.hasRole(result, "Admin");
                 this.user.isUser = this.hasRole(result, "User");
+                this.user.isService = this.hasRole(result, "Service");
 
                 this.loaded = true;
                 this.nameFormData = new FormGroup({
@@ -61,6 +62,7 @@ export class EditUserComponent
                     email: new FormControl(this.user.email),
                     isAdmin: new FormControl(this.user.isAdmin),
                     isUser: new FormControl(this.user.isUser),
+                    isService: new FormControl(this.user.isService),
                 });
             }, error => console.error(error));
         });
@@ -84,6 +86,10 @@ export class EditUserComponent
         if (user.isUser)
         {
             userInfo.roles.push("User");
+        }
+        if (user.isService)
+        {
+            userInfo.roles.push("Service");
         }
 
         console.error(userInfo);
@@ -140,4 +146,5 @@ class FullUserInfo
     email: string;
     isAdmin: boolean;
     isUser: boolean;
+    isService: boolean;
 }

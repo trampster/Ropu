@@ -53,7 +53,7 @@ namespace Ropu.Shared.Web
             return true;
         }
 
-        async Task<HttpResponseMessage> Post<T>(string uri, T payload)
+        public async Task<HttpResponseMessage> Post<T>(string uri, T payload)
         {
             var json = JsonConvert.SerializeObject(payload);
             return await Do(() => _httpClient.PostAsync(uri, new StringContent(json, Encoding.UTF8, "application/json")));
