@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServingNode", "ServingNode\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CallController", "CallController\CallController.csproj", "{CD0CEE44-E6E9-4EA2-B31C-886CB9326F06}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ropu.Shared.Tests", "Ropu.Shared.Tests\Ropu.Shared.Tests.csproj", "{FCB6D92B-CC56-41C7-88A3-C698A887A5E8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -86,5 +88,17 @@ Global
 		{CD0CEE44-E6E9-4EA2-B31C-886CB9326F06}.Release|x64.Build.0 = Release|Any CPU
 		{CD0CEE44-E6E9-4EA2-B31C-886CB9326F06}.Release|x86.ActiveCfg = Release|Any CPU
 		{CD0CEE44-E6E9-4EA2-B31C-886CB9326F06}.Release|x86.Build.0 = Release|Any CPU
+		{FCB6D92B-CC56-41C7-88A3-C698A887A5E8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FCB6D92B-CC56-41C7-88A3-C698A887A5E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FCB6D92B-CC56-41C7-88A3-C698A887A5E8}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{FCB6D92B-CC56-41C7-88A3-C698A887A5E8}.Debug|x64.Build.0 = Debug|Any CPU
+		{FCB6D92B-CC56-41C7-88A3-C698A887A5E8}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{FCB6D92B-CC56-41C7-88A3-C698A887A5E8}.Debug|x86.Build.0 = Debug|Any CPU
+		{FCB6D92B-CC56-41C7-88A3-C698A887A5E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FCB6D92B-CC56-41C7-88A3-C698A887A5E8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FCB6D92B-CC56-41C7-88A3-C698A887A5E8}.Release|x64.ActiveCfg = Release|Any CPU
+		{FCB6D92B-CC56-41C7-88A3-C698A887A5E8}.Release|x64.Build.0 = Release|Any CPU
+		{FCB6D92B-CC56-41C7-88A3-C698A887A5E8}.Release|x86.ActiveCfg = Release|Any CPU
+		{FCB6D92B-CC56-41C7-88A3-C698A887A5E8}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -118,3 +118,33 @@ Sent when the serving node receives a packet from a client that isn't registered
 
 ### Deregister Rsponse
 * Packet Type 18 (byte)
+
+
+## Encryption
+All packets are encrypted.
+Keys are created and distributed via the web. There are always three keys for each group, user or service, todays, yesterdays and tomorrows. This allows for smooth handover of keys on day changes, where clocks by not be perfectly aligned. Sending should always be with todays key (according to the senders understanding of time) but receiving should accept any of the three keys. The Key ID increment for each day and wrap round to zero in the sequence, 0, 1, 2, 0, 1, 2... The Web will inform the user which key is for which day, as follows:
+{
+    "KeyId":1,
+    "Date":"2019-03-20",
+    "KeyMaterial":"95888a5d1ef426af363222edb8328328f3bbd1b6f7d33d8708b83a41dc47e3af",
+    "IV":"407fb5acbaf15fe3a43bc6411bdd6e9f"
+}
+{
+    "KeyId":2,
+    "Date":"2019-03-21",
+    "KeyMaterial":"21b4835b0fe636d3a9c1bd8b129f2af314e917dc7fdee26e1c1e7e215bf4453c",
+    "IV":"c2f490ff1d1a10079b9b1ceb1cd47aba"
+}
+{
+    "KeyId":0,
+    "Date":"2019-03-22",
+    "KeyMaterial":"dae9d8452e5e8dccb66a76f9b329d67273c5564c565432f5244f914c1985495a"
+    "IV":"73ca34c4a034c0e7f4e761f8f696c2ae"
+}
+Dates are specified in UTC time.
+* Type (0 = group, 1 = user, 2 = service) (2 bits)
+* KeyId (2 bits) - 
+* Reserved (5 bits) - 
+* SourceId (4 bytes) - groupId, userId or serviceId depending on type
+* Sequence Number (4 bytes)
+* Encrypted payload (16 bytes)
