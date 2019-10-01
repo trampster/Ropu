@@ -10,7 +10,7 @@ namespace Ropu.Client
     public class ServingNodeClient : IControlPacketParser
     {
         readonly ProtocolSwitch _protocolSwitch;
-        IControllingFunctionPacketHandler _controllingFunctionHandler;
+        IControllingFunctionPacketHandler? _controllingFunctionHandler;
 
         public ServingNodeClient(ProtocolSwitch protocolSwitch)
         {
@@ -25,6 +25,8 @@ namespace Ropu.Client
 
         public void Register(uint userId)
         {
+            Console.WriteLine("Register with serving node");
+
             var sendBuffer = _protocolSwitch.SendBuffer();
             //packet type (byte)
             sendBuffer[0] = (byte)RopuPacketType.Registration;

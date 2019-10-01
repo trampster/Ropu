@@ -16,11 +16,5 @@
         "Folder": "../CallController/",
         "Command": "dotnet",
         "Args": "run -- -u core@ropu.com -p core"
-    },
-    {
-        "Name": "Web",
-        "Folder": "../web/",
-        "Command": "dotnet",
-        "Args": "run"
     }
 ]

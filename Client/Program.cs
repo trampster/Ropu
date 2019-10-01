@@ -10,9 +10,10 @@ namespace Ropu.Client
     public class Program
     {
         const ushort _controlPortStarting = 5061;
-        RopuClient _ropuClient;
+        RopuClient? _ropuClient;
         const int LoadBalancerPort = 5069;
-        IMediaClient _mediaClient;
+        IMediaClient? _mediaClient;
+
         static void Main(string[] args)
         {
             var program = new Program();
@@ -21,8 +22,9 @@ namespace Ropu.Client
 
         public void Run(string[] args)
         {
-            var settings = new CommandLineClientSettings();
-            if(!settings.ParseArgs(args))
+            var settingsReader = new CommandLineClientSettingsReader();
+            var settings = settingsReader.ParseArgs(args);
+            if(settings == null)
             {
                 return;
             }
@@ -111,7 +113,7 @@ namespace Ropu.Client
                         Console.WriteLine("error: You must specify the group to call as a number");
                         return;
                     }
-                    _ropuClient.StartCall(group);
+                    _ropuClient?.StartCall(group);
                     break;
                 default:
                     Console.WriteLine("I'm not sure what you mean.");

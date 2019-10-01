@@ -5,12 +5,11 @@ using System.Threading.Tasks;
 
 namespace Ropu.Client.StateModel
 {
-    public class StateManager<Id, EventT>
+    public class StateManager<Id, EventT> where EventT : struct where Id : struct
     {
         IState<Id, EventT> _current;
-        public event EventHandler<EventArgs> StateChanged;
+        public event EventHandler<EventArgs>? StateChanged;
         readonly List<IState<Id, EventT>> _states = new List<IState<Id, EventT>>();
-        
 
         public StateManager(IState<Id, EventT> start)
         {

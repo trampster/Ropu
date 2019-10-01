@@ -2,7 +2,6 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
-using Ropu.LoadBalancer.FileServer;
 using Ropu.Shared.LoadBalancing;
 using Ropu.Shared.Groups;
 using Ropu.Shared;
@@ -18,13 +17,13 @@ namespace Ropu.LoadBalancer
             Console.WriteLine("Copyright (c) Daniel Hughes");
             Console.WriteLine();
 
-            var settings = new CommandLineSettings();
-            if(!settings.ParseArgs(args))
+            var settingsReader = new CommandLineSettingsReader();
+            var settings = settingsReader.ParseArgs(args);
+            if(settings == null)
             {
                 return;
             }
 
-            var fileManager = new FileManager();
             var credentialsProvider = new CredentialsProvider()
             {
                 Email = settings.Email,
@@ -33,7 +32,7 @@ namespace Ropu.LoadBalancer
             var webClient = new RopuWebClient("https://localhost:5001/", credentialsProvider);
             var groupsClient = new GroupsClient(webClient);
             var loadBalancerProtocol = new LoadBalancerProtocol(new PortFinder(), 5069);
-            var controller = new LoadBalancerRunner(loadBalancerProtocol, groupsClient, fileManager, webClient, settings);
+            var controller = new LoadBalancerRunner(loadBalancerProtocol, groupsClient, webClient, settings);
             Console.WriteLine("Before Run");
             await controller.Run();
         }   

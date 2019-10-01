@@ -2,6 +2,12 @@ namespace Ropu.Shared.WebModels
 {
     public class User : IUser
     {
+        public User()
+        {
+            Name = "";
+            ImageHash = "";
+        }
+
         public uint Id
         {
             get;

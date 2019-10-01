@@ -7,6 +7,7 @@ using System.Windows.Input;
 using Eto.Drawing;
 using Eto.Forms;
 using Ropu.ClientUI.Services;
+using Ropu.Shared;
 
 namespace Ropu.ClientUI
 {
@@ -181,7 +182,7 @@ namespace Ropu.ClientUI
             }
         }
 
-        public string Talker
+        public string? Talker
         {
             get =>  _talkerDrawable.Text;
             set
@@ -197,23 +198,23 @@ namespace Ropu.ClientUI
                     AddAnimation(_receivingAnimationAction);
                 }
                 _talkerDrawable.Hidden = value == null;
-                _talkerDrawable.Text = value;
+                _talkerDrawable.Text = value == null ? "" : value;
                 Invalidate();
             }
         }
 
-        public BindableBinding<PttPage, string> TalkerBinding
+        public BindableBinding<PttPage, string?> TalkerBinding
         { 
             get
             {
-                return new BindableBinding<PttPage, string>(
+                return new BindableBinding<PttPage, string?>(
                     this, 
                     p => p.Talker, 
                     (p,c) => p.Talker = c);
             }
         }
 
-        public byte[] TalkerImage
+        public byte[]? TalkerImage
         {
             set
             {
@@ -223,11 +224,11 @@ namespace Ropu.ClientUI
             }
         }
 
-        public BindableBinding<PttPage, byte[]> TalkerImageBinding
+        public BindableBinding<PttPage, byte[]?> TalkerImageBinding
         { 
             get
             {
-                return new BindableBinding<PttPage, byte[]>(
+                return new BindableBinding<PttPage, byte[]?>(
                     this, 
                     p => null, 
                     (p,c) => p.TalkerImage = c);
@@ -265,29 +266,29 @@ namespace Ropu.ClientUI
             }
         }
 
-        public string CallGroup
+        public string? CallGroup
         {
             get =>  _callGroupDrawable.Text;
             set
             {
                 _callGroupDrawable.Hidden = value == null;
-                _callGroupDrawable.Text = value;
+                _callGroupDrawable.Text = value.EmptyIfNull();
                 Invalidate();
             }
         }
 
-        public BindableBinding<PttPage, string> CallGroupBinding
+        public BindableBinding<PttPage, string?> CallGroupBinding
         { 
             get
             {
-                return new BindableBinding<PttPage, string>(
+                return new BindableBinding<PttPage, string?>(
                     this, 
                     p => p.CallGroup, 
                     (p,c) => p.CallGroup = c);
             }
         }
 
-        public byte[] CallGroupImage
+        public byte[]? CallGroupImage
         {
             set
             {
@@ -297,11 +298,11 @@ namespace Ropu.ClientUI
             }
         }
 
-        public BindableBinding<PttPage, byte[]> CallGroupImageBinding
+        public BindableBinding<PttPage, byte[]?> CallGroupImageBinding
         { 
             get
             {
-                return new BindableBinding<PttPage, byte[]>(
+                return new BindableBinding<PttPage, byte[]?>(
                     this, 
                     p => null, 
                     (p,c) => p.CallGroupImage = c);
@@ -350,7 +351,7 @@ namespace Ropu.ClientUI
             }
         }
 
-        public byte[] IdleGroupImage
+        public byte[]? IdleGroupImage
         {
             set
             {
@@ -360,18 +361,18 @@ namespace Ropu.ClientUI
             }
         }
 
-        public BindableBinding<PttPage, byte[]> IdleGroupImageBinding
+        public BindableBinding<PttPage, byte[]?> IdleGroupImageBinding
         { 
             get
             {
-                return new BindableBinding<PttPage, byte[]>(
+                return new BindableBinding<PttPage, byte[]?>(
                     this, 
                     p => null, 
                     (p,c) => p.IdleGroupImage = c);
             }
         }
 
-        void PaintHandler(object caller, PaintEventArgs paintEventArgs)
+        void PaintHandler(object? caller, PaintEventArgs paintEventArgs)
         {
             var graphics = paintEventArgs.Graphics;
 
@@ -456,7 +457,7 @@ namespace Ropu.ClientUI
             return _pttCircle.Radius;
         }
 
-        event EventHandler<EventArgs> ButtonDownEvent;
+        event EventHandler<EventArgs>? ButtonDownEvent;
 
         static readonly object ButtonDownCommandKey = new object();
 
@@ -472,7 +473,7 @@ namespace Ropu.ClientUI
 			set { Properties.Set(ButtonDownCommandKey, value, () => Properties.UpdateCommandCanExecute(ButtonDownCommandKey)); }
 		}
 
-        event EventHandler<EventArgs> ButtonUpEvent;
+        event EventHandler<EventArgs>? ButtonUpEvent;
 
         static readonly object ButtonUpCommandKey = new object();
 

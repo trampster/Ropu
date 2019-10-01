@@ -13,7 +13,7 @@ namespace Ropu.Client
             set;
         }
 
-        string FileMediaSource
+        string? FileMediaSource
         {
             get;
             set;

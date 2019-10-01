@@ -3,9 +3,9 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.0</TargetFramework>
-    <LangVersion>7.1</LangVersion>
-    <NullableReferenceTypes>true</NullableReferenceTypes>
     <RuntimeIdentifiers>linux-x64</RuntimeIdentifiers>
+    <Nullable>enable</Nullable>
+    <WarningsAsErrors>CS8600;CS8602;CS8603;CS8714;CS8613;CS8618;CS8601;CS8625;CS8604;CS8622;CS8619;CS8629;CS8614</WarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>

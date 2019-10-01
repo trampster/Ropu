@@ -24,7 +24,7 @@ namespace Ropu.CallController
         }
 
         DateTime _lastActivity;
-        CancellationTokenSource _callCancellationTokenSource;
+        CancellationTokenSource? _callCancellationTokenSource;
         
         public void StartCall(uint userId)
         {
@@ -93,7 +93,7 @@ namespace Ropu.CallController
                         endPointsReader.Release();
                         _callInProgress = false;
                         Console.WriteLine($"Call ended because idle timer expired after {callHangTime/1000} seconds.");
-                        _callCancellationTokenSource.Cancel();
+                        _callCancellationTokenSource?.Cancel();
                         return;
                     }
                     int timeToWait = (int)expiryTime.Subtract(now).TotalMilliseconds;

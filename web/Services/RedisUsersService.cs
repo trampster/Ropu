@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
-using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Newtonsoft.Json;
 using Ropu.Shared.WebModels;
 using Ropu.Web.Models;
@@ -20,7 +18,7 @@ namespace Ropu.Web.Services
         const string IdByEmailKey = "IdByEmail";
         const string UsersKey = "Users";
 
-        public event EventHandler<(string name, uint userId)> NameChanged;
+        public event EventHandler<(string name, uint userId)>? NameChanged;
 
         public RedisUsersService(
             RedisService redisService, 
@@ -175,7 +173,7 @@ namespace Ropu.Web.Services
             }
         }
 
-        public RedisUser AuthenticateUser(Credentials credentials)
+        public RedisUser? AuthenticateUser(Credentials credentials)
         {
             IDatabase db = _redisService.GetDatabase();
 
@@ -195,7 +193,7 @@ namespace Ropu.Web.Services
             
             if(_passwordHasher.VerifyHash(credentials.Password, user.PasswordHash))
             {
-                user.PasswordHash = null; //they don't need it so best to limit access
+                user.PasswordHash = ""; //they don't need it so best to limit access
                 return user;
             }
             return null;
@@ -207,9 +205,9 @@ namespace Ropu.Web.Services
             var user = db.StringGet($"{UsersKey}:{userId}");
             var redisUser = JsonConvert.DeserializeObject<RedisUser>(user);
             //clear sensitive information
-            redisUser.PasswordHash = null;
-            redisUser.Roles = null;
-            redisUser.Email = null;
+            redisUser.PasswordHash = "";
+            redisUser.Roles.Clear();
+            redisUser.Email = "";
             return redisUser;
         }
 

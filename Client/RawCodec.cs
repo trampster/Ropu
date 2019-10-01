@@ -16,7 +16,7 @@ namespace Ropu.Client
         }
 
 
-        public int Decode(AudioData encodedData, bool isNext, short[] output)
+        public int Decode(AudioData? encodedData, bool isNext, short[] output)
         {
             if(encodedData == null)
             {

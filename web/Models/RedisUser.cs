@@ -5,6 +5,15 @@ namespace Ropu.Web.Models
 {
     public class RedisUser : IUser
     {
+        public RedisUser()
+        {
+            Name = "";
+            Email = "";
+            ImageHash = "";
+            PasswordHash = "";
+            Roles = new List<string>();
+        }
+
         public uint Id
         {
             get;

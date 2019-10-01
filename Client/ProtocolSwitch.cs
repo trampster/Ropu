@@ -1,6 +1,7 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using Ropu.Shared;
 using Ropu.Shared.ControlProtocol;
@@ -13,8 +14,8 @@ namespace Ropu.Client
         const int MaxUdpSize = 0x10000;
         const int AnyPort = IPEndPoint.MinPort;
         static readonly IPEndPoint Any = new IPEndPoint(IPAddress.Any, AnyPort);
-        IControlPacketParser _controlPacketParser;
-        IMediaPacketParser _mediaPacketParser;
+        IControlPacketParser? _controlPacketParser;
+        IMediaPacketParser? _mediaPacketParser;
         
         public ProtocolSwitch(ushort startingPort, PortFinder portFinder)
         {
@@ -39,10 +40,9 @@ namespace Ropu.Client
             get;
         }
 
-        [ThreadStatic]
-        static byte[] _sendBuffer;
+        static ThreadLocal<byte[]> _sendBuffer = new ThreadLocal<byte[]>(() => new byte[MaxUdpSize]);
 
-        public IPEndPoint ServingNodeEndpoint
+        public IPEndPoint? ServingNodeEndpoint
         {
             get;
             set;
@@ -50,11 +50,9 @@ namespace Ropu.Client
 
         public byte[] SendBuffer()
         {
-            if(_sendBuffer == null)
-            {
-                _sendBuffer = new byte[MaxUdpSize];
-            }
-            return _sendBuffer;
+            #nullable disable
+            return _sendBuffer.Value;
+            #nullable enable
         }
 
         public async Task Run()

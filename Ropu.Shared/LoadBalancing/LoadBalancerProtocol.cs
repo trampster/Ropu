@@ -22,8 +22,8 @@ namespace Ropu.Shared.LoadBalancing
 
         readonly IPEndPoint Any = new IPEndPoint(IPAddress.Any, AnyPort);
 
-        ILoadBalancerServerMessageHandler _serverMessageHandler;
-        ILoadBalancerClientMessageHandler _clientMessageHandler;
+        ILoadBalancerServerMessageHandler? _serverMessageHandler;
+        ILoadBalancerClientMessageHandler? _clientMessageHandler;
 
         public LoadBalancerProtocol(PortFinder portFinder, ushort startingPort)
         {
@@ -158,13 +158,14 @@ namespace Ropu.Shared.LoadBalancing
             handler();
         }
 
-        H GetRequestHandler<H>(ushort requestId)
+        H? GetRequestHandler<H>(ushort requestId) where H : class
         {
-            if(_requests[requestId] == null)
+            var handler = _requests[requestId];
+            if(handler == null)
             {
                 return default(H);
             }
-            return (H)_requests[requestId];
+            return (H)handler;
         }
 
         SocketAsyncEventArgs CreateSocketAsyncEventArgs()
@@ -200,11 +201,11 @@ namespace Ropu.Shared.LoadBalancing
         /// <summary>
         /// Index is requestId, value is handler
         /// </summary>
-        readonly object[] _requests = new object[ushort.MaxValue];
+        readonly object?[] _requests = new object[ushort.MaxValue];
 
         async Task<bool> AwaitRequest<H>(
             ushort requestId, H handler, byte[] buffer, IPEndPoint endPoint, 
-            ManualResetEvent manualResetEvent, int length)
+            ManualResetEvent manualResetEvent, int length) where H : class
         {
              _requests[requestId] = handler;
 
@@ -215,7 +216,7 @@ namespace Ropu.Shared.LoadBalancing
             return acknowledged;
         }
 
-        public async Task<IPEndPoint> RequestServingNode(IPEndPoint targetEndPoint)
+        public async Task<IPEndPoint?> RequestServingNode(IPEndPoint targetEndPoint)
         {
             var sendBuffer = _sendBufferPool.Get();
 
@@ -226,7 +227,7 @@ namespace Ropu.Shared.LoadBalancing
             // Request ID (uint16)
             sendBuffer.WriteUshort(requestId, 1);
 
-            IPEndPoint servingNodeEndPoint = null;
+            IPEndPoint? servingNodeEndPoint = null;
             var manualResetEvent = new ManualResetEvent(false);
 
             Action<IPEndPoint> handler = endPoint =>

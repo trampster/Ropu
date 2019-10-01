@@ -19,7 +19,7 @@ namespace Ropu.ServingNode
         static readonly IPEndPoint Any = new IPEndPoint(IPAddress.Any, AnyPort);
         readonly byte[] _receiveBuffer = new byte[MaxUdpSize];
 
-        IMessageHandler _messageHandler;
+        IMessageHandler? _messageHandler = null;
 
         readonly byte[] _sendBuffer = new byte[MaxUdpSize];
 
@@ -205,13 +205,13 @@ namespace Ropu.ServingNode
                 return Interlocked.Decrement(ref _waitingSendCount);
             }
 
-            public Action<object> Finished
+            public Action<object?>? Finished
             {
                 get;
                 set;
             }
 
-            public object State
+            public object? State
             {
                 get;
                 set;
@@ -224,7 +224,7 @@ namespace Ropu.ServingNode
             }
         }
 
-        void AsyncSendComplete(object sender, SocketAsyncEventArgs args)
+        void AsyncSendComplete(object? sender, SocketAsyncEventArgs args)
         {
             _socketEventArgsPool.Add(args);
 
@@ -239,7 +239,7 @@ namespace Ropu.ServingNode
             }
         }
 
-        public void BulkSendAsync(byte[] buffer, int length, Span<IPEndPoint> endPoints, Action<object> onComplete, object state, IPEndPoint except)
+        public void BulkSendAsync(byte[] buffer, int length, Span<IPEndPoint> endPoints, Action<object?> onComplete, object state, IPEndPoint except)
         {
             var token = _bulkRequestTokenPool.Get();
             token.Reset();
@@ -299,7 +299,7 @@ namespace Ropu.ServingNode
             _socket.SendTo(_sendBuffer, 0, 1, SocketFlags.None, endPoint);
         }
 
-        public void BulkSendAsync(byte[] buffer, int length, Span<IPEndPoint> endPoints, Action<object> onComplete, object state)
+        public void BulkSendAsync(byte[] buffer, int length, Span<IPEndPoint> endPoints, Action<object?> onComplete, object state)
         {
             var token = _bulkRequestTokenPool.Get();
             token.Reset();

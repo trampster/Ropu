@@ -67,6 +67,7 @@ namespace Ropu.Client
                     {
                         return; //nothing available
                     }
+                    if(_clientSettings.UserId == null) throw new InvalidOperationException("Cannot send audio because no UserId is set");
                     SendMediaPacket(groupId, _sequenceNumber, _clientSettings.UserId.Value, audio);
                     _sequenceNumber++;
                 }
@@ -109,7 +110,7 @@ namespace Ropu.Client
             };
             while(!_disposing)
             {
-                (AudioData data, bool isNext) = _jitterBuffer.GetNext(reset);
+                (AudioData? data, bool isNext) = _jitterBuffer.GetNext(reset);
 
                 if(data != null)
                 {

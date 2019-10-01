@@ -12,7 +12,9 @@ namespace Ropu.ClientUI.Services
         {
             var codeBase = System.Reflection.Assembly.GetExecutingAssembly().Location;
             Console.WriteLine($"Codebase: {codeBase}");
-            _imageFolder = Path.GetDirectoryName(codeBase);
+            var imageFolder = Path.GetDirectoryName(codeBase);
+            if(imageFolder == null) throw new IOException($"Could not get directory name for image folder path {codeBase}");
+            _imageFolder = imageFolder;
             Console.WriteLine($"ImageFolder: {_imageFolder}");
 
         }

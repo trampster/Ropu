@@ -8,7 +8,7 @@ namespace Ropu.Shared.Groups
     {
         Task<IEnumerable<ushort>> GetGroups();
 
-        Task<Group> Get(ushort groupId);
+        Task<Group?> Get(ushort groupId);
 
         Task<ushort[]> GetUsersGroups(uint userId);
     }

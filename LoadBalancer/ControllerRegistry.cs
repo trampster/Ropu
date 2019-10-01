@@ -20,7 +20,7 @@ namespace Ropu.LoadBalancer
         /// <returns>true if new else false if update</returns>
         public bool Register(IPEndPoint callManagementEndpoint, Action<T> update, Func<T> createContoller)
         {
-            if(_controllers.TryGetValue(callManagementEndpoint, out T existingMediaController))
+            if(_controllers.TryGetValue(callManagementEndpoint, out T? existingMediaController))
             {
                 update(existingMediaController);
                 return false;
@@ -29,7 +29,7 @@ namespace Ropu.LoadBalancer
             return true;
         }
 
-        public T GetAvailableController()
+        public T? GetAvailableController()
         {
             foreach(var controllerPair in _controllers)
             {
@@ -48,8 +48,10 @@ namespace Ropu.LoadBalancer
                 if(controllerPair.Value.IsExpired())
                 {
                     Console.WriteLine("Serving Node Expired");
-                    _controllers.TryRemove(controllerPair.Key, out T value);
-                    onRemove(controllerPair.Value);
+                    if(_controllers.TryRemove(controllerPair.Key, out T? value))
+                    {
+                        onRemove(controllerPair.Value);
+                    }
                 }
             }
         }

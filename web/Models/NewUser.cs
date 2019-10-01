@@ -4,6 +4,13 @@ namespace Ropu.Web.Models
 {
     public class NewUser
     {
+        public NewUser()
+        {
+            Email = "";
+            Name = "";
+            Password = "";
+        }
+
         public string Email
         {
             get;

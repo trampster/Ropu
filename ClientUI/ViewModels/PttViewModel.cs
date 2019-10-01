@@ -6,6 +6,8 @@ using Ropu.Client;
 using Ropu.Shared.Groups;
 using Ropu.Shared.Web;
 using System.Threading.Tasks;
+using System.Diagnostics.Contracts;
+using Ropu.Shared;
 
 namespace Ropu.ClientUI.ViewModels
 {
@@ -17,7 +19,12 @@ namespace Ropu.ClientUI.ViewModels
         readonly IUsersClient _usersClient;
         readonly ImageClient _imageClient;
 
-        public PttViewModel(RopuClient ropuClient, IClientSettings clientSettings, IGroupsClient groupsClient, IUsersClient usersClient, ImageClient imageClient)
+        public PttViewModel(
+            RopuClient ropuClient, 
+            IClientSettings clientSettings, 
+            IGroupsClient groupsClient, 
+            IUsersClient usersClient, 
+            ImageClient imageClient)
         {
             _ropuClient = ropuClient;
             _ropuClient.StateChanged += (sender, args) => 
@@ -36,12 +43,19 @@ namespace Ropu.ClientUI.ViewModels
 
         public override async Task Initialize()
         {
-            _clientSettings.UserId = (await _usersClient.GetCurrentUser()).Id;
-            _ropuClient.IdleGroup = (await _groupsClient.GetUsersGroups(_clientSettings.UserId.Value))[0];
+            _clientSettings.UserId = (await _usersClient.GetCurrentUser())?.Id;
+
+            if(_clientSettings.UserId == null) throw new InvalidOperationException("UserId is not set");
+
+            var groups = (await _groupsClient.GetUsersGroups(_clientSettings.UserId.Value));
+            _ropuClient.IdleGroup = groups[0];
 
             var idleGroup = await _groupsClient.Get(_ropuClient.IdleGroup);
-            _idleGroup = idleGroup.Name;
-            _idleGroupImage = idleGroup.Image;
+            if(idleGroup != null)
+            {
+                _idleGroup = idleGroup.Name;
+                _idleGroupImage = idleGroup.Image;
+            }
 
             await _ropuClient.Run();
         }
@@ -90,14 +104,16 @@ namespace Ropu.ClientUI.ViewModels
             Transmitting = state == StateId.InCallTransmitting;
 
             var callGroup = InCall(state) ? await _groupsClient.Get(_ropuClient.CallGroup) : null;
-            CallGroup = callGroup?.Name;
+            CallGroup = callGroup?.Name == null ? "" : callGroup.Name;
             CallGroupImage = callGroup?.Image;
 
-            CircleText = InCall(state) ? 
-                (await _groupsClient.Get(_ropuClient.CallGroup)).Name : 
-                (await _groupsClient.Get(_ropuClient.IdleGroup)).Name;
+            CircleText = (InCall(state) ? 
+                (await _groupsClient.Get(_ropuClient.CallGroup))?.Name : 
+                (await _groupsClient.Get(_ropuClient.IdleGroup))?.Name).EmptyIfNull();
 
-            var user = state == StateId.InCallReceiving ? await _usersClient.Get(_ropuClient.Talker.Value) : null;
+            var user = state == StateId.InCallReceiving ? 
+                (_ropuClient.Talker.HasValue ? await _usersClient.Get(_ropuClient.Talker.Value) : null) :
+                null;
             Talker = user?.Name;
             if(user != null)
             {
@@ -162,15 +178,15 @@ namespace Ropu.ClientUI.ViewModels
             set => SetProperty(ref _pttColor, value);
         }
 
-        string _talker;
-        public string Talker
+        string? _talker = "";
+        public string? Talker
         {
             get => _talker;
             set => SetProperty(ref _talker, value);
         }
 
-        byte[] _talkerImage;
-        public byte[] TalkerImage
+        byte[]? _talkerImage;
+        public byte[]? TalkerImage
         {
             get => _talkerImage;
             set => SetProperty(ref _talkerImage, value);
@@ -183,35 +199,35 @@ namespace Ropu.ClientUI.ViewModels
             set => SetProperty(ref _transmitting, value);
         }
 
-        string _callGroup;
+        string _callGroup = "";
         public string CallGroup
         {
             get => _callGroup;
             set => SetProperty(ref _callGroup, value);
         }
 
-        byte[] _callGroupImage;
-        public byte[] CallGroupImage
+        byte[]? _callGroupImage;
+        public byte[]? CallGroupImage
         {
             get => _callGroupImage;
             set => SetProperty(ref _callGroupImage, value);
         }
 
-        string _idleGroup;
+        string _idleGroup = "";
         public string IdleGroup
         {
             get => _idleGroup;
             set => SetProperty(ref _idleGroup, value);
         }
 
-        byte[] _idleGroupImage;
-        public byte[] IdleGroupImage
+        byte[]? _idleGroupImage;
+        public byte[]? IdleGroupImage
         {
             get => _idleGroupImage;
             set => SetProperty(ref _idleGroupImage, value);
         }
 
-        string _circleText;
+        string _circleText = "";
         public string CircleText
         {
             get => _circleText;

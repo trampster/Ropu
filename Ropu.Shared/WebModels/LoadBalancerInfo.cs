@@ -2,6 +2,11 @@ namespace Ropu.Shared.WebModels
 {
     public class LoadBalancerInfo
     {
+        public LoadBalancerInfo()
+        {
+            IPEndPoint = "";
+        }
+        
         public string IPEndPoint
         {
             get;

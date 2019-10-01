@@ -39,11 +39,11 @@ namespace Ropu.Client.Opus
             }
         }
 
-        public int Decode(AudioData audioData, bool isNext, short[] output)
+        public int Decode(AudioData? audioData, bool isNext, short[] output)
         {
             int size = OpusNativeMethods.opus_decode(
                 _opusDecoderPtr, 
-                audioData?.Buffer, 
+                audioData == null ? null : audioData.Buffer, 
                 audioData != null ? audioData.Length : 0, 
                 output, 
                 160, 

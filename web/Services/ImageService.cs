@@ -79,7 +79,7 @@ namespace Ropu.Web.Services
             }
         }
 
-        public byte[] Get(string hash)
+        public byte[]? Get(string hash)
         {
             IDatabase db = _connectionMultiplexer.GetDatabase();
             var result = db.StringGet($"Image:{hash}");

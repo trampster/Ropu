@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Ropu.Client.StateModel
 {
-    public class State<Id, EventT> : IState<Id, EventT>
+    public class State<Id, EventT> : IState<Id, EventT> where EventT : struct where Id : struct
     {
         readonly List<Transition<EventT, IState<Id, EventT>>> _transitions;
 
@@ -30,15 +30,15 @@ namespace Ropu.Client.StateModel
         {
             foreach(var transition in _transitions)
             {
-                if(transition.Event.Equals(eventType))
+                if(transition != null && transition.Event.Equals(eventType))
                 {
                     return transition.State;
                 }
             }
-            return null;
+            throw new InvalidOperationException($"Could not find a transition for event {eventType} in state {this.Identifier}");
         }
 
-        public override string ToString()
+        public override string? ToString()
         {
             return Identifier.ToString();
         }
@@ -49,8 +49,8 @@ namespace Ropu.Client.StateModel
             _entryTask = Entry(_entryTaskCancellationTokenSource.Token);
         }
 
-        Task _entryTask;
-        CancellationTokenSource _entryTaskCancellationTokenSource;
+        Task? _entryTask;
+        CancellationTokenSource? _entryTaskCancellationTokenSource;
 
         public async void RunExit(IState<Id, EventT> newState)
         {

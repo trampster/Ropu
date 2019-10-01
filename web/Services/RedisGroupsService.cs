@@ -26,7 +26,7 @@ namespace Ropu.Web.Services
         }
 
 
-        public event EventHandler<(string name, ushort groupId)> NameChanged;
+        public event EventHandler<(string name, ushort groupId)>? NameChanged;
 
         public (bool, string) AddGroup(string name, GroupType groupType)
         {

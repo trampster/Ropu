@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Ropu.Shared.WebModels;
-using Ropu.Web.Models;
 using StackExchange.Redis;
 
 namespace Ropu.Web.Services
@@ -73,13 +72,17 @@ namespace Ropu.Web.Services
         void ChangeUserName(uint userId, string newName)
         {
             var db = _redisService.CurrentDatabase;
+            if(db == null)
+            {
+                throw new InvalidOperationException("No current database");
+            }
             var transaction = _redisService.CurrentTransaction;
             //find what groups the user is in
             foreach(int groupId in db.SortedSetRangeByScore(UsersGroupsKey(userId)))
             {
                 var key = GroupMembersKey((ushort)groupId);
-                transaction.SortedSetRemoveAsync(key, userId);
-                transaction.SortedSetAddAsync(key, userId, _redisService.CalculateStringScore(newName));
+                transaction?.SortedSetRemoveAsync(key, userId);
+                transaction?.SortedSetAddAsync(key, userId, _redisService.CalculateStringScore(newName));
             }
         }
 
@@ -87,12 +90,14 @@ namespace Ropu.Web.Services
         {
             var database = _redisService.GetDatabase();
             var groupMembersKey = GroupMembersKey(groupId);
-            var redisValues = database.SortedSetRangeByScore(groupMembersKey);
+            RedisValue[] redisValues = database.SortedSetRangeByScore(groupMembersKey);
+            var list = new List<IUser>();
+
             if(redisValues == null)
             {
-                return null;
+                return list;
             }
-            var list = new List<IUser>();
+
             foreach(uint userId in redisValues)
             {
                 list.Add(_usersService.Get(userId));
@@ -120,11 +125,11 @@ namespace Ropu.Web.Services
             var database = _redisService.GetDatabase();
             var usersGroupsKey = UsersGroupsKey(userId);
             var redisValues = database.SortedSetRangeByScore(usersGroupsKey);
+            var list = new List<IGroup>();
             if(redisValues == null)
             {
-                return null;
+                return list;
             }
-            var list = new List<IGroup>();
             foreach(var groupRedisValue in redisValues)
             {
                 ushort groupId = (ushort)(uint)groupRedisValue;
@@ -151,7 +156,9 @@ namespace Ropu.Web.Services
         void ChangeGroupName(ushort groupId, string newName)
         {
             var db = _redisService.CurrentDatabase;
+            if(db == null) throw new InvalidOperationException("No Current Database");
             var transaction = _redisService.CurrentTransaction;
+            if(transaction == null) throw new InvalidOperationException("No Current Transaction");
             //find what users have this group
             foreach(int userId in db.SortedSetRangeByScore(GroupMembersKey(groupId)))
             {

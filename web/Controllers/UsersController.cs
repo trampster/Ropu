@@ -1,8 +1,6 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -46,12 +44,12 @@ namespace web.Controllers
         public IUser UserById(uint userId)
         {
             var user = _usersService.GetFull(userId);
-            user.Password = null;
-            user.PasswordHash = null;
+            user.Password = "";
+            user.PasswordHash = "";
             if(!CanEdit(userId))
             {
-                user.Email = null;
-                user.Roles = null;
+                user.Email = "";
+                user.Roles.Clear();
             }
             return user;
         }
@@ -113,7 +111,7 @@ namespace web.Controllers
             {
                 var message = "Failed to get user's groups";
                 _logger.LogError(message);
-                return null;
+                return new List<IGroup>();
             }
             return groups;
         }
@@ -126,7 +124,7 @@ namespace web.Controllers
             {
                 var message = "Failed to get user's group ids";
                 _logger.LogError(message);
-                return null;
+                return new uint[0];
             }
             return groups;
         }

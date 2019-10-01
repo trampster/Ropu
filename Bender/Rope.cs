@@ -2,30 +2,30 @@ namespace Ropu.Bender
 {
     public class Rope
     {
-        public string Name
+        public string? Name
         {
             get;
             set;
         }
-        public string Folder
-        {
-            get;
-            set;
-        }
-
-        public string Command
+        public string? Folder
         {
             get;
             set;
         }
 
-        public string Args
+        public string? Command
         {
             get;
             set;
         }
 
-        public ArgParam ArgParam
+        public string? Args
+        {
+            get;
+            set;
+        }
+
+        public ArgParam? ArgParam
         {
             get;
             set;

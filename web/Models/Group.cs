@@ -4,6 +4,12 @@ namespace Ropu.Web.Models
 {
     public class Group : IGroup
     {
+        public Group()
+        {
+            Name = "";
+            ImageHash = "";
+        }
+
         public ushort Id
         {
             get;

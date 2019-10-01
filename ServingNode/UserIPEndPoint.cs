@@ -24,7 +24,7 @@ namespace Ropu.ServingNode
             var other = comparand as UserIPEndPoint;
             if(other == null)
             {
-                IPEndPoint otherEndpoint = comparand as IPEndPoint;
+                IPEndPoint? otherEndpoint = comparand as IPEndPoint;
                 if(otherEndpoint == null)
                 {
                     return false;

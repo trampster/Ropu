@@ -19,7 +19,7 @@ namespace Ropu.CallController
         static readonly IPEndPoint Any = new IPEndPoint(IPAddress.Any, AnyPort);
         readonly byte[] _receiveBuffer = new byte[MaxUdpSize];
 
-        IMessageHandler _messageHandler;
+        IMessageHandler? _messageHandler;
 
         readonly MemoryPool<byte[]> _sendBufferPool = new MemoryPool<byte[]>(() => new byte[ushort.MaxValue]);
 
@@ -117,7 +117,7 @@ namespace Ropu.CallController
 
         readonly MemoryPool<SocketAsyncEventArgs> _socketEventArgsPool;
         int _waitingSendCount = 0;
-        Action _onBulkAsyncFinished;
+        Action? _onBulkAsyncFinished;
         readonly object _asyncCompleteLock = new object();
 
         SocketAsyncEventArgs CreateSocketAsyncEventArgs()
@@ -127,7 +127,7 @@ namespace Ropu.CallController
             return args;
         }
 
-        void AsyncSendComplete(object sender, SocketAsyncEventArgs args)
+        void AsyncSendComplete(object? sender, SocketAsyncEventArgs args)
         {
             
             _socketEventArgsPool.Add(args);

@@ -93,6 +93,6 @@ namespace Ropu.Client.Opus
         /// <param name="decode_fec">Flag (0 or 1) to request that any in-band forward error correction data be decoded. If no such data is available, the frame is decoded as if it were lost.</param>
         /// <returns>Number of decoded samples or ErrorCodes</returns>
         [DllImport(OPUS_LIB)]
-        public static extern int opus_decode (IntPtr st, byte[] data, int len, short[] output, int frame_size, int decode_fec);
+        public static extern int opus_decode (IntPtr st, byte[]? data, int len, short[] output, int frame_size, int decode_fec);
     }
 }

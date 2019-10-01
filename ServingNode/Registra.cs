@@ -149,7 +149,7 @@ namespace Ropu.ServingNode
             {
                 if(_registrationLookup.TryGetValue(userId, out var registration))
                 {
-                    registration.Renew();
+                    registration?.Renew();
                     return true;
                 }
                 return false; //not registered
@@ -174,6 +174,10 @@ namespace Ropu.ServingNode
         {
             if(_registrationLookup.TryGetValue(userId, out var registration))
             {
+                if(registration == null)
+                {
+                    return;
+                }
                 Console.WriteLine($"Deregister registration for User ID: {userId} at {registration.EndPoint}");
                 await RemoveRegistration(registration);
             }

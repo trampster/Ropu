@@ -12,7 +12,7 @@ namespace Ropu.Shared.Concurrent
         Remove
     }
 
-    public class SetChange<T>
+    public class SetChange<T> where T : class
     {
         public ChangeType ChangeType
         {
@@ -20,16 +20,33 @@ namespace Ropu.Shared.Concurrent
             set;
         }
 
+        T? _value;
+
         public T Value
         {
-            get;
-            set;
+            get
+            {
+                if(_value == null)
+                {
+                    throw new Exception("SetChange is currently cleared");
+                }
+                return _value;
+            }
+            set
+            {
+                _value = value;
+            }
+        }
+
+        public void Clear()
+        {
+            _value = null;
         }
     }
 
-    public class SnapshotSet<T>
+    public class SnapshotSet<T> where T : class
     {
-        T[] _array;
+        T?[] _array;
         int _length;
         readonly int _maxElements;
         readonly List<SetChange<T>> _queuedChanges = new List<SetChange<T>>();
@@ -85,7 +102,7 @@ namespace Ropu.Shared.Concurrent
                 {
                     newLength = _maxElements;
                 }
-                var newArray = new T[newLength];
+                var newArray = new T?[newLength];
                 for(int index = 0; index < _array.Length; index++)
                 {
                     newArray[index] = _array[index];
@@ -115,6 +132,7 @@ namespace Ropu.Shared.Concurrent
                 if(itemIndex != _length -1)
                 {
                     var movedItem = _array[_length-1];
+                    if(movedItem == null) throw new Exception("Logic error moved item should never be null");
                     _indexLookup[movedItem] = itemIndex; //the last item was moved to the index of the old one.
                 }
                 _indexLookup.Remove(item);
@@ -133,7 +151,10 @@ namespace Ropu.Shared.Concurrent
         public Span<T> GetSnapShot()
         {
             _locked = true;
+            #nullable disable // should only be null outside the range of the span
             return _array.AsSpan(0, _length);
+            #nullable enable
+
         }
 
         void ProcessQueuedChanges()

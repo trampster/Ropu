@@ -8,6 +8,8 @@ namespace Ropu.Shared.Groups
 
         public Group()
         {
+            Name = "";
+            ImageHash = "";
         }
 
         public string Name
@@ -22,7 +24,7 @@ namespace Ropu.Shared.Groups
             set;
         }
 
-        public byte[] Image
+        public byte[]? Image
         {
             get;
             set;

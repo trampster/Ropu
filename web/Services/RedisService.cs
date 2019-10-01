@@ -33,9 +33,10 @@ namespace Ropu.Web.Services
         }
 
         [ThreadStatic]
-        static ITransaction _transaction;
+        static ITransaction? _transaction;
+        
         [ThreadStatic]
-        static IDatabase _database;
+        static IDatabase? _database;
 
         public (bool, string) RunInTransaction(string failureMessage, Func<IDatabase, ITransaction, (bool,string)> toRun)
         {
@@ -57,7 +58,7 @@ namespace Ropu.Web.Services
             return (true, "");
         }
 
-        public ITransaction CurrentTransaction => _transaction;
-        public IDatabase CurrentDatabase => _database;
+        public ITransaction? CurrentTransaction => _transaction;
+        public IDatabase? CurrentDatabase => _database;
     }
 }

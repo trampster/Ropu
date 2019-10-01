@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Ropu.Shared;
 using Ropu.Shared.WebModels;
 using Ropu.Web.Services;
 
@@ -26,7 +27,7 @@ namespace Ropu.Web.Controllers
 
         [HttpGet("[action]")]
         [Authorize(Roles="Admin")]
-        public LoadBalancerInfo LoadBalancer([FromBody]LoadBalancerInfo loadBalancerInfo)
+        public LoadBalancerInfo? LoadBalancer([FromBody]LoadBalancerInfo loadBalancerInfo)
         {
             return _servicesService.LoadBalancerInfo;
         }
@@ -35,7 +36,7 @@ namespace Ropu.Web.Controllers
         [Authorize(Roles="Admin,User")]
         public string LoadBalancerIPEndpoint()
         {
-            return _servicesService.LoadBalancerInfo?.IPEndPoint;
+            return (_servicesService?.LoadBalancerInfo?.IPEndPoint).EmptyIfNull();
         }
     }
 }

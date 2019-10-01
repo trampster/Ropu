@@ -4,7 +4,7 @@ namespace Ropu.Web.Services
 {
     public class ServicesService
     {
-        public LoadBalancerInfo LoadBalancerInfo
+        public LoadBalancerInfo? LoadBalancerInfo
         {
             get;
             set;

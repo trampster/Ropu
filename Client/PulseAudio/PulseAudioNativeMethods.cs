@@ -8,10 +8,10 @@ namespace Ropu.Client.PulseAudio
 
         [DllImport("pulse-simple.so.0")]
         public static extern IntPtr pa_simple_new(
-            string server, //const char * 	server
+            string? server, //const char * 	server
             string name, //const char * 	name
             StreamDirection direction, // pa_stream_direction_t 	dir,
-            string dev, // const char * 	dev,
+            string? dev, // const char * 	dev,
             string streamName, //const char * 	stream_name,
             IntPtr sampleSpec, // pointer to struct SampleSpec
             IntPtr channelMap, // Channel Map use pass IntPtr.Zero for now

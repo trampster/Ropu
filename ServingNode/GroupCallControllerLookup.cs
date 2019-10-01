@@ -4,7 +4,8 @@ namespace Ropu.ServingNode
 {
     public class GroupCallControllerLookup
     {
-        readonly IPEndPoint[] _lookup = new IPEndPoint[ushort.MaxValue];
+        readonly IPEndPoint?[] _lookup = new IPEndPoint[ushort.MaxValue];
+        
         public void Add(ushort groupId, IPEndPoint endPoint)
         {
             _lookup[groupId] = endPoint;
@@ -15,7 +16,7 @@ namespace Ropu.ServingNode
             _lookup[groupId] = null;
         }
 
-        public IPEndPoint LookupEndPoint(ushort groupId)
+        public IPEndPoint? LookupEndPoint(ushort groupId)
         {
             return _lookup[groupId];
         }

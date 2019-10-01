@@ -14,9 +14,9 @@ namespace Ropu.Shared.Web
             _webClient = webClient;
         }
 
-        public async Task<byte[]> GetImage(string hash)
+        public async Task<byte[]?> GetImage(string hash)
         {
-            if(_imageCache.TryGetValue(hash, out byte[] imageBytes))
+            if(_imageCache.TryGetValue(hash, out byte[]? imageBytes))
             {
                 return imageBytes;
             }

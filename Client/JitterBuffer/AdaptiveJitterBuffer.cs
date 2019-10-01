@@ -40,11 +40,8 @@ namespace Ropu.Client.JitterBuffer
             _max = max;
 
             _writeIndex = _min;
-            IntializeStats();
-        }
-
-        void IntializeStats()
-        {
+            
+            // InitalizeStats
             _requiredBufferSizeCounts = new float[_max*2];
             
             //will ensure, buffer size doesn't change instantly
@@ -53,7 +50,6 @@ namespace Ropu.Client.JitterBuffer
                 _requiredBufferSizeCounts[_min-1] += 1;
                 _expireStats[index] = _min -1;
             }
-
         }
 
         int GetIndexFromOffset(int offset)
@@ -232,7 +228,7 @@ namespace Ropu.Client.JitterBuffer
 
         bool _returnedAudioSinceEmpty = false;
 
-        public (AudioData, bool) GetNext(Action reset)
+        public (AudioData?, bool) GetNext(Action reset)
         {
             if(_packetsInBuffer == 0)
             {

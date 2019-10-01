@@ -1,1 +1,0 @@
-This provides a Rest API/Web UI for managing users and groups.

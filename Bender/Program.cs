@@ -34,7 +34,7 @@ namespace Ropu.Bender
             var clientThreads = new List<Thread>();
             foreach(var rope in Expand(ropes))
             {
-                if(rope.Name.StartsWith("Client"))
+                if(rope.Name != null && rope.Name.StartsWith("Client"))
                 {
                     Console.WriteLine($"Starting {rope.Name}");
                     clientThreads.Add(StartClient(rope));
@@ -55,7 +55,7 @@ namespace Ropu.Bender
             Thread thread = new Thread(_ => 
             {
                 var program = new Ropu.Client.Program();
-                program.Run(rope.Args.Split(' ', StringSplitOptions.RemoveEmptyEntries));
+                program.Run(rope.Args == null ? new string[0] : rope.Args.Split(' ', StringSplitOptions.RemoveEmptyEntries));
             });
             thread.Start();
             return thread;
@@ -78,7 +78,7 @@ namespace Ropu.Bender
                         Name = $"{rope.Name}_{index}",
                         Folder = rope.Folder,
                         Command = rope.Command,
-                        Args = string.Format(rope.Args, index)
+                        Args = rope.Args == null ? "" : string.Format(rope.Args, index)
                     };
                 }
             }

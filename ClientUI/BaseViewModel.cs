@@ -6,8 +6,7 @@ namespace Ropu.ClientUI
 {
     public abstract class BaseViewModel : INotifyPropertyChanged
     {
-        
-        protected void SetProperty<T>(ref T property, T value, [CallerMemberName] string memberName = null)
+        protected void SetProperty<T>(ref T property, T value, [CallerMemberName] string memberName = "")
         {
             if(property == null || !property.Equals(value))
             {
@@ -16,7 +15,7 @@ namespace Ropu.ClientUI
             }
         }
 
-        protected void RaisePropertyChanged([CallerMemberName] string memberName = null)
+        protected void RaisePropertyChanged([CallerMemberName] string memberName = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(memberName));
         }
@@ -26,6 +25,6 @@ namespace Ropu.ClientUI
             return Task.CompletedTask;
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
     }
 }

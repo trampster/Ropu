@@ -14,7 +14,7 @@ namespace Ropu.Web.Services
             get;
         }
 
-        RedisUser AuthenticateUser(Credentials credentials);
+        RedisUser? AuthenticateUser(Credentials credentials);
 
         (bool, string) AddUser(string name, string email, string password, List<string> roles);
 

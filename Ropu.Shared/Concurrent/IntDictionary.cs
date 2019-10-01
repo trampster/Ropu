@@ -8,7 +8,7 @@ namespace Ropu.Shared.Concurrent
         const int _setSize = 256;
         int _count = 0;
 
-        readonly T[][][] _store;
+        readonly T?[][][] _store;
 
 
         public int Count => _count;
@@ -21,7 +21,7 @@ namespace Ropu.Shared.Concurrent
         class Cell
         {
             public bool IsValue => Array == null;
-            Cell[] Array{get;set;}
+            Cell?[]? Array{get;set;}
 
             int Value{get;set;}
         }
@@ -50,7 +50,7 @@ namespace Ropu.Shared.Concurrent
             _count++;
         }
 
-        public T this[uint index]
+        public T? this[uint index]
         {
             get 
             { 
@@ -68,7 +68,7 @@ namespace Ropu.Shared.Concurrent
             }
         }
 
-        public bool TryGetValue(uint index, out T value)
+        public bool TryGetValue(uint index, out T? value)
         {
             uint index1 = index >> 16;
             uint index2 = (index >> 8) & 0xFF;

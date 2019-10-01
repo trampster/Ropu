@@ -5,7 +5,7 @@ namespace Ropu.ClientUI
 {
     public interface IDrawable
     {
-        int Width{get;}
+        int Width {get;}
         int Height {get;}
 
         int X {set;}
@@ -87,9 +87,10 @@ namespace Ropu.ClientUI
             _fontFamily = fontFamily;
             _font = new Font(fontFamily, 12);
             _textBrush = new SolidBrush(Color.FromArgb(50,50,50,0xFF));
+            Text = "";
         }
 
-        public Image Image
+        public Image? Image
         {
             get;
             set;
@@ -186,7 +187,7 @@ namespace Ropu.ClientUI
             }
         }
 
-        public Image Image
+        public Image? Image
         {
             get;
             set;

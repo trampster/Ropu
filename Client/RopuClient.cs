@@ -36,10 +36,10 @@ namespace Ropu.Client
         LoadBalancerProtocol _loadBalancerProtocol;
 
         readonly Ropu.Shared.Timer _retryTimer;
-        IPEndPoint _loadBalancerEndPoint;
+        IPEndPoint? _loadBalancerEndPoint;
         uint _registeredUserId = 0;
 
-        public event EventHandler<EventArgs> StateChanged;
+        public event EventHandler<EventArgs>? StateChanged;
         /// <summary>
         /// this is the group the user has selected, it is the group to be called when they PTT and 
         /// the group to return to after the call
@@ -50,7 +50,7 @@ namespace Ropu.Client
         /// </summary>
         ushort _callGroup;
 
-        Task _heartbeatTask;
+        Task? _heartbeatTask;
         CancellationTokenSource _heartbeatCancellationTokenSource = new CancellationTokenSource();
         ManualResetEvent _heartbeatOnEvent = new ManualResetEvent(false);
         readonly IBeepPlayer _beepPlayer;
@@ -85,6 +85,7 @@ namespace Ropu.Client
             {
                 Entry = async token => 
                 { 
+                    if(_clientSettings.UserId == null) throw new InvalidOperationException("UserId is not set");
                     _callGroup = IdleGroup;
                     _registeredUserId = _clientSettings.UserId.Value;
                     if(_heartbeatTask == null)
@@ -167,6 +168,7 @@ namespace Ropu.Client
             {
                 Entry = token => 
                 {
+                    if(_clientSettings.UserId == null) throw new InvalidOperationException("UserId is not set");
                     _servingNodeClient.SendFloorRequest(_callGroup, _clientSettings.UserId.Value);
                     var ignore = _mediaClient.StartSendingAudio(_callGroup);
                     return new Task(() => {});
@@ -187,6 +189,7 @@ namespace Ropu.Client
             {
                 Entry = token => 
                 {
+                    if(_clientSettings.UserId == null) throw new InvalidOperationException("UserId is not set");
                     _servingNodeClient.SendFloorReleased(_callGroup, _clientSettings.UserId.Value);
                     return new Task(() => {});
                 }   
@@ -198,14 +201,18 @@ namespace Ropu.Client
             _inCallReleasingFloor.AddTransition(EventId.FloorGranted, () => _inCallReleasingFloor);
 
 
-            _stateManager.StateChanged += (sender, args) => StateChanged?.Invoke(this, args);
+            _stateManager.StateChanged += (sender, args) => 
+            {
+                Console.WriteLine($"State Changed {this._stateManager.CurrentState}");
+                StateChanged?.Invoke(this, args);
+            };
             
             _stateManager.AddTransitionToAll(EventId.HeartbeatFailed, () => _unregistered, stateId => stateId != StateId.Unregistered);
             _stateManager.AddTransitionToAll(EventId.NotRegistered, () => _unregistered, stateId => stateId != StateId.Unregistered);
             _stateManager.AddTransitionToAll(EventId.CallEnded, () => _registered, stateId => stateId != StateId.Unregistered && stateId != StateId.Start && stateId != StateId.Deregistering);
             _stateManager.AddTransitionToAll(EventId.FloorIdle, () => _inCallIdle, IsRegistered);
             _stateManager.AddTransitionToAll(EventId.FloorTaken, () => _inCallReceiveing, IsRegistered);
-            _stateManager.AddTransitionToAll(EventId.FloorGranted, () => _inCallTransmitting, stateId => stateId != StateId.InCallReleasingFloor && stateId != StateId.InCallTransmitting);
+            _stateManager.AddTransitionToAll(EventId.FloorGranted, () => _inCallTransmitting, stateId => stateId != StateId.InCallReleasingFloor);
 
         }
 
@@ -314,6 +321,8 @@ namespace Ropu.Client
 
         async Task Heartbeat(CancellationToken token)
         {
+            if(_clientSettings.UserId == null) throw new InvalidOperationException("UserId is not set");
+
             while(!token.IsCancellationRequested)
             {
                 await WaitForEvent(_heartbeatOnEvent);
@@ -341,6 +350,7 @@ namespace Ropu.Client
 
         async Task Register(CancellationToken token)
         {
+            if(_clientSettings.UserId == null) throw new InvalidOperationException("UserId is not set yet");
             while(!token.IsCancellationRequested)
             {
                 if(_clientSettings.UserId == 0)
@@ -353,6 +363,7 @@ namespace Ropu.Client
                 }
                 if(_protocolSwitch.ServingNodeEndpoint == null)
                 {
+                    if(_loadBalancerEndPoint == null) throw new InvalidOperationException("Don't know the load balancer endpoint");
                     var servingNodeEndpoint = await _loadBalancerProtocol.RequestServingNode(_loadBalancerEndPoint);
                     if(servingNodeEndpoint == null)
                     {
@@ -401,6 +412,7 @@ namespace Ropu.Client
 
         async Task StartCall(CancellationToken token)
         {
+            if(_clientSettings.UserId == null) throw new InvalidOperationException("UserId is not set");
             if(_callGroup == 0)
             {
                 _callGroup = IdleGroup;
@@ -452,6 +464,7 @@ namespace Ropu.Client
 
         public void HandleRegistrationResponseReceived(Codec codec, ushort bitrate)
         {
+            Console.WriteLine("Register Response Received");
             _stateManager.HandleEvent(EventId.RegistrationResponseReceived);
         }
 

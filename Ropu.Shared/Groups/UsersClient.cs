@@ -16,7 +16,7 @@ namespace Ropu.Shared.Groups
             _client = client;
         }
 
-        public async Task<IUser> Get(uint userId)
+        public async Task<IUser?> Get(uint userId)
         {
             var response = await _client.Get<User>($"api/Users/{userId}");
             if(response.StatusCode != HttpStatusCode.OK)
@@ -27,7 +27,7 @@ namespace Ropu.Shared.Groups
             return await response.GetJson();
         }
 
-        public async Task<IUser> GetCurrentUser()
+        public async Task<IUser?> GetCurrentUser()
         {
             var response = await _client.Get<User>($"api/Users/Current").ConfigureAwait(false);
             if(response.StatusCode != HttpStatusCode.OK)

@@ -5,56 +5,15 @@ using Mono.Options;
 
 namespace Ropu.Client
 {
-    public class CommandLineClientSettings : IClientSettings
+    public class ClientSettings : IClientSettings
     {
         uint? _userId = null;
 
-        public bool ParseArgs(string[] args)
+        public ClientSettings(string email, string password, string webAddress)
         {
-            bool showHelp = false;
-            bool fakeMedia = false;
-
-            var optionSet = new OptionSet () 
-            {
-                { "u|user=", "the {email} of this client",  v => Email = v },
-                { "p|password=", "the {password} of this client",  v => Password = v },
-                { "f|fake-media", "Don't do any media processing", v =>  fakeMedia = v != null },
-                { "l|file-media=", "use file as media source", v =>  FileMediaSource = v },
-                { "w|web-address=", "Address of the Ropu Web", v =>  WebAddress = v },
-                { "h|help",  "show this message and exit", v => showHelp = v != null }
-            };
-            
-            optionSet.Parse(args);
-
-            if(WebAddress == null)
-            {
-                Console.Error.WriteLine("Web address is required");
-                showHelp = true;
-            }
-
-            if(showHelp)
-            {
-                ShowHelp(optionSet);
-                return false;
-            }
-
-            if(FileMediaSource != null && !File.Exists(FileMediaSource))
-            {
-                Console.Error.WriteLine($"Could not find file {FileMediaSource}");
-                return false;
-            }
-
-            FakeMedia = fakeMedia;
-
-            return true;
-        }
-
-        void ShowHelp (OptionSet optionaSet)
-        {
-            Console.WriteLine ("Usage: Client [OPTIONS]");
-            Console.WriteLine ();
-            Console.WriteLine ("Options:");
-            optionaSet.WriteOptionDescriptions (Console.Out);
+            Email = email;
+            Password = password;
+            WebAddress = webAddress;
         }
 
         public string Email
@@ -78,7 +37,7 @@ namespace Ropu.Client
             }
         }
 
-        public string FileMediaSource
+        public string? FileMediaSource
         {
             get;
             set;
@@ -95,5 +54,64 @@ namespace Ropu.Client
             get;
             set;
         }
+    }
+
+    public class CommandLineClientSettingsReader
+    {
+        public ClientSettings? ParseArgs(string[] args)
+        {
+            bool showHelp = false;
+
+            string? email = null;
+            string? password = null;
+            bool fakeMedia = false;
+            string? fileMediaSource = null;
+            string? webAddress = null;
+
+            var optionSet = new OptionSet () 
+            {
+                { "u|user=", "the {email} of this client",  v => email = v },
+                { "p|password=", "the {password} of this client",  v => password = v },
+                { "f|fake-media", "Don't do any media processing", v =>  fakeMedia = v != null },
+                { "l|file-media=", "use file as media source", v =>  fileMediaSource = v },
+                { "w|web-address=", "Address of the Ropu Web", v =>  webAddress = v },
+                { "h|help",  "show this message and exit", v => showHelp = v != null }
+            };
+            
+            optionSet.Parse(args);
+
+            if(webAddress == null)
+            {
+                Console.Error.WriteLine("Web address is required");
+                showHelp = true;
+            }
+
+            if(showHelp || email == null || password == null || webAddress == null)
+            {
+                ShowHelp(optionSet);
+                return null;
+            }
+
+            if(fileMediaSource != null && !File.Exists(fileMediaSource))
+            {
+                Console.Error.WriteLine($"Could not find file {fileMediaSource}");
+                return null;
+            }
+
+            return new ClientSettings(email, password, webAddress)
+            {
+                FileMediaSource = fileMediaSource,
+                FakeMedia = fakeMedia
+            };
+        }
+
+        void ShowHelp (OptionSet optionaSet)
+        {
+            Console.WriteLine ("Usage: Client [OPTIONS]");
+            Console.WriteLine ();
+            Console.WriteLine ("Options:");
+            optionaSet.WriteOptionDescriptions (Console.Out);
+        }
+
     }
 }

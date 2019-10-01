@@ -8,7 +8,7 @@ namespace Ropu.ClientUI
     {
         readonly Dictionary<Type, Func<Control>> _viewLookup;
 
-        Action<Control> _changeView;
+        Action<Control> _changeView = control => {};
 
         public Navigator()
         {

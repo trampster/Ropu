@@ -5,6 +5,12 @@ namespace Ropu.Web.Models
 {
     public class RedisGroup : IGroup
     {
+        public RedisGroup()
+        {
+            Name = "";
+            ImageHash = "";
+        }
+
         public ushort Id
         {
             get;

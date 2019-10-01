@@ -80,14 +80,17 @@ namespace Ropu.ServingNode
             _ropuProtocol.BulkSendAsync(packetData, length, clientEndPoints.GetSnapShot(), ReleaseSnapshotSet, clientEndPoints, from);
         }
 
-        static void ReleaseSnapshotSet(object snapshot)
+        static void ReleaseSnapshotSet(object? snapshot)
         {
+            if(snapshot == null)
+            {
+                return;
+            }
             ((SnapshotSet<IPEndPoint>)snapshot).Release();
         }
 
         public void ForwardClientMediaPacket(ushort groupId, byte[] packetData, int length, IPEndPoint from)
         {
-            //Console.WriteLine("Received media packet");
             //check if it has floor
             uint userId = packetData.AsSpan(5).ParseUint();
             if(_groupFloorLookup[groupId] != userId)
@@ -102,7 +105,6 @@ namespace Ropu.ServingNode
 
             //forward to clients
             ForwardPacketToClients(groupId, packetData, length, from);
-
         }
 
         async Task Register()

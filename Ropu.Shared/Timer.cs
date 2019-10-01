@@ -6,8 +6,13 @@ namespace Ropu.Shared
 {
     public class Timer : IDisposable
     {
+        public Timer()
+        {
+            Callback = () => {};
+        }
+
         readonly ManualResetEvent _manualResetEvent = new ManualResetEvent(false);
-        Task _task;
+        Task? _task;
 
         public int Duration
         {
@@ -46,7 +51,6 @@ namespace Ropu.Shared
                 _manualResetEvent.Dispose();
                 _task?.Wait();
                 _task?.Dispose();
-                _task = null;
             }
         }
 

@@ -64,7 +64,7 @@ namespace Ropu.Client.PulseAudio
             if(error != 0 || result != 0)
             {
                 IntPtr msgPtr = PulseAudioNativeMethods.pa_strerror(error);
-                string errorMessage = Marshal.PtrToStringAuto(msgPtr);
+                string? errorMessage = Marshal.PtrToStringAuto(msgPtr);
                 throw new Exception($"Failed to read audio from PulseAudio Error: {errorMessage} Result: {result} ");
             }
         }

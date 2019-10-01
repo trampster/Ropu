@@ -5,43 +5,67 @@ namespace Ropu.LoadBalancer
 {
     public class CommandLineSettings
     {
-        public bool ParseArgs(string[] args)
+        public CommandLineSettings(string email, string password, string publicIPEndpoint)
+        {
+            Email = email;
+            Password = password;
+            PublicIPEndpoint = publicIPEndpoint;
+        }
+
+        public string Email
+        {
+            get;
+        }
+
+        public string Password
+        {
+            get;
+        }
+
+        public string PublicIPEndpoint
+        {
+            get;
+        }
+    }
+
+    public class CommandLineSettingsReader
+    {
+        public CommandLineSettings? ParseArgs(string[] args)
         {
             bool showHelp = false;
-
+            string? email = null;
+            string? password = null;
+            string? publicIPEndpoint = null;
             var optionSet = new OptionSet () 
             {
-                { "u|user=", "the {email} of this client",  v => Email = v },
-                { "p|password=", "the {password} of this client",  v => Password = v },
-                { "i|ipendpoint=", "the public endpoint", v => PublicIPEndpoint = v},
+                { "u|user=", "the {email} of this client",  v => email = v },
+                { "p|password=", "the {password} of this client",  v => password = v },
+                { "i|ipendpoint=", "the public endpoint", v => publicIPEndpoint = v},
                 { "h|help",  "show this message and exit", v => showHelp = v != null }
             };
             
             optionSet.Parse(args);
 
-            if(Email == null) 
+            if(email == null) 
             {
                 Console.Error.WriteLine("email command line arg is required");
-                showHelp = true;
             }
-            if(Password == null) 
+            if(password == null) 
             {
                 Console.Error.WriteLine("password command line arg is required");
-                showHelp = true;
             }
-            if(PublicIPEndpoint == null) 
+            if(publicIPEndpoint == null) 
             {
                 Console.Error.WriteLine("ipaddress command line arg is required");
-                showHelp = true;
             }
 
-            if(showHelp)
+            if(showHelp || email == null || password == null || publicIPEndpoint == null)
             {
                 ShowHelp(optionSet);
-                return false;
+                return null;
             }
 
-            return true;
+            return new CommandLineSettings(email, password, publicIPEndpoint);
         }
 
         void ShowHelp (OptionSet optionaSet)
@@ -50,24 +74,6 @@ namespace Ropu.LoadBalancer
             Console.WriteLine ();
             Console.WriteLine ("Options:");
             optionaSet.WriteOptionDescriptions (Console.Out);
-        }
-
-        public string Email
-        {
-            get;
-            set;
-        }
-
-        public string Password
-        {
-            get;
-            set;
-        }
-
-        public string PublicIPEndpoint
-        {
-            get;
-            set;
         }
     }
 }

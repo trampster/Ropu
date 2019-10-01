@@ -10,6 +10,8 @@
 
     <!-- Set this to true if you enable server-side prerendering -->
     <BuildServerSideRenderer>false</BuildServerSideRenderer>
+    <Nullable>enable</Nullable>
+    <WarningsAsErrors>CS8600;CS8602;CS8603;CS8714;CS8613;CS8618;CS8601;CS8625;CS8604;CS8622;CS8619;CS8629;CS8614</WarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>

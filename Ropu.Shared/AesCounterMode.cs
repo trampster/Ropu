@@ -1,34 +1,44 @@
 using System;
 using System.Security.Cryptography;
+using System.Threading;
 
 namespace Ropu.Shared
 {
     public class AesCounterMode
     {
-        [ThreadStatic]
-        static byte[] _counterBuf = new byte[16];
-        [ThreadStatic]
-        static byte[] _blockInput = new byte[16];
-        [ThreadStatic]
-        static byte[] _blockOutput = new byte[16];
+        static ThreadLocal<byte[]> _counterBuf = new ThreadLocal<byte[]>(() => new byte[16]);
+
+        static ThreadLocal<byte[]> _blockInput = new ThreadLocal<byte[]>(() => new byte[16]);
+
+        static ThreadLocal<byte[]> _blockOutput = new ThreadLocal<byte[]>(() => new byte[16]);
+
+        #nullable disable
+        byte[] CounterBuf => _counterBuf.Value;
+        byte[] BlockInput => _blockInput.Value;
+        byte[] BlockOutput => _blockOutput.Value;
+        #nullable enable
 
         public void TransformBlock(Span<byte> iv, Span<byte> input, ICryptoTransform aesTransform, int sequenceNumber, byte blockIndex, Span<byte> output)
         {
             // turn counter into an array
-            _counterBuf[0] =  (byte)(blockIndex & 0xFF);
-            _counterBuf[12] = (byte)(sequenceNumber << 24);
-            _counterBuf[13] = (byte)(sequenceNumber << 16);
-            _counterBuf[14] = (byte)(sequenceNumber << 8);
-            _counterBuf[15] = (byte)sequenceNumber;
+            var counterBuf = CounterBuf;
+            counterBuf[0] =  (byte)(blockIndex & 0xFF);
+            counterBuf[12] = (byte)(sequenceNumber << 24);
+            counterBuf[13] = (byte)(sequenceNumber << 16);
+            counterBuf[14] = (byte)(sequenceNumber << 8);
+            counterBuf[15] = (byte)sequenceNumber;
+
+            var blockInput = BlockInput;
+            var blockOutput = BlockOutput;
 
             // xor iv with counter
-            Xor(iv, _counterBuf, _blockInput);
+            Xor(iv, counterBuf, blockInput);
 
             // encrypt with key
-            aesTransform.TransformBlock(_blockInput, 0, 16, _blockOutput, 0);
+            aesTransform.TransformBlock(blockInput, 0, 16, blockOutput, 0);
 
             // xor with input
-            Xor(_blockOutput, input, output);
+            Xor(blockOutput, input, output);
         }
 
         void Xor(Span<byte> a, Span<byte> b, Span<byte> output)

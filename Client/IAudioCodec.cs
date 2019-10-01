@@ -13,6 +13,6 @@ namespace Ropu.Client
         /// <returns>the number of bytes writen to output</returns>
         int Encode(short[] raw, Span<byte> output);
 
-        int Decode(AudioData audioData, bool isNext, short[] output);
+        int Decode(AudioData? audioData, bool isNext, short[] output);
     }
 }

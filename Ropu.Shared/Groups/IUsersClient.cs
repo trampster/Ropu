@@ -5,7 +5,7 @@ namespace Ropu.Shared.Groups
 {
     public interface IUsersClient
     {
-        Task<IUser> Get(uint userId);
-        Task<IUser> GetCurrentUser();
+        Task<IUser?> Get(uint userId);
+        Task<IUser?> GetCurrentUser();
     }
 }

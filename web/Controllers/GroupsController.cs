@@ -1,7 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -116,7 +113,7 @@ namespace web.Controllers
             {
                 var message = "Failed to get group members";
                 _logger.LogError(message);
-                return null;
+                return new List<IUser>();
             }
             return members;
         }
@@ -129,7 +126,7 @@ namespace web.Controllers
             {
                 var message = "Failed to get group member IDs";
                 _logger.LogError(message);
-                return null;
+                return new uint[0];
             }
             return members;
         }

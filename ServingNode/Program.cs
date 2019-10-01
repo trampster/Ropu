@@ -24,8 +24,9 @@ namespace Ropu.ServingNode
             Console.WriteLine("Copyright (c) Daniel Hughes");
             Console.WriteLine();
 
-            var settings = new CommandLineSettings();
-            if(!settings.ParseArgs(args))
+            var settingsReader = new CommandLineSettingsReader();
+            var settings = settingsReader.ParseArgs(args);
+            if(settings == null)
             {
                 return;
             }

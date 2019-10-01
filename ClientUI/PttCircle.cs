@@ -14,6 +14,7 @@ namespace Ropu.ClientUI
             _brush = new SolidBrush(new Color());
             _pen = new Pen(_brush, 6);
             _font = new Font(_fontFamily,12);
+            _text = "";
         }
 
         public int Width

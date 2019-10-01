@@ -26,7 +26,7 @@ namespace Ropu.ClientUI.ViewModels
             _credentialsProvider = credentialProvider;
         }
 
-        string _email;
+        string _email = "";
 
         public string Email
         {
@@ -34,7 +34,7 @@ namespace Ropu.ClientUI.ViewModels
             set => SetProperty(ref _email, value);
         }
 
-        string _password;
+        string _password = "";
 
         public string Password
         {

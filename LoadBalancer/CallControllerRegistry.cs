@@ -20,13 +20,13 @@ namespace Ropu.LoadBalancer
     public class CallControllerRegistry
     {
         readonly IPEndPoint[] _groupLookup;
-        readonly RegisteredCallController[] _controllers;
+        readonly RegisteredCallController?[] _controllers;
         const int MaxControllers = 256;
         const int MaxGroups = ushort.MaxValue;
         int _nextIndex = 0;
         int _count = 0;
         readonly IGroupsClient _groupsClient;
-        IGroupCallControllerListener _listener;
+        IGroupCallControllerListener? _listener;
         readonly Queue<ushort> _unassignedGroups = new Queue<ushort>();
 
         public CallControllerRegistry(IGroupsClient groupsClient)
@@ -53,11 +53,7 @@ namespace Ropu.LoadBalancer
                 {
                     foreach(var groupId in controller.Groups)
                     {
-                        yield return new GroupCallController()
-                        {
-                            GroupId = groupId,
-                            EndPoint = controller.CallEndPoint
-                        };
+                        yield return new GroupCallController(controller.CallEndPoint, groupId);
                     }
                 }
             }
@@ -100,11 +96,7 @@ namespace Ropu.LoadBalancer
                 _groupLookup[groupId] = registeredCallController.CallEndPoint;
                 _listener?.GroupsChanged(new GroupCallController[]
                 {
-                    new GroupCallController()
-                    {
-                        EndPoint = registeredCallController.CallEndPoint, 
-                        GroupId = groupId
-                    }
+                    new GroupCallController(registeredCallController.CallEndPoint, groupId)
                 });
             }
             FindNextIndex();
@@ -159,7 +151,7 @@ namespace Ropu.LoadBalancer
                     }
                     var group = enumerator.Current;
                     controller.AddGroup(group);
-                    list.Add(new GroupCallController(){EndPoint = controller.CallEndPoint, GroupId = group});
+                    list.Add(new GroupCallController(controller.CallEndPoint, group));
                 }
                 if(noMore)
                 {
@@ -184,7 +176,7 @@ namespace Ropu.LoadBalancer
                 Console.Error.WriteLine($"Tried to refresh a controller with ID {controllerId} but it isn't registered");
                 return;
             }
-            _controllers[controllerId].RefreshExpiry();
+            _controllers[controllerId]?.RefreshExpiry();
         }
     }
 }

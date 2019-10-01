@@ -12,7 +12,7 @@ namespace Ropu.Shared.Web
     {
         readonly HttpClient _httpClient;
         readonly HttpClientHandler _httpClientHandler;
-        string _jwt;
+        string? _jwt;
         public CredentialsProvider _credentialsProvider;
 
         public RopuWebClient(string uri, CredentialsProvider credentialsProvider)
@@ -26,6 +26,11 @@ namespace Ropu.Shared.Web
 
         class JwtResponse
         {
+            public JwtResponse()
+            {
+                Token = "";
+            }
+            
             public string Token
             {
                 get;

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using Ropu.LoadBalancer.FileServer;
 using Ropu.Shared;
 using Ropu.Shared.LoadBalancing;
 using Ropu.Shared.Groups;
@@ -18,7 +17,6 @@ namespace Ropu.LoadBalancer
         readonly ControllerRegistry<RegisteredServingNode> _servingNodes;
         readonly CallControllerRegistry _callControllers;
         readonly IGroupsClient _groupsClient;
-        readonly FileManager _fileManager;
         readonly RopuWebClient _webClient;
         CommandLineSettings _settings;
         volatile bool _closing = false;
@@ -26,12 +24,10 @@ namespace Ropu.LoadBalancer
         public LoadBalancerRunner(
             LoadBalancerProtocol loadBalancerProtocol, 
             IGroupsClient groupsClient, 
-            FileManager fileManager,
             RopuWebClient webClient,
             CommandLineSettings settings)
         {
             _settings = settings;
-            _fileManager = fileManager;
             _loadBalancerProtocol = loadBalancerProtocol;
             _loadBalancerProtocol.SetServerMessageHandler(this);
             _groupsClient = groupsClient;
@@ -94,7 +90,7 @@ namespace Ropu.LoadBalancer
             }
         }
 
-        RegisteredServingNode GetServingNode()
+        RegisteredServingNode? GetServingNode()
         {
             return _servingNodes.GetAvailableController();
         }

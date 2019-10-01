@@ -2,7 +2,7 @@ using System;
 
 namespace Ropu.Client.StateModel
 {
-    public class Transition<EventT, StateT>
+    public class Transition<EventT, StateT> where EventT : struct
     {
         readonly Func<StateT> _getState;
 

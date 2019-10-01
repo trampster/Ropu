@@ -20,9 +20,10 @@ namespace Ropu.ClientUI
         {
             const ushort controlPortStarting = 5061;
 
-            var settings = new CommandLineClientSettings();
+            var settingsReader = new CommandLineClientSettingsReader();
 
-            if(!settings.ParseArgs(args))
+            var settings = settingsReader.ParseArgs(args);
+            if(settings == null)
             {
                 return;
             }

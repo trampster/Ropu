@@ -3,28 +3,49 @@ using Mono.Options;
 
 namespace Ropu.ServingNode
 {
-    public class CommandLineSettings
+    public class Settings
     {
-        public bool ParseArgs(string[] args)
+        public Settings(string email, string password)
+        {
+            Email = email;
+            Password = password;
+        }
+
+        public string Email
+        {
+            get;
+        }
+
+        public string Password
+        {
+            get;
+        }
+    }
+
+    public class CommandLineSettingsReader
+    {
+        public Settings? ParseArgs(string[] args)
         {
             bool showHelp = false;
+            string? email = null;
+            string? password = null;
 
             var optionSet = new OptionSet () 
             {
-                { "u|user=", "the {email} of this client",  v => Email = v },
-                { "p|password=", "the {password} of this client",  v => Password = v },
+                { "u|user=", "the {email} of this client",  v => email = v },
+                { "p|password=", "the {password} of this client",  v => password = v },
                 { "h|help",  "show this message and exit", v => showHelp = v != null }
             };
             
             optionSet.Parse(args);
 
-            if(showHelp)
+            if(showHelp || email == null || password == null)
             {
                 ShowHelp(optionSet);
-                return false;
+                return null;
             }
 
-            return true;
+            return new Settings(email, password);
         }
 
         void ShowHelp (OptionSet optionaSet)
@@ -33,18 +54,6 @@ namespace Ropu.ServingNode
             Console.WriteLine ();
             Console.WriteLine ("Options:");
             optionaSet.WriteOptionDescriptions (Console.Out);
-        }
-
-        public string Email
-        {
-            get;
-            set;
-        }
-
-        public string Password
-        {
-            get;
-            set;
         }
     }
 }

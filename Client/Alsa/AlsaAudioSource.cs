@@ -6,7 +6,7 @@ namespace Ropu.Client.Alsa
 
     public class AlsaAudioSource : IAudioSource
     {
-        SoundPcm _soundPcm;
+        SoundPcm? _soundPcm;
 
         public AlsaAudioSource()
         {
@@ -15,6 +15,10 @@ namespace Ropu.Client.Alsa
 
         public void ReadAudio(short[] buffer)
         {
+            if(_soundPcm == null)
+            {
+                throw new InvalidOperationException("You must call start before ReadAudio");
+            }
             if(_firstAfterStart)
             {
                 //for whatever reason, After the first read there are a while lot of frames suddenly (and without time for them to fill, ie they are created from magic) 
