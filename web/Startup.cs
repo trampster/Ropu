@@ -58,6 +58,7 @@ namespace web
                 .AddSingleton<RedisService, RedisService>()
                 .AddSingleton<IGroupsService, RedisGroupsService>()
                 .AddSingleton<GroupMembersipService>()
+                .AddSingleton<KeyService>()
                 .AddSingleton<ServicesService>();
 
 

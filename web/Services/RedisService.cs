@@ -13,11 +13,29 @@ namespace Ropu.Web.Services
         {
             _logger = logger;
             _connectionMultiplexer = connectionMultiplexer;
+            SubscribeKeySpace();
         }
 
         public IDatabase GetDatabase()
         {
             return _connectionMultiplexer.GetDatabase();
+        }
+
+        public event EventHandler<string>? KeyDeleted;
+
+        public void SubscribeKeySpace()
+        {
+            ISubscriber sub = _connectionMultiplexer.GetSubscriber();
+
+            sub.Subscribe("__keyspace@0__:*", (channel, value) =>
+            {
+                var channelString = (string)channel;
+                if ((string)value == "del")
+                {
+                    int start = channelString.IndexOf(':') + 1;
+                    KeyDeleted?.Invoke(this, channelString.Substring(start));
+                }
+            });
         }
 
         public long CalculateStringScore(string item)

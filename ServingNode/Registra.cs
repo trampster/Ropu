@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using Ropu.Shared.Groups;
-using System.Linq;
 using Ropu.Shared.Concurrent;
 using System.Threading.Tasks;
 using System.Threading;
