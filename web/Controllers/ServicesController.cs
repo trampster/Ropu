@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Ropu.Shared;
@@ -37,6 +38,20 @@ namespace Ropu.Web.Controllers
         public string LoadBalancerIPEndpoint()
         {
             return (_servicesService?.LoadBalancerInfo?.IPEndPoint).EmptyIfNull();
+        }
+
+        [HttpPost("[action]")]
+        [Authorize(Roles="Service")]
+        public byte Register([FromBody]ServiceInfo serviceInfo)
+        {
+            return _servicesService.RegisterService(serviceInfo);
+        }
+
+        [HttpGet("[action]")]
+        [Authorize(Roles="Admin,User,Service")]
+        public IEnumerable<ServiceInfo> All()
+        {
+            return _servicesService.Services;
         }
     }
 }

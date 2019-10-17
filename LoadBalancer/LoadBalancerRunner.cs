@@ -8,6 +8,7 @@ using Ropu.Shared.LoadBalancing;
 using Ropu.Shared.Groups;
 using Ropu.Shared.Web;
 using Ropu.Shared.WebModels;
+using System.Threading;
 
 namespace Ropu.LoadBalancer
 {
@@ -18,6 +19,7 @@ namespace Ropu.LoadBalancer
         readonly CallControllerRegistry _callControllers;
         readonly IGroupsClient _groupsClient;
         readonly RopuWebClient _webClient;
+        readonly ServicesClient _servicesClient;
         CommandLineSettings _settings;
         volatile bool _closing = false;
 
@@ -25,13 +27,15 @@ namespace Ropu.LoadBalancer
             LoadBalancerProtocol loadBalancerProtocol, 
             IGroupsClient groupsClient, 
             RopuWebClient webClient,
-            CommandLineSettings settings)
+            CommandLineSettings settings,
+            ServicesClient servicesClient)
         {
             _settings = settings;
             _loadBalancerProtocol = loadBalancerProtocol;
             _loadBalancerProtocol.SetServerMessageHandler(this);
             _groupsClient = groupsClient;
             _webClient = webClient;
+            _servicesClient = servicesClient;
 
             _servingNodes = new ControllerRegistry<RegisteredServingNode>();
 
@@ -45,8 +49,15 @@ namespace Ropu.LoadBalancer
             var callManagement = _loadBalancerProtocol.Run();
             var removeExpired = RemoveExpiredControllers();
             var webdateWeb = UpdateWeb();
+            
+            var cancellationTokenSource = new CancellationTokenSource();
+            var serviceClientTask = _servicesClient.RegisterService(cancellationTokenSource.Token);
 
-            await TaskCordinator.WaitAll(callManagement, removeExpired, webdateWeb);
+            await TaskCordinator.WaitAll(
+                callManagement, 
+                removeExpired, 
+                webdateWeb,
+                serviceClientTask);
         }
 
         async Task UpdateWeb()

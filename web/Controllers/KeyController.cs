@@ -11,10 +11,12 @@ namespace Ropu.Web.Controllers
     public class KeyController : Controller
     {
         readonly KeyService _keyService;
+        readonly ServicesService _servicesService;
 
-        public KeyController(KeyService keyService)
+        public KeyController(KeyService keyService, ServicesService servicesService)
         {
             _keyService = keyService;
+            _servicesService = servicesService;
         }
 
         [HttpGet("{isGroup}/{groupOrUserId}")]
@@ -22,6 +24,21 @@ namespace Ropu.Web.Controllers
         public List<EncryptionKey> Keys(bool isGroup, uint groupOrUserId)
         {
             return _keyService.GetKeys(isGroup, groupOrUserId);
+        }
+
+        [HttpGet("[action]")]
+        [Authorize(Roles="Admin,User,Service")]
+        public IEnumerable<EntitiesKeys> UsersKeys([FromBody]List<uint> userIds)
+        {
+            foreach(var userId in userIds)
+            {
+                var keys = _keyService.GetKeys(false, userId);
+                yield return new EntitiesKeys()
+                {
+                    UserOrGroupId = userId,
+                    Keys = keys
+                };
+            }
         }
     }
 }

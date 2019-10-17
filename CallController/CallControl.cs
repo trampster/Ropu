@@ -3,6 +3,8 @@ using Ropu.Shared.LoadBalancing;
 using Ropu.Shared;
 using System.Net;
 using System;
+using Ropu.Shared.Web;
+using System.Threading;
 
 namespace Ropu.CallController
 {
@@ -16,6 +18,7 @@ namespace Ropu.CallController
         ushort? _refreshInterval;
 
         readonly ServiceDiscovery _serviceDiscovery;
+        readonly ServicesClient _servicesClient;
 
         readonly GroupCallManager[] _groupCallManagers = new GroupCallManager[ushort.MaxValue];
 
@@ -23,7 +26,8 @@ namespace Ropu.CallController
             LoadBalancerProtocol loadBalancerProtocol, 
             ServiceDiscovery serviceDiscovery,
             RopuProtocol ropuProtocol,
-            ServingNodes servingNodes)
+            ServingNodes servingNodes,
+            ServicesClient servicesClient)
         {
             _loadBalancerProtocol = loadBalancerProtocol;
             _loadBalancerProtocol.SetClientMessageHandler(this);
@@ -31,6 +35,7 @@ namespace Ropu.CallController
             _ropuProtocol = ropuProtocol;
             _ropuProtocol.SetMessageHandler(this);
             _servingNodes = servingNodes;
+            _servicesClient = servicesClient;
         }
 
         public async Task Run()
@@ -38,8 +43,14 @@ namespace Ropu.CallController
             var loadBalancerTask = _loadBalancerProtocol.Run();
             var ropuProtocolTask = _ropuProtocol.Run();
             var registerTask = Register();
+            var cancellationTokenSource = new CancellationTokenSource();
+            var serviceClientTask = _servicesClient.RegisterService(cancellationTokenSource.Token);
 
-            await TaskCordinator.WaitAll(loadBalancerTask, registerTask, ropuProtocolTask);
+            await TaskCordinator.WaitAll(
+                loadBalancerTask, 
+                registerTask, 
+                ropuProtocolTask, 
+                serviceClientTask);
         }
 
         async Task Register()

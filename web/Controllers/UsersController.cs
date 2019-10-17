@@ -32,7 +32,7 @@ namespace web.Controllers
         }
 
         [HttpGet("[action]")]
-        [Authorize(Roles="Admin,User")]
+        [Authorize(Roles="Admin,User,Service")]
         public IUser Current()
         {
             uint userId = uint.Parse(base.User.Claims.Where(claim => claim.Type == ClaimTypes.NameIdentifier).Single().Value);
@@ -95,7 +95,7 @@ namespace web.Controllers
             {
                 return Forbid();
             }
-            (bool result, string message) =_usersService.Edit(user);
+            (bool result, string message) = _usersService.Edit(user);
             if(!result)
             {
                 return BadRequest(message);

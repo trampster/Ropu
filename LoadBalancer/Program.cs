@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Net;
-using System.Net.Sockets;
 using System.Threading.Tasks;
 using Ropu.Shared.LoadBalancing;
 using Ropu.Shared.Groups;
 using Ropu.Shared;
 using Ropu.Shared.Web;
+using Ropu.Shared.WebModels;
 
 namespace Ropu.LoadBalancer
 {
@@ -32,8 +31,10 @@ namespace Ropu.LoadBalancer
             var webClient = new RopuWebClient("https://localhost:5001/", credentialsProvider);
             var groupsClient = new GroupsClient(webClient);
             var loadBalancerProtocol = new LoadBalancerProtocol(new PortFinder(), 5069);
-            var controller = new LoadBalancerRunner(loadBalancerProtocol, groupsClient, webClient, settings);
-            Console.WriteLine("Before Run");
+            
+            var servicesClient = new ServicesClient(webClient, ServiceType.LoadBalancer);
+
+            var controller = new LoadBalancerRunner(loadBalancerProtocol, groupsClient, webClient, settings, servicesClient);
             await controller.Run();
         }   
     }

@@ -30,5 +30,7 @@ namespace Ropu.Shared.Web
         {
             return await _response.Content.ReadAsStringAsync();
         }
+
+        public bool IsSuccessfulStatusCode => _response.IsSuccessStatusCode;
     }
 }

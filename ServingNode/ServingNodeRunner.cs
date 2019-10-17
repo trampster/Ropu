@@ -1,10 +1,12 @@
 using System;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using Ropu.Shared;
 using Ropu.Shared.Concurrent;
 using Ropu.Shared.ControlProtocol;
 using Ropu.Shared.LoadBalancing;
+using Ropu.Shared.Web;
 
 namespace Ropu.ServingNode
 {
@@ -16,6 +18,7 @@ namespace Ropu.ServingNode
         readonly Registra _registra;
         readonly ServingNodes _servingNodes;
         readonly GroupCallControllerLookup _groupCallControllerLookup;
+        readonly ServicesClient _servicesClient;
 
         uint[] _groupFloorLookup = new uint[ushort.MaxValue];
 
@@ -25,7 +28,8 @@ namespace Ropu.ServingNode
             ServiceDiscovery serviceDiscovery,
             Registra registra,
             ServingNodes servingNodes,
-            GroupCallControllerLookup groupCallControllerLookup)
+            GroupCallControllerLookup groupCallControllerLookup,
+            ServicesClient servicesClient)
         {
             _ropuProtocol = mediaProtocol;
             _ropuProtocol.SetMessageHandler(this);
@@ -34,6 +38,7 @@ namespace Ropu.ServingNode
             _registra = registra;
             _servingNodes = servingNodes;
             _groupCallControllerLookup = groupCallControllerLookup;
+            _servicesClient = servicesClient;
             loadBalancerProtocol.SetClientMessageHandler(this);
         }
 
@@ -42,11 +47,13 @@ namespace Ropu.ServingNode
             Task callManagementTask = _loadBalancerProtocol.Run();
             Task mediaTask = _ropuProtocol.Run();
             Task regisrationExpiryTask = _registra.CheckExpiries();
+            var cancellationTokenSource = new CancellationTokenSource();
+            Task registrationTask = _servicesClient.RegisterService(cancellationTokenSource.Token);
 
             Task registerTask = Register();
 
 
-            await TaskCordinator.WaitAll(callManagementTask, mediaTask, registerTask, regisrationExpiryTask);
+            await TaskCordinator.WaitAll(callManagementTask, mediaTask, registerTask, regisrationExpiryTask, registrationTask);
         }
 
         public async Task Registration(uint userId, IPEndPoint endPoint)

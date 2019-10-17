@@ -13,7 +13,7 @@ namespace Ropu.Shared.Web
         readonly HttpClient _httpClient;
         readonly HttpClientHandler _httpClientHandler;
         string? _jwt;
-        public CredentialsProvider _credentialsProvider;
+        readonly CredentialsProvider _credentialsProvider;
 
         public RopuWebClient(string uri, CredentialsProvider credentialsProvider)
         {
@@ -62,6 +62,13 @@ namespace Ropu.Shared.Web
         {
             var json = JsonConvert.SerializeObject(payload);
             return await Do(() => _httpClient.PostAsync(uri, new StringContent(json, Encoding.UTF8, "application/json")));
+        }
+
+        public async Task<Response<R>> Post<T, R>(string uri, T payload)
+        {
+            var json = JsonConvert.SerializeObject(payload);
+            var response = await Do(() => _httpClient.PostAsync(uri, new StringContent(json, Encoding.UTF8, "application/json")));
+            return new Response<R>(response);
         }
 
         public async Task<Response<T>> Get<T>(string uri)

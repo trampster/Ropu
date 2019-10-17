@@ -10,6 +10,7 @@ using Ropu.Shared.LoadBalancing;
 using Ropu.Shared.Groups;
 using System.Collections.Concurrent;
 using Ropu.Shared.Web;
+using Ropu.Shared.WebModels;
 
 namespace Ropu.ServingNode
 {
@@ -46,13 +47,16 @@ namespace Ropu.ServingNode
             var servingNodes = new ServingNodes(100);
             var groupCallControllerLookup = new GroupCallControllerLookup();
 
+            var servicesClient = new ServicesClient(webClient, ServiceType.ServingNode);
+
             var servingNodeRunner = new ServingNodeRunner(
                 mediaProtocol, 
                 loadBalancerProtocol, 
                 serviceDiscovery,
                 registra,
                 servingNodes,
-                groupCallControllerLookup);
+                groupCallControllerLookup,
+                servicesClient);
 
             await servingNodeRunner.Run();
         }
