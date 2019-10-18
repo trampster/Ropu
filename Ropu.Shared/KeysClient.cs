@@ -16,13 +16,21 @@ namespace Ropu.Shared
         readonly Dictionary<uint, List<EncryptionKey>> _groups = new Dictionary<uint, List<EncryptionKey>>();
         readonly RopuWebClient _ropuWebClient;
 
-        public KeysClient(RopuWebClient ropuWebClient)
+        readonly bool _cacheAllServices;
+
+        public KeysClient(RopuWebClient ropuWebClient, bool cacheAllServices)
         {
             _ropuWebClient = ropuWebClient;
+            _cacheAllServices = cacheAllServices;
         }
 
         public async Task Run(CancellationToken cancellationToken)
         {
+            if(!_cacheAllServices)
+            {
+                return;
+            }
+
             while(!cancellationToken.IsCancellationRequested)
             {
                 if(!await CacheServices())
@@ -33,19 +41,93 @@ namespace Ropu.Shared
             }
         }
 
-        public byte[]? GetServiceKey(uint userId)
+        public async Task<byte[]?> GetServiceKey(uint userId)
         {
-            if(_services.TryGetValue(userId, out var keys))
+            byte[]? keyMaterial;
+            if(_users.TryGetValue(userId, out var keys))
             {
-                foreach(var key in keys)
+                keyMaterial = GetTodaysKey(keys);
+                if(keyMaterial != null)
                 {
-                    if(key.Date.Date == DateTime.UtcNow.Date)
-                    {
-                        return key.GetKeyMaterial();
-                    }
+                    return keyMaterial;
+                }
+                //keys are all expired
+                _users.Remove(userId);
+            }
+
+            var response = await _ropuWebClient.Get<List<EncryptionKey>>($"api/Key/False/{userId}");
+            if(!response.IsSuccessfulStatusCode)
+            {
+                Console.Error.WriteLine($"Failed to find a key for service with UserId {userId}");
+                return null;
+            }
+            keys = await response.GetJson();
+            _users.Add(userId, keys);
+
+            return GetTodaysKey(keys);
+        }
+
+        public async Task<byte[]?> GetUserKey(uint userId)
+        {
+            byte[]? keyMaterial;
+            if(_users.TryGetValue(userId, out var keys))
+            {
+                keyMaterial = GetTodaysKey(keys);
+                if(keyMaterial != null)
+                {
+                    return keyMaterial;
+                }
+                //keys are all expired
+                _users.Remove(userId);
+            }
+
+            var response = await _ropuWebClient.Get<List<EncryptionKey>>($"api/Key/False/{userId}");
+            if(!response.IsSuccessfulStatusCode)
+            {
+                Console.Error.WriteLine($"Failed to find a key for user with UserId {userId}");
+                return null;
+            }
+            keys = await response.GetJson();
+            _users.Add(userId, keys);
+
+            return GetTodaysKey(keys);
+        }
+
+        public async Task<byte[]?> GetGroupKey(uint groupId)
+        {
+            byte[]? keyMaterial;
+            if(_groups.TryGetValue(groupId, out var keys))
+            {
+                keyMaterial = GetTodaysKey(keys);
+                if(keyMaterial != null)
+                {
+                    return keyMaterial;
+                }
+                //keys are all expired
+                _groups.Remove(groupId);
+            }
+
+            var response = await _ropuWebClient.Get<List<EncryptionKey>>($"api/Key/True/{groupId}");
+            if(!response.IsSuccessfulStatusCode)
+            {
+                Console.Error.WriteLine($"Failed to find a key for group with groupid {groupId}");
+                return null;
+            }
+            keys = await response.GetJson();
+            _groups.Add(groupId, keys);
+
+            return GetTodaysKey(keys);
+        }
+
+        byte[]? GetTodaysKey(List<EncryptionKey> keys)
+        {
+            foreach(var key in keys)
+            {
+                if(key.Date.Date == DateTime.UtcNow.Date)
+                {
+                    return key.GetKeyMaterial();
                 }
             }
-            Console.Error.WriteLine($"Couldn't find a key for service with UserId {userId}");
             return null;
         }
 
