@@ -144,4 +144,5 @@ Dates are specified in UTC time.
 * Reserved (6 bits) - 
 * SourceId (4 bytes) - groupId, userId or serviceId depending on type
 * PacketCounter (4 bytes) - incremented for each packet from that source
-* Encrypted payload (16 bytes)
+* Tag (12 bytes) - created by the encryption
+* Encrypted payload (X bytes)

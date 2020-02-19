@@ -11,15 +11,26 @@ namespace Ropu.Client
     public class ProtocolSwitch
     {
         readonly Socket _socket;
+        readonly PacketEncryption _packetEncryption;
+        readonly KeysClient _keysClient;
         const int MaxUdpSize = 0x10000;
         const int AnyPort = IPEndPoint.MinPort;
         static readonly IPEndPoint Any = new IPEndPoint(IPAddress.Any, AnyPort);
         IControlPacketParser? _controlPacketParser;
         IMediaPacketParser? _mediaPacketParser;
+        IClientSettings _clientSettings;
         
-        public ProtocolSwitch(ushort startingPort, PortFinder portFinder)
+        public ProtocolSwitch(
+            ushort startingPort, 
+            PortFinder portFinder, 
+            PacketEncryption packetEncryption, 
+            KeysClient keysClient,
+            IClientSettings clientSettings)
         {
             _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            _packetEncryption = packetEncryption;
+            _keysClient  = keysClient;
+            _clientSettings = clientSettings;
             LocalPort = (ushort)portFinder.BindToAvailablePort(_socket, IPAddress.Any, startingPort);
 
             Console.WriteLine($"ProtocolSwitch bound to port {LocalPort}");
@@ -41,6 +52,7 @@ namespace Ropu.Client
         }
 
         static ThreadLocal<byte[]> _sendBuffer = new ThreadLocal<byte[]>(() => new byte[MaxUdpSize]);
+        static ThreadLocal<byte[]> _sendBufferEncrypted = new ThreadLocal<byte[]>(() => new byte[MaxUdpSize]);
 
         public IPEndPoint? ServingNodeEndpoint
         {
@@ -55,24 +67,33 @@ namespace Ropu.Client
             #nullable enable
         }
 
+        byte[] SendBufferEncrypted()
+        {
+            #nullable disable
+            return _sendBufferEncrypted.Value;
+            #nullable enable
+        }
+
         public async Task Run()
         {
-            var task = new Task(ProcessPackets, TaskCreationOptions.LongRunning);
+            var task = new Task(async () => await ProcessPackets(), TaskCreationOptions.LongRunning);
             task.Start();
             await task;
         }
 
-        void ProcessPackets()
+        async Task ProcessPackets()
         {
             byte[] _buffer = new byte[MaxUdpSize];
+            byte[] payload = new byte[MaxUdpSize];
             EndPoint any = Any;
 
             while(true)
             {
                 int ammountRead = _socket.ReceiveFrom(_buffer, ref any);
 
-                var receivedBytes = new Span<byte>(_buffer, 0, ammountRead);
-                HandlePacket(receivedBytes, ((IPEndPoint)any).Address);
+                int payloadLength = await _packetEncryption.Decrypt(_buffer, ammountRead, payload);
+
+                HandlePacket(payload.AsSpan(0, payloadLength), ((IPEndPoint)any).Address);
             }
         }
 
@@ -121,7 +142,28 @@ namespace Ropu.Client
 
         public void Send(int length)
         {
-            _socket.SendTo(SendBuffer(), 0, length, SocketFlags.None, ServingNodeEndpoint);
+            //_socket.SendTo(SendBuffer(), 0, length, SocketFlags.None, ServingNodeEndpoint);
+            if(ServingNodeEndpoint == null)
+            {
+                throw new InvalidOperationException("Can't send packet to serving node because we don't have a serving node yet");
+            }
+
+            SendToEncrypted(SendBuffer(), length, ServingNodeEndpoint);
+        }
+
+        bool SendToEncrypted(byte[] buffer, int length, IPEndPoint endPoint)
+        {
+            var userId = _clientSettings.UserId;
+            var keyInfo = _keysClient.GetMyKeyInfo();
+            if(userId == null || keyInfo ==null)
+            {
+                return false;
+            }
+            var packet =  SendBufferEncrypted();
+            int packetLength = _packetEncryption.CreateEncryptedPacket(buffer.AsSpan(0,  length), packet, false, userId.Value, keyInfo);
+            Console.WriteLine($"ProtocolSwitch SendToEncrypted length {packetLength}");
+            _socket.SendTo(packet, 0, packetLength, SocketFlags.None, endPoint);
+            return true;
         }
     }
 }

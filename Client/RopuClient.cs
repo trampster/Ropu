@@ -55,6 +55,7 @@ namespace Ropu.Client
         ManualResetEvent _heartbeatOnEvent = new ManualResetEvent(false);
         readonly IBeepPlayer _beepPlayer;
         readonly RopuWebClient _webClient;
+        readonly KeysClient _keysClient;
 
         public RopuClient(
             ProtocolSwitch protocolSwitch, 
@@ -63,7 +64,8 @@ namespace Ropu.Client
             LoadBalancerProtocol loadBalancerProtocol,
             IClientSettings clientSettings,
             IBeepPlayer beepPlayer,
-            RopuWebClient webClient)
+            RopuWebClient webClient,
+            KeysClient keysClient)
         {
             _webClient = webClient;
             _beepPlayer = beepPlayer;
@@ -74,6 +76,7 @@ namespace Ropu.Client
             _mediaClient = mediaClient;
             _servingNodeClient.SetControllingFunctionHandler(this);
             _retryTimer = new Ropu.Shared.Timer();
+            _keysClient = keysClient;
 
             //start
             _start = new RopuState(StateId.Start);
@@ -241,11 +244,16 @@ namespace Ropu.Client
         public async Task Run()
         {
             await GetLoadBalancerIPEndpoint();
+
+            var cancellationTokenSource = new CancellationTokenSource();
+            var keysClient = _keysClient.Run(cancellationTokenSource.Token);
             var protocolSwitchTask = _protocolSwitch.Run();
+
+            _loadBalancerProtocol.UserId = _clientSettings.UserId;
             var loadBalancerTask = _loadBalancerProtocol.Run();
             var playAudioTask = _mediaClient.PlayAudio();
             _stateManager.SetState(_unregistered, _start);
-            await TaskCordinator.WaitAll(protocolSwitchTask, loadBalancerTask, playAudioTask);
+            await TaskCordinator.WaitAll(protocolSwitchTask, loadBalancerTask, playAudioTask, keysClient);
         }
 
         public async Task GetLoadBalancerIPEndpoint()

@@ -15,18 +15,34 @@ namespace Ropu.CallController
         bool _callInProgress;
         uint _callInitiator;
         uint? _talker;
+        readonly KeysClient _keysClient;
+        CachedEncryptionKey? _keyInfo;
 
-        public GroupCallManager(ushort groupId, RopuProtocol ropuProtocol, ServingNodes servingNodes)
+
+        public GroupCallManager(ushort groupId, RopuProtocol ropuProtocol, ServingNodes servingNodes, KeysClient keysClient)
         {
             _groupId = groupId;
             _ropuProtocol = ropuProtocol;
             _servingNodes = servingNodes;
+            _keysClient = keysClient;
         }
 
         DateTime _lastActivity;
         CancellationTokenSource? _callCancellationTokenSource;
         
-        public void StartCall(uint userId)
+
+        CachedEncryptionKey KeyInfo
+        {
+            get
+            {
+                if(_keyInfo == null)
+                {
+                    throw new InvalidOperationException("Group Call request KeyInfo but call isn't started yet");
+                }
+                return _keyInfo;
+            }
+        }
+        public async Task StartCall(uint userId)
         {
             if(_callInProgress)
             {
@@ -37,9 +53,17 @@ namespace Ropu.CallController
             _talker = userId;
             _callInitiator = userId;
 
+            var keyInfo = await _keysClient.GetGroupKey(_groupId);
+            while(keyInfo == null)
+            {
+                Console.Error.WriteLine("Failed to get key for group {_groupId}");
+                await Task.Delay(1000);
+                keyInfo = await _keysClient.GetGroupKey(_groupId);
+            }
+            _keyInfo = keyInfo;
 
             var endPointsReader = _servingNodes.EndPoints;
-            _ropuProtocol.SendFloorTaken(_talker.Value, _groupId, endPointsReader.GetSnapShot());
+            _ropuProtocol.SendFloorTaken(_talker.Value, _groupId, endPointsReader.GetSnapShot(), _keyInfo);
             endPointsReader.Release();
 
             Console.WriteLine($"Called started with group {_groupId} initiator {userId}");
@@ -47,11 +71,12 @@ namespace Ropu.CallController
             _callCancellationTokenSource = new CancellationTokenSource();
 
             var cancellationToken = _callCancellationTokenSource.Token;
-            RunIdleTimer(cancellationToken);
-            RunPeriodicUpdates(cancellationToken);
+            var idleTask = RunIdleTimer(cancellationToken);
+            var updatesTask = RunPeriodicUpdates(cancellationToken);
+            Task.WaitAll(idleTask, updatesTask);
         }
 
-        async void RunPeriodicUpdates(CancellationToken token)
+        async Task RunPeriodicUpdates(CancellationToken token)
         {
             try
             {
@@ -62,11 +87,11 @@ namespace Ropu.CallController
 
                     if(_talker == null)
                     {
-                        _ropuProtocol.SendFloorIdle(_groupId, endPointsReader.GetSnapShot());
+                        _ropuProtocol.SendFloorIdle(_groupId, endPointsReader.GetSnapShot(), KeyInfo);
                         endPointsReader.Release();
                         continue;
                     }
-                    _ropuProtocol.SendFloorTaken(_talker.Value, _groupId, endPointsReader.GetSnapShot());
+                    _ropuProtocol.SendFloorTaken(_talker.Value, _groupId, endPointsReader.GetSnapShot(), KeyInfo);
                     endPointsReader.Release();
                 }
             }
@@ -75,7 +100,7 @@ namespace Ropu.CallController
             }
         }
 
-        async void RunIdleTimer(CancellationToken token)
+        async Task RunIdleTimer(CancellationToken token)
         {
             try
             {
@@ -89,7 +114,13 @@ namespace Ropu.CallController
                     {
                         //end the call
                         var endPointsReader = _servingNodes.EndPoints;
-                        _ropuProtocol.SendCallEnded(_groupId, endPointsReader.GetSnapShot());
+                        var keyInfo = await _keysClient.GetGroupKey(_groupId);
+                        if(keyInfo == null)
+                        {
+                            Console.Error.WriteLine($"Could not get key info for group {_groupId}");
+                            return;
+                        }
+                        _ropuProtocol.SendCallEnded(_groupId, endPointsReader.GetSnapShot(), keyInfo);
                         endPointsReader.Release();
                         _callInProgress = false;
                         Console.WriteLine($"Call ended because idle timer expired after {callHangTime/1000} seconds.");
@@ -124,7 +155,7 @@ namespace Ropu.CallController
             _talker = null;
 
             var endPointsReader = _servingNodes.EndPoints;
-            _ropuProtocol.SendFloorIdle(_groupId, endPointsReader.GetSnapShot());
+            _ropuProtocol.SendFloorIdle(_groupId, endPointsReader.GetSnapShot(), KeyInfo);
             endPointsReader.Release();
         }
 
@@ -137,7 +168,7 @@ namespace Ropu.CallController
             {
                 Console.WriteLine($"Got floor request from {userId} but they already have the floor");
                 //send another floor taken so they figure it out
-                _ropuProtocol.SendFloorTaken(_talker.Value, _groupId, endPointsReader.GetSnapShot());
+                _ropuProtocol.SendFloorTaken(_talker.Value, _groupId, endPointsReader.GetSnapShot(), KeyInfo);
                 endPointsReader.Release();
 
                 return;
@@ -149,9 +180,8 @@ namespace Ropu.CallController
             }
             Console.WriteLine($"Floor granted to {userId} for group {_groupId}");
             _talker = userId;
-            _ropuProtocol.SendFloorTaken(userId, _groupId, endPointsReader.GetSnapShot());
+            _ropuProtocol.SendFloorTaken(userId, _groupId, endPointsReader.GetSnapShot(), KeyInfo);
             endPointsReader.Release();
-
         }
     }
 }

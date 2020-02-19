@@ -19,6 +19,7 @@ namespace Ropu.CallController
 
         readonly ServiceDiscovery _serviceDiscovery;
         readonly ServicesClient _servicesClient;
+        readonly KeysClient _keysClient;
 
         readonly GroupCallManager[] _groupCallManagers = new GroupCallManager[ushort.MaxValue];
 
@@ -27,7 +28,8 @@ namespace Ropu.CallController
             ServiceDiscovery serviceDiscovery,
             RopuProtocol ropuProtocol,
             ServingNodes servingNodes,
-            ServicesClient servicesClient)
+            ServicesClient servicesClient,
+            KeysClient keysClient)
         {
             _loadBalancerProtocol = loadBalancerProtocol;
             _loadBalancerProtocol.SetClientMessageHandler(this);
@@ -36,21 +38,32 @@ namespace Ropu.CallController
             _ropuProtocol.SetMessageHandler(this);
             _servingNodes = servingNodes;
             _servicesClient = servicesClient;
+            _keysClient = keysClient;
         }
 
         public async Task Run()
         {
+            var cancellationTokenSource = new CancellationTokenSource();
+
+            uint? userId = await _servicesClient.GetUserId(cancellationTokenSource.Token);
+            if(userId == null)
+            {
+                return; //must have been cancelled
+            }
+
+            var keysClientTask = _keysClient.Run(cancellationTokenSource.Token);
+            _loadBalancerProtocol.UserId = userId;
             var loadBalancerTask = _loadBalancerProtocol.Run();
             var ropuProtocolTask = _ropuProtocol.Run();
             var registerTask = Register();
-            var cancellationTokenSource = new CancellationTokenSource();
-            var serviceClientTask = _servicesClient.RegisterService(cancellationTokenSource.Token);
+            var serviceClientTask = _servicesClient.ServiceRegistration(cancellationTokenSource.Token);
 
             await TaskCordinator.WaitAll(
                 loadBalancerTask, 
                 registerTask, 
                 ropuProtocolTask, 
-                serviceClientTask);
+                serviceClientTask,
+                keysClientTask);
         }
 
         async Task Register()
@@ -141,17 +154,16 @@ namespace Ropu.CallController
             var callManager = _groupCallManagers[groupId];
             if(callManager == null)
             {
-                callManager = new GroupCallManager(groupId, _ropuProtocol, _servingNodes);
+                callManager = new GroupCallManager(groupId, _ropuProtocol, _servingNodes, _keysClient);
                 _groupCallManagers[groupId] = callManager;
             }
             return callManager;
         }
 
-        public void HandleStartGroupCall(ushort groupId, uint userId)
+        public async void HandleStartGroupCall(ushort groupId, uint userId)
         {
             var callManager = GetCallManager(groupId);
-            callManager.StartCall(userId);
-            
+            await callManager.StartCall(userId);
         }
 
         public void HandleFloorReleased(ushort groupId, uint userId)

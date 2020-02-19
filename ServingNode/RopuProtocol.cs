@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -22,8 +20,12 @@ namespace Ropu.ServingNode
         IMessageHandler? _messageHandler = null;
 
         readonly byte[] _sendBuffer = new byte[MaxUdpSize];
+        readonly byte[] _encryptedBuffer = new byte[MaxUdpSize];
 
-        public RopuProtocol(PortFinder portFinder, int startingPort)
+        readonly PacketEncryption _packetEncryption;
+        readonly KeysClient _keysClient;
+
+        public RopuProtocol(PortFinder portFinder, int startingPort, PacketEncryption packetEncryption, KeysClient keysClient)
         {
             _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             MediaPort = (ushort)portFinder.BindToAvailablePort(_socket, IPAddress.Any, startingPort);
@@ -31,6 +33,9 @@ namespace Ropu.ServingNode
 
             _socketEventArgsPool = new MemoryPool<SocketAsyncEventArgs>(() => CreateSocketAsyncEventArgs());
             _bulkRequestTokenPool = new MemoryPool<BulkRequestToken>(() => new BulkRequestToken(ReleaseBulkRequestToken));
+
+            _packetEncryption = packetEncryption;
+            _keysClient = keysClient;
         }
 
         void ReleaseBulkRequestToken(BulkRequestToken token)
@@ -59,6 +64,7 @@ namespace Ropu.ServingNode
         {
 
             byte[] buffer = new byte[MaxUdpSize];
+            byte[] payload = new byte[MaxUdpSize];
             var segment = new ArraySegment<byte>(buffer);
             EndPoint any = Any;
 
@@ -82,7 +88,12 @@ namespace Ropu.ServingNode
                     resetEvent.Reset();
                 }
 
-                HandlePacket(buffer, socketArgs.BytesTransferred, (IPEndPoint)socketArgs.RemoteEndPoint);
+                int payloadLength = await _packetEncryption.Decrypt(buffer, socketArgs.BytesTransferred, payload);
+                
+                if(payloadLength != 0)
+                {
+                    HandlePacket(payload, payloadLength, (IPEndPoint)socketArgs.RemoteEndPoint);
+                }
             }
         }
 
@@ -155,15 +166,29 @@ namespace Ropu.ServingNode
                 }
                 default:
                 {
-                    Console.Error.WriteLine("Received unknown packet");
+                    Console.Error.WriteLine($"Received unknown packet, packet type {data[0]}");
                     break;
                 }
             }
         }
 
-        public void SendPacket(byte[] packet, int length, IPEndPoint target)
+        public void SendPacket(byte[] packet, int length, IPEndPoint target, uint userOrGroupId, CachedEncryptionKey keyInfo)
         {
+
             _socket.SendTo(packet, 0, length, SocketFlags.None, target);
+        }
+
+        void SendToUserEncrypted(Span<byte> payload, IPEndPoint endPoint)
+        {
+            var keyInfo = _keysClient.GetMyKeyInfo();
+            if(keyInfo == null)
+            {
+                Console.Error.WriteLine("Failed to send encrypted packet because we could not get our key info");
+                return;
+            }
+            int packetLength = _packetEncryption.CreateEncryptedPacket(payload, _encryptedBuffer, false, UserId, keyInfo);
+
+            _socket.SendTo(_encryptedBuffer, 0, packetLength, SocketFlags.None, endPoint);
         }
 
         readonly MemoryPool<SocketAsyncEventArgs> _socketEventArgsPool;
@@ -239,7 +264,7 @@ namespace Ropu.ServingNode
             }
         }
 
-        public void BulkSendAsync(byte[] buffer, int length, Span<IPEndPoint> endPoints, Action<object?> onComplete, object state, IPEndPoint except)
+        public void BulkSendAsync(byte[] buffer, int length, Span<IPEndPoint> endPoints, Action<object?> onComplete, object state, IPEndPoint except, uint groupId, CachedEncryptionKey keyInfo)
         {
             var token = _bulkRequestTokenPool.Get();
             token.Reset();
@@ -256,7 +281,7 @@ namespace Ropu.ServingNode
                     continue;
                 }
                 args.RemoteEndPoint = endPoint;
-                args.SetBuffer(buffer, 0, length);
+                SetBufferEncrypted(args, buffer, length, groupId, keyInfo);
 
                 if(!_socket.SendToAsync(args))
                 {
@@ -282,24 +307,37 @@ namespace Ropu.ServingNode
         {
             // Packet Type
             _sendBuffer[0] = (byte)RopuPacketType.DeregisterResponse;
-            _socket.SendTo(_sendBuffer, 0, 1, SocketFlags.None, endPoint);
+            
+            SendToUserEncrypted(_sendBuffer.AsSpan(0,1), endPoint);
+        }
+
+        public uint UserId
+        {
+            get;
+            set;
         }
 
         public void SendNotRegistered(IPEndPoint endPoint)
         {
             // Packet Type
             _sendBuffer[0] = (byte)RopuPacketType.NotRegistered;
-            _socket.SendTo(_sendBuffer, 0, 1, SocketFlags.None, endPoint);
+            SendToUserEncrypted(_sendBuffer.AsSpan(0,1), endPoint);
         }
 
         public void SendHeartbeatResponse(IPEndPoint endPoint)
         {
              // Packet Type
             _sendBuffer[0] = (byte)RopuPacketType.HeartbeatResponse;
-            _socket.SendTo(_sendBuffer, 0, 1, SocketFlags.None, endPoint);
+            SendToUserEncrypted(_sendBuffer.AsSpan(0,1), endPoint);
         }
 
-        public void BulkSendAsync(byte[] buffer, int length, Span<IPEndPoint> endPoints, Action<object?> onComplete, object state)
+        void SetBufferEncrypted(SocketAsyncEventArgs args, byte[] buffer, int length, uint groupId, CachedEncryptionKey keyInfo)
+        {
+            int packetLength = _packetEncryption.CreateEncryptedPacket(buffer, _encryptedBuffer, false, groupId, keyInfo);
+            args.SetBuffer(_encryptedBuffer, 0, packetLength);
+        }
+
+        public void BulkSendAsync(byte[] buffer, int length, Span<IPEndPoint> endPoints, Action<object?> onComplete, object state, uint groupId, CachedEncryptionKey keyInfo)
         {
             var token = _bulkRequestTokenPool.Get();
             token.Reset();
@@ -310,7 +348,7 @@ namespace Ropu.ServingNode
             {
                 var args = _socketEventArgsPool.Get();
                 args.RemoteEndPoint = endPoints[endpointIndex];
-                args.SetBuffer(buffer, 0, length);
+                SetBufferEncrypted(args, buffer, length, groupId, keyInfo);
                 args.UserToken = token;
 
                 if(!_socket.SendToAsync(args))
@@ -345,7 +383,7 @@ namespace Ropu.ServingNode
             // Bitrate (uint16)
             _sendBuffer.WriteUshort(8000, 8);
 
-            _socket.SendTo(_sendBuffer, 0, 10, SocketFlags.None, endPoint);
+            SendToUserEncrypted(_sendBuffer.AsSpan(0,10), endPoint);
         }
 
         public void SendCallStartFailed(CallFailedReason reason, uint userId, IPEndPoint endPoint)
@@ -357,7 +395,7 @@ namespace Ropu.ServingNode
             //* Reason (byte) 0 = insufficient resources, 255 = other reason
             _sendBuffer[5] = (byte)CallFailedReason.InsufficientResources;
 
-            _socket.SendTo(_sendBuffer, 0, 6, SocketFlags.None, endPoint);
+            SendToUserEncrypted(_sendBuffer.AsSpan(0,6), endPoint);
         }
     }
 }

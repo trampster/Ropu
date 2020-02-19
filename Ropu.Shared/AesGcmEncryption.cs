@@ -11,9 +11,11 @@ namespace Ropu.Shared
         static byte[] _nounceBuffer = new byte[0];
         [ThreadStatic]
         static bool _threadInitialized = false;
+        readonly byte[] _key;
 
         public AesGcmEncryption(byte[] key)
         {
+            _key = key;
             _aesGcm = new AesGcm(key);
         }
 
@@ -32,6 +34,11 @@ namespace Ropu.Shared
             _aesGcm.Encrypt(_nounceBuffer, input, output, tag);
         }
 
+        public void Encrypt(Span<byte> input, Span<byte> output, Span<byte> tag, int packetCounter)
+        {
+            Encrypt(input, packetCounter, output, tag);
+        }
+
         public void Decrypt(Span<byte> input, int packetCounter, Span<byte> output, Span<byte> tag)
         {
             if(!_threadInitialized)
@@ -47,6 +54,8 @@ namespace Ropu.Shared
 
             _aesGcm.Decrypt(_nounceBuffer, input, tag, output);
         }
+
+        public byte[] Key => _key;
 
     }
 }

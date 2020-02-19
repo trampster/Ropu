@@ -33,15 +33,19 @@ namespace Ropu.ServingNode
             }
 
             var portFinder = new PortFinder();
-            var mediaProtocol = new RopuProtocol(portFinder, StartingServingNodePort);
-            var loadBalancerProtocol = new LoadBalancerProtocol(portFinder, StartingLoadBalancerPort);
-            var serviceDiscovery = new ServiceDiscovery();
             var credentialsProvider = new CredentialsProvider()
             {
                 Email = settings.Email,
                 Password = settings.Password
             };
             var webClient = new RopuWebClient("https://localhost:5001", credentialsProvider); 
+            var keysClient = new KeysClient(webClient, true);
+            var packetEncryption = new PacketEncryption(keysClient);
+
+            var mediaProtocol = new RopuProtocol(portFinder, StartingServingNodePort, packetEncryption, keysClient);
+            var loadBalancerProtocol = new LoadBalancerProtocol(portFinder, StartingLoadBalancerPort, packetEncryption, keysClient);
+            var serviceDiscovery = new ServiceDiscovery();
+            
             var groupsClient = new GroupsClient(webClient);
             var registra = new Registra(groupsClient);
             var servingNodes = new ServingNodes(100);
@@ -56,7 +60,8 @@ namespace Ropu.ServingNode
                 registra,
                 servingNodes,
                 groupCallControllerLookup,
-                servicesClient);
+                servicesClient,
+                keysClient);
 
             await servingNodeRunner.Run();
         }

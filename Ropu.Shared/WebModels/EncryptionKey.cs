@@ -26,16 +26,5 @@ namespace Ropu.Shared.WebModels
             get;
             set;
         }
-
-        byte[]? _keyMaterialArray;
-
-        public byte[] GetKeyMaterial()
-        {
-            if(_keyMaterialArray == null)
-            {
-                _keyMaterialArray = HexConverter.FromHex(KeyMaterial);
-            }
-            return _keyMaterialArray;
-        }
     }
 }

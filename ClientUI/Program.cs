@@ -1,5 +1,4 @@
 ﻿using Ropu.Client;
-using System.Net;
 using Ropu.Shared;
 using Ropu.Shared.LoadBalancing;
 using Ropu.Client.FileAudio;
@@ -28,7 +27,13 @@ namespace Ropu.ClientUI
                 return;
             }
 
-            var protocolSwitch = new ProtocolSwitch(controlPortStarting, new PortFinder());
+            var credentialsProvider = new CredentialsProvider();
+            var webClient = new RopuWebClient("https://localhost:5001/", credentialsProvider);
+
+            var keysClient = new KeysClient(webClient, false);
+            var packetEncryption = new PacketEncryption(keysClient);
+
+            var protocolSwitch = new ProtocolSwitch(controlPortStarting, new PortFinder(), packetEncryption, keysClient, settings);
             var servingNodeClient = new ServingNodeClient(protocolSwitch);
 
             IAudioSource audioSource = 
@@ -40,13 +45,12 @@ namespace Ropu.ClientUI
             var audioCodec = new OpusCodec();
             var jitterBuffer = new AdaptiveJitterBuffer(2, 50);
             var mediaClient = new MediaClient(protocolSwitch, audioSource, audioPlayer, audioCodec, jitterBuffer, settings);
-            var callManagementProtocol = new LoadBalancerProtocol(new PortFinder(), 5079);
+            var callManagementProtocol = new LoadBalancerProtocol(new PortFinder(), 5079, packetEncryption, keysClient);
 
             var beepPlayer = new BeepPlayer(new PulseAudioSimple(StreamDirection.Record, "RopuBeeps"));
-            var credentialsProvider = new CredentialsProvider();
-            var webClient = new RopuWebClient("https://localhost:5001/", credentialsProvider);
+            
 
-            var ropuClient = new RopuClient(protocolSwitch, servingNodeClient, mediaClient, callManagementProtocol, settings, beepPlayer, webClient);
+            var ropuClient = new RopuClient(protocolSwitch, servingNodeClient, mediaClient, callManagementProtocol, settings, beepPlayer, webClient, keysClient);
 
             var application = new RopuApplication(ropuClient);
 
