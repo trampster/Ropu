@@ -52,6 +52,9 @@ namespace Ropu.CallController
             }
 
             var keysClientTask = _keysClient.Run(cancellationTokenSource.Token);
+
+            await _keysClient.WaitForkeys();
+
             _loadBalancerProtocol.UserId = userId;
             var loadBalancerTask = _loadBalancerProtocol.Run();
             var ropuProtocolTask = _ropuProtocol.Run();
@@ -98,6 +101,7 @@ namespace Ropu.CallController
                 else
                 {
                     Console.WriteLine("Failed to register");
+                    await Task.Delay(2000);
                 }
             }
         }
