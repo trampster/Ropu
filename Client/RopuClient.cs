@@ -136,6 +136,7 @@ namespace Ropu.Client
                 }
             };
             _startingCall.AddTransition(EventId.CallStartFailed, () => _registered);
+            _startingCall.AddTransition(EventId.PttUp, () => _registered);
             _stateManager.AddState(_startingCall);
 
             //in call idle
