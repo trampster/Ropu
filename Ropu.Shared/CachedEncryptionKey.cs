@@ -22,7 +22,6 @@ namespace Ropu.Shared
 
         public bool isTodaysKey()
         {
-            Console.WriteLine($"KeyDate: {Key.Date.Date} TodaysDate: {DateTime.UtcNow.Date}");
             bool result = Key.Date.Date == DateTime.UtcNow.Date;
             return result;
         }

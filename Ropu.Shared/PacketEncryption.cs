@@ -39,7 +39,6 @@ namespace Ropu.Shared
                 Console.Error.WriteLine($"Failed to find a key for packet, isUser {isUser}, keyId {keyId}");
                 return 0;
             }
-            Console.WriteLine($"Decrypting packet isUser: {isUser}, keyId {keyId}, sourceId {sourceId}");
             return Decrypt(packetBuffer, length, encryption.Encryption, plainText);
         }
 
@@ -54,8 +53,6 @@ namespace Ropu.Shared
             int packetCounter = BitConverter.ToInt32(packet.Slice(5));
             var tag = packet.Slice(9, 12);
             var cipherText = packet.Slice(21);
-
-            Console.WriteLine($"Decrypt Packet, Key: {ToString(encryption.Key)} Tag: {ToString(tag)}, Length: {ToString(cipherText)}, , PacketCounter: {packetCounter}");
 
             encryption.Decrypt(cipherText, packetCounter, plainText.AsSpan(0, cipherText.Length), tag);
 
@@ -80,7 +77,6 @@ namespace Ropu.Shared
 
             keyInfo.Encryption.Encrypt(payload, packet.Slice(9 + 12, payload.Length), tag, (int)packetCounter);
 
-            Console.WriteLine($"Encrypted Packet, Key: {ToString(keyInfo.Encryption.Key)}, Tag: {ToString(tag)}, Length: {ToString(packet.Slice(9 + 12, payload.Length))}, PacketCounter: {packetCounter}");
             return 9 + 12 + payload.Length;
         }
 

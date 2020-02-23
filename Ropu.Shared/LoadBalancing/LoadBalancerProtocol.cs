@@ -68,11 +68,9 @@ namespace Ropu.Shared.LoadBalancing
 
             while(true)
             {
-                Console.WriteLine("Starting receive");
                 int read = _socket.ReceiveFrom(buffer, ref any);
                 //var result = await _socket.ReceiveFromAsync(arraySegment, SocketFlags.None, any);
                 // int read = result.ReceivedBytes;
-                Console.WriteLine("Received Packet");
 
                 int payloadLength = await _packetEncryption.Decrypt(buffer, read, payload);
                 
@@ -269,7 +267,6 @@ namespace Ropu.Shared.LoadBalancing
             int packetLength = _packetEncryption.CreateEncryptedPacket(buffer.AsSpan(0,  length), packet, false, userId.Value, keyInfo);
             _socket.SendTo(packet, 0, packetLength, SocketFlags.None, endPoint);
             _sendBufferPool.Add(packet);
-            Console.WriteLine("SendToEncrypted Finished");
             return true;
         }
 

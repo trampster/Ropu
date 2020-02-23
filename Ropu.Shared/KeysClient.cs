@@ -239,7 +239,6 @@ namespace Ropu.Shared
 
         CachedEncryptionKey? GetTodaysEncryptionInfo(List<CachedEncryptionKey> keys)
         {
-            Console.WriteLine($"Keys count: {keys.Count()}");
             foreach(var key in keys)
             {
                 if(key.isTodaysKey())
