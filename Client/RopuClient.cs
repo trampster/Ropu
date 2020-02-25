@@ -428,9 +428,9 @@ namespace Ropu.Client
             }
             var ignore = _mediaClient.StartSendingAudio(_callGroup);
 
-            Console.WriteLine($"sending StartGroupCall for group {_callGroup} {_protocolSwitch.ServingNodeEndpoint}");
             while(!token.IsCancellationRequested)
             {
+                Console.WriteLine($"sending StartGroupCall for group {_callGroup} {_protocolSwitch.ServingNodeEndpoint}");
                 _servingNodeClient.StartGroupCall(_clientSettings.UserId.Value, _callGroup);
                 await WaitForCancel(token, 1000);
             }

@@ -124,6 +124,7 @@ namespace Ropu.ServingNode
                 case RopuPacketType.StartGroupCall:
                 case RopuPacketType.FloorReleased:
                 {
+                    Console.WriteLine("Got Start Group Call Message");
                     ushort groupId = data.Slice(1).ParseUshort();
                     _messageHandler?.HandleCallControllerMessage(groupId, buffer, ammountRead);
                     break;
@@ -172,10 +173,11 @@ namespace Ropu.ServingNode
             }
         }
 
-        public void SendPacket(byte[] packet, int length, IPEndPoint target, uint userOrGroupId, CachedEncryptionKey keyInfo)
+        public void SendGroupPacket(byte[] packet, int length, IPEndPoint target, uint groupId, CachedEncryptionKey keyInfo)
         {
+            int packetLength = _packetEncryption.CreateEncryptedPacket(packet.AsSpan(0, length), _encryptedBuffer, true, groupId, keyInfo);
 
-            _socket.SendTo(packet, 0, length, SocketFlags.None, target);
+            _socket.SendTo(_encryptedBuffer, 0, packetLength, SocketFlags.None, target);
         }
 
         void SendToUserEncrypted(Span<byte> payload, IPEndPoint endPoint)
@@ -333,7 +335,7 @@ namespace Ropu.ServingNode
 
         void SetBufferEncrypted(SocketAsyncEventArgs args, byte[] buffer, int length, uint groupId, CachedEncryptionKey keyInfo)
         {
-            int packetLength = _packetEncryption.CreateEncryptedPacket(buffer, _encryptedBuffer, false, groupId, keyInfo);
+            int packetLength = _packetEncryption.CreateEncryptedPacket(buffer.AsSpan(0, length), _encryptedBuffer, true, groupId, keyInfo);
             args.SetBuffer(_encryptedBuffer, 0, packetLength);
         }
 

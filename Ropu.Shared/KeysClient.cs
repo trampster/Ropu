@@ -162,10 +162,10 @@ namespace Ropu.Shared
 
         async Task<List<CachedEncryptionKey>?> RefreshGroupKeys(uint groupId)
         {
-            var response = await _ropuWebClient.Get<List<EncryptionKey>>($"api/Key/False/{groupId}");
+            var response = await _ropuWebClient.Get<List<EncryptionKey>>($"api/Key/True/{groupId}");
             if(!response.IsSuccessfulStatusCode)
             {
-                Console.Error.WriteLine($"Failed to find a key for group with GroupId {groupId}");
+                Console.Error.WriteLine($"Failed to get a key for group with GroupId {groupId} with response code {response.StatusCode}");
                 return null;
             }
             var keys = (await response.GetJson()).Select(key => new CachedEncryptionKey(key)).ToList();
@@ -198,12 +198,13 @@ namespace Ropu.Shared
             CachedEncryptionKey? encryption;
             if(_groups.TryGetValue(groupId, out var keys))
             {
-                encryption = GetTodaysEncryptionInfo(keys);
-                if(encryption == null)
+                encryption = GetEncryptionInfo(keys, keyId);
+                if(encryption != null)
                 {
-                    //keys are all expired
-                    _groups.Remove(groupId);
+                    return encryption;    
                 }
+                //keys are all expired
+                _groups.Remove(groupId);
             }
 
             keys = await RefreshGroupKeys(groupId);

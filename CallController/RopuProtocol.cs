@@ -77,12 +77,18 @@ namespace Ropu.CallController
                     await Task.Run(() => resetEvent.WaitOne());
                     resetEvent.Reset();
                 }
-
-                int payloadLength = await _packetEncryption.Decrypt(buffer, socketArgs.BytesTransferred, payload);
-
-                if(payloadLength != 0)
+                try
                 {
-                    HandlePacket(payload, payloadLength, (IPEndPoint)socketArgs.RemoteEndPoint);
+                    int payloadLength = await _packetEncryption.Decrypt(buffer, socketArgs.BytesTransferred, payload);
+
+                    if(payloadLength != 0)
+                    {
+                        HandlePacket(payload, payloadLength, (IPEndPoint)socketArgs.RemoteEndPoint);
+                    }
+                }
+                catch(Exception exception)
+                {
+                    Console.WriteLine($"Exception occured process ropu packet {exception.ToString()}");
                 }
             }
         }
@@ -112,6 +118,11 @@ namespace Ropu.CallController
                     ushort groupId = data.Slice(1).ParseUshort();
                     uint userId = data.Slice(3).ParseUint();
                     _messageHandler?.HandleFloorRequest(groupId, userId);
+                    break;
+                }
+                default:
+                {
+                    Console.Error.WriteLine($"Received Unknown Ropu packet type {data[0]}");
                     break;
                 }
             }

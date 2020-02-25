@@ -56,7 +56,7 @@ namespace Ropu.CallController
             var keyInfo = await _keysClient.GetGroupKey(_groupId);
             while(keyInfo == null)
             {
-                Console.Error.WriteLine("Failed to get key for group {_groupId}");
+                Console.Error.WriteLine($"Failed to get key for group {_groupId}");
                 await Task.Delay(1000);
                 keyInfo = await _keysClient.GetGroupKey(_groupId);
             }

@@ -93,7 +93,7 @@ namespace Ropu.ServingNode
                 Console.Error.WriteLine($"Could not forward message to send CallController because key is not available for group {groupId}");
                 return;
             }
-            _ropuProtocol.SendPacket(packetData, length, endPoint, groupId, keyInfo);
+            _ropuProtocol.SendGroupPacket(packetData, length, endPoint, groupId, keyInfo);
         }
 
 
