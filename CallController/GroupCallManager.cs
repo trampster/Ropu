@@ -73,7 +73,7 @@ namespace Ropu.CallController
             var cancellationToken = _callCancellationTokenSource.Token;
             var idleTask = RunIdleTimer(cancellationToken);
             var updatesTask = RunPeriodicUpdates(cancellationToken);
-            Task.WaitAll(idleTask, updatesTask);
+            await Task.WhenAll(idleTask, updatesTask);
         }
 
         async Task RunPeriodicUpdates(CancellationToken token)
