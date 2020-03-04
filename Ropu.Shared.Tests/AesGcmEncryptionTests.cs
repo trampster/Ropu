@@ -23,12 +23,6 @@ namespace Ropu.Shared.Tests
 
             var aesCounterMode = new AesGcmEncryption(key);
 
-            
-            AesCryptoServiceProvider provider = new AesCryptoServiceProvider();
-            provider.Key = key;
-            provider.Mode = CipherMode.ECB;
-            var transform = provider.CreateEncryptor();
-
             byte[] cipherText = new byte[16];
             byte[] tag = new byte[12];
 

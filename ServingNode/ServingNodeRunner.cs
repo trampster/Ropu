@@ -19,6 +19,7 @@ namespace Ropu.ServingNode
         readonly ServingNodes _servingNodes;
         readonly GroupCallControllerLookup _groupCallControllerLookup;
         readonly ServicesClient _servicesClient;
+        readonly KeysClient _keysClient;
 
         uint[] _groupFloorLookup = new uint[ushort.MaxValue];
 
@@ -29,7 +30,8 @@ namespace Ropu.ServingNode
             Registra registra,
             ServingNodes servingNodes,
             GroupCallControllerLookup groupCallControllerLookup,
-            ServicesClient servicesClient)
+            ServicesClient servicesClient,
+            KeysClient keysClient)
         {
             _ropuProtocol = mediaProtocol;
             _ropuProtocol.SetMessageHandler(this);
@@ -39,21 +41,34 @@ namespace Ropu.ServingNode
             _servingNodes = servingNodes;
             _groupCallControllerLookup = groupCallControllerLookup;
             _servicesClient = servicesClient;
+            _keysClient = keysClient;
             loadBalancerProtocol.SetClientMessageHandler(this);
         }
 
         public async Task Run()
         {
+            var cancellationTokenSource = new CancellationTokenSource();
+            var userId = await _servicesClient.GetUserId(cancellationTokenSource.Token);
+            if(userId == null)
+            {
+                return; //probably cancelled
+            }
+            _loadBalancerProtocol.UserId = userId;
+            _ropuProtocol.UserId = userId.Value;
+            Task keyInfoTask = _keysClient.Run(cancellationTokenSource.Token);
+            Task waitForKeysTask = _keysClient.WaitForkeys();
+            await Task.WhenAny(keyInfoTask, waitForKeysTask); //this way we will know of error fromt eh keyInfoTask
+
+
             Task callManagementTask = _loadBalancerProtocol.Run();
             Task mediaTask = _ropuProtocol.Run();
             Task regisrationExpiryTask = _registra.CheckExpiries();
-            var cancellationTokenSource = new CancellationTokenSource();
-            Task registrationTask = _servicesClient.RegisterService(cancellationTokenSource.Token);
+            Task registrationTask = _servicesClient.ServiceRegistration(cancellationTokenSource.Token);
 
             Task registerTask = Register();
 
 
-            await TaskCordinator.WaitAll(callManagementTask, mediaTask, registerTask, regisrationExpiryTask, registrationTask);
+            await TaskCordinator.WaitAll(callManagementTask, mediaTask, registerTask, regisrationExpiryTask, registrationTask, keyInfoTask);
         }
 
         public async Task Registration(uint userId, IPEndPoint endPoint)
@@ -64,18 +79,25 @@ namespace Ropu.ServingNode
             _ropuProtocol.SendRegisterResponse(registration, endPoint);
         }
 
-        public void HandleCallControllerMessage(ushort groupId, byte[] packetData, int length)
+        public async void HandleCallControllerMessage(ushort groupId, byte[] packetData, int length)
         {
             var endPoint = _groupCallControllerLookup.LookupEndPoint(groupId);
             if(endPoint == null)
             {
-                Console.Error.WriteLine($"No Call controller avaialable for group {groupId}");
+                Console.Error.WriteLine($"No Call controller available for group {groupId}");
                 return;
             }
-            _ropuProtocol.SendPacket(packetData, length, endPoint);
+            var keyInfo = await _keysClient.GetGroupKey(groupId);
+            if(keyInfo == null)
+            {
+                Console.Error.WriteLine($"Could not forward message to send CallController because key is not available for group {groupId}");
+                return;
+            }
+            _ropuProtocol.SendGroupPacket(packetData, length, endPoint, groupId, keyInfo);
         }
 
-        public void ForwardPacketToClients(ushort groupId, byte[] packetData, int length, IPEndPoint from)
+
+        public async void ForwardPacketToClients(ushort groupId, byte[] packetData, int length, IPEndPoint from)
         {
             //forward to clients that have registered with us and belong to that group
             var clientEndPoints = _registra.GetUserEndPoints(groupId);
@@ -84,7 +106,13 @@ namespace Ropu.ServingNode
                 Console.WriteLine($"No members for group {groupId}");
                 return;
             }
-            _ropuProtocol.BulkSendAsync(packetData, length, clientEndPoints.GetSnapShot(), ReleaseSnapshotSet, clientEndPoints, from);
+            var keyInfo = await _keysClient.GetGroupKey(groupId);
+            if(keyInfo == null)
+            {
+                Console.Error.WriteLine($"Could not get Group key to use to forward media packet for group {groupId}");
+                return;
+            }
+            _ropuProtocol.BulkSendAsync(packetData, length, clientEndPoints.GetSnapShot(), ReleaseSnapshotSet, clientEndPoints, from, groupId, keyInfo);
         }
 
         static void ReleaseSnapshotSet(object? snapshot)
@@ -96,7 +124,7 @@ namespace Ropu.ServingNode
             ((SnapshotSet<IPEndPoint>)snapshot).Release();
         }
 
-        public void ForwardClientMediaPacket(ushort groupId, byte[] packetData, int length, IPEndPoint from)
+        public async void ForwardClientMediaPacket(ushort groupId, byte[] packetData, int length, IPEndPoint from)
         {
             //check if it has floor
             uint userId = packetData.AsSpan(5).ParseUint();
@@ -105,10 +133,17 @@ namespace Ropu.ServingNode
                 return;//doesn't have floor
             }
 
+            var keyInfo = await _keysClient.GetGroupKey(groupId);
+            if(keyInfo == null)
+            {
+                Console.Error.WriteLine($"Could not get Group key to use to forward media packet for group {groupId}");
+                return;
+            }
+
             //forward to all serving nodes
             var servingNodeEndPoints = _servingNodes.EndPoints;
             packetData[0] = (byte)RopuPacketType.MediaPacketGroupCallServingNode;
-            _ropuProtocol.BulkSendAsync(packetData, length, servingNodeEndPoints.GetSnapShot(), ReleaseSnapshotSet, servingNodeEndPoints);
+            _ropuProtocol.BulkSendAsync(packetData, length, servingNodeEndPoints.GetSnapShot(), ReleaseSnapshotSet, servingNodeEndPoints, groupId, keyInfo);
 
             //forward to clients
             ForwardPacketToClients(groupId, packetData, length, from);
@@ -119,6 +154,7 @@ namespace Ropu.ServingNode
             while(true)
             {
                 var callManagementServerEndpoint = _serviceDiscovery.CallManagementServerEndpoint();
+                Console.WriteLine($"Attempting to register with LoadBalancer {callManagementServerEndpoint}");
                 bool registered = await _loadBalancerProtocol.SendRegisterServingNode(
                     new IPEndPoint(_serviceDiscovery.GetMyAddress(), _ropuProtocol.MediaPort), 
                     callManagementServerEndpoint);
@@ -127,7 +163,9 @@ namespace Ropu.ServingNode
                     await Task.Delay(60000);
                     continue;
                 }
-                Console.WriteLine("Failed to register");
+                Console.WriteLine("Failed to register with load balancer");
+                await Task.Delay(5000);
+
             }
         }
 

@@ -9,6 +9,7 @@ namespace Ropu.Shared.Web
     {
         readonly RopuWebClient _webClient;
         readonly ServiceType _serviceType;
+        uint _userId = 0;
 
         public ServicesClient(RopuWebClient webClient, ServiceType serviceType)
         {
@@ -16,10 +17,9 @@ namespace Ropu.Shared.Web
             _serviceType = serviceType;
         }
 
-        public async Task RegisterService(CancellationToken cancellationToken)
+        public async Task<uint?> GetUserId(CancellationToken cancellationToken)
         {
             //get user Id
-            uint userId = 0;
             while(!cancellationToken.IsCancellationRequested)
             {
                 var response = await _webClient.Get<User>("api/Users/Current");
@@ -29,13 +29,17 @@ namespace Ropu.Shared.Web
                     await Task.Delay(5000);
                     continue;
                 }
-                userId = (await response.GetJson()).Id;
-                break;
+                _userId = (await response.GetJson()).Id;
+                return _userId;
             }
+            return null;
+        }
 
+        public async Task ServiceRegistration(CancellationToken cancellationToken)
+        {
             var serviceInfo = new ServiceInfo()
             {
-                UserId = userId,
+                UserId = _userId,
                 ServiceType = _serviceType,
             };
 

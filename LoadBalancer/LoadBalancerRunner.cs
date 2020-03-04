@@ -20,16 +20,19 @@ namespace Ropu.LoadBalancer
         readonly IGroupsClient _groupsClient;
         readonly RopuWebClient _webClient;
         readonly ServicesClient _servicesClient;
+        readonly KeysClient _keysClient;
         CommandLineSettings _settings;
         volatile bool _closing = false;
 
         public LoadBalancerRunner(
+            KeysClient keysClient,
             LoadBalancerProtocol loadBalancerProtocol, 
             IGroupsClient groupsClient, 
             RopuWebClient webClient,
             CommandLineSettings settings,
             ServicesClient servicesClient)
         {
+            _keysClient = keysClient;
             _settings = settings;
             _loadBalancerProtocol = loadBalancerProtocol;
             _loadBalancerProtocol.SetServerMessageHandler(this);
@@ -45,15 +48,27 @@ namespace Ropu.LoadBalancer
 
         public async Task Run()
         {
+            var cancellationTokenSource = new CancellationTokenSource();
+
+            var userId = await _servicesClient.GetUserId(cancellationTokenSource.Token);
+            if(userId == null)
+            {
+                return; // probably cancelled
+            }
+
             await _callControllers.Initialize();
+
+            _loadBalancerProtocol.UserId = userId;
+
+            var keyInfoTask = _keysClient.Run(cancellationTokenSource.Token);
             var callManagement = _loadBalancerProtocol.Run();
             var removeExpired = RemoveExpiredControllers();
             var webdateWeb = UpdateWeb();
             
-            var cancellationTokenSource = new CancellationTokenSource();
-            var serviceClientTask = _servicesClient.RegisterService(cancellationTokenSource.Token);
+            var serviceClientTask = _servicesClient.ServiceRegistration(cancellationTokenSource.Token);
 
             await TaskCordinator.WaitAll(
+                keyInfoTask,
                 callManagement, 
                 removeExpired, 
                 webdateWeb,

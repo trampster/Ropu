@@ -11,6 +11,8 @@ namespace Ropu.Shared.LoadBalancing
     public class LoadBalancerProtocol
     {
         readonly Socket _socket;
+        readonly PacketEncryption _packetEncryption;
+        readonly KeysClient _keysClient;
         SocketAsyncEventArgs _sendArgs;
 
         readonly ushort _port;
@@ -19,15 +21,20 @@ namespace Ropu.Shared.LoadBalancing
         readonly MemoryPool<byte[]> _sendBufferPool = new MemoryPool<byte[]>(() => new byte[MaxUdpSize]);
         ushort _requestId = 0;
 
-
         readonly IPEndPoint Any = new IPEndPoint(IPAddress.Any, AnyPort);
 
         ILoadBalancerServerMessageHandler? _serverMessageHandler;
         ILoadBalancerClientMessageHandler? _clientMessageHandler;
 
-        public LoadBalancerProtocol(PortFinder portFinder, ushort startingPort)
+        public LoadBalancerProtocol(
+            PortFinder portFinder, 
+            ushort startingPort, 
+            PacketEncryption packetEncryption, 
+            KeysClient keysClient)
         {
             _sendArgs = CreateSocketAsyncEventArgs();
+            _packetEncryption = packetEncryption;
+            _keysClient = keysClient;
             _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             _port = (ushort) portFinder.BindToAvailablePort(_socket, IPAddress.Any, startingPort);
             Console.WriteLine($"Load BalancerProtocol bound to port {_port}");
@@ -47,21 +54,27 @@ namespace Ropu.Shared.LoadBalancing
 
         public async Task Run()
         {
-            var task = new Task(() => ProcessPackets(), TaskCreationOptions.LongRunning);
+            var task = new Task(async () => await ProcessPackets(), TaskCreationOptions.LongRunning);
             task.Start();
             await task;
         }
 
-        void ProcessPackets()
+        async Task ProcessPackets()
         {
             var buffer = new byte[MaxUdpSize];
+            var arraySegment = new ArraySegment<byte>(buffer);
+            byte[] payload = new byte[MaxUdpSize];
             EndPoint any = Any;
 
             while(true)
             {
                 int read = _socket.ReceiveFrom(buffer, ref any);
+                //var result = await _socket.ReceiveFromAsync(arraySegment, SocketFlags.None, any);
+                // int read = result.ReceivedBytes;
+
+                int payloadLength = await _packetEncryption.Decrypt(buffer, read, payload);
                 
-                HandlePacket(buffer, read, (IPEndPoint)any);
+                HandlePacket(payload, payloadLength, (IPEndPoint)any);
             }
         }
 
@@ -197,6 +210,11 @@ namespace Ropu.Shared.LoadBalancing
             }
         }
 
+        public uint? UserId
+        {
+            get;
+            set;
+        }
 
         /// <summary>
         /// Index is requestId, value is handler
@@ -207,13 +225,49 @@ namespace Ropu.Shared.LoadBalancing
             ushort requestId, H handler, byte[] buffer, IPEndPoint endPoint, 
             ManualResetEvent manualResetEvent, int length) where H : class
         {
+            var userId = UserId;
+            var keyInfo = _keysClient.GetMyKeyInfo();
+            if(userId == null)
+            {
+                Console.Error.WriteLine($"Could not send packet because userId is null");
+                return false;
+            }
+            if(keyInfo == null)
+            {
+                Console.Error.WriteLine($"Could not send packet because keyInfo is null");
+                return false;
+            }
+
              _requests[requestId] = handler;
 
-            _socket.SendTo(buffer, 0, length, SocketFlags.None, endPoint);
+            var packet = _sendBufferPool.Get();
+            int packetLength = _packetEncryption.CreateEncryptedPacket(buffer.AsSpan(0, length), packet, false, userId.Value, keyInfo);
+
+            _socket.SendTo(packet, 0, packetLength, SocketFlags.None, endPoint);
             bool acknowledged = await AwaitResetEvent(manualResetEvent);
+            
+            _sendBufferPool.Add(packet);
 
             _requests[requestId] = null;
             return acknowledged;
+        }
+
+        bool SendToEncrypted(byte[] buffer, int length, IPEndPoint endPoint)
+        {
+            var userId = UserId;
+
+            var keyInfo = _keysClient.GetMyKeyInfo();
+
+            if(userId == null || keyInfo ==null)
+            {
+                return false;
+            }
+            var packet = _sendBufferPool.Get();
+
+            int packetLength = _packetEncryption.CreateEncryptedPacket(buffer.AsSpan(0,  length), packet, false, userId.Value, keyInfo);
+            _socket.SendTo(packet, 0, packetLength, SocketFlags.None, endPoint);
+            _sendBufferPool.Add(packet);
+            return true;
         }
 
         public async Task<IPEndPoint?> RequestServingNode(IPEndPoint targetEndPoint)
@@ -252,7 +306,7 @@ namespace Ropu.Shared.LoadBalancing
             // Serving Node Endpoint (6 bytes)
             sendBuffer.WriteEndPoint(servingNodeEndPoint, 3);
 
-            _socket.SendTo(sendBuffer, 0, 9, SocketFlags.None, targetEndPoint);
+            SendToEncrypted(sendBuffer, 9, targetEndPoint);
 
             _sendBufferPool.Add(sendBuffer);
         }
@@ -451,7 +505,8 @@ namespace Ropu.Shared.LoadBalancing
             sendBuffer[0] = (byte)LoadBalancerPacketType.Ack;
             // Request ID (uint16)
             sendBuffer.WriteUshort(requestId, 1);
-            _socket.SendTo(sendBuffer, 0, 3, SocketFlags.None, ipEndPoint);
+
+            SendToEncrypted(sendBuffer, 3, ipEndPoint);
 
             _sendBufferPool.Add(sendBuffer);
         }

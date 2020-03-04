@@ -93,6 +93,11 @@ namespace Ropu.Web.Services
             }
         }
 
+        public bool IsService(uint userId)
+        {
+            return _services.Any(service => service.Value.UserId == userId);
+        }
+
         byte _nextServiceId = 0;
 
         readonly object _lock = new object();

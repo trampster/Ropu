@@ -24,18 +24,22 @@ namespace Ropu.CallController
                 return;
             }
 
-            var portFinder = new PortFinder();
-            var ropuProtocol = new RopuProtocol(portFinder, 9000);
-            var loadBalancerProtocol = new LoadBalancerProtocol(portFinder, StartingControlPort);
-            var serviceDiscovery = new ServiceDiscovery();
-            var servingNodes = new ServingNodes(100);
-
-            var credentialsProvider = new CredentialsProvider()
+             var credentialsProvider = new CredentialsProvider()
             {
                 Email = settings.Email,
                 Password = settings.Password
             };
             var webClient = new RopuWebClient("https://localhost:5001", credentialsProvider); 
+
+            var portFinder = new PortFinder();
+            var keysClient = new KeysClient(webClient, true);
+            var packetEncryption = new PacketEncryption(keysClient);
+            var ropuProtocol = new RopuProtocol(portFinder, 9000, packetEncryption);
+            var loadBalancerProtocol = new LoadBalancerProtocol(portFinder, StartingControlPort, packetEncryption, keysClient);
+            var serviceDiscovery = new ServiceDiscovery();
+            var servingNodes = new ServingNodes(100);
+
+
             var servicesClient = new ServicesClient(webClient, ServiceType.CallController);
 
             var callControl = new CallControl(
@@ -43,7 +47,8 @@ namespace Ropu.CallController
                 serviceDiscovery, 
                 ropuProtocol, 
                 servingNodes,
-                servicesClient);
+                servicesClient,
+                keysClient);
             
             await callControl.Run();
         }

@@ -29,24 +29,31 @@ namespace Ropu.Client
                 return;
             }
 
-            var protocolSwitch = new ProtocolSwitch(_controlPortStarting, new PortFinder());
+            var credentials = new CredentialsProvider()
+            {
+                Email = settings.Email,
+                Password = settings.Password
+            };
+
+            var webClient = new RopuWebClient("asdf", credentials);
+
+
+            var keysClient = new KeysClient(webClient, false);
+            var packetEncryption = new PacketEncryption(keysClient);
+
+            var protocolSwitch = new ProtocolSwitch(_controlPortStarting, new PortFinder(), packetEncryption, keysClient, settings);
             var servingNodeClient = new ServingNodeClient(protocolSwitch);
 
-            var callManagementProtocol = new LoadBalancerProtocol(new PortFinder(), 5079);
+            var callManagementProtocol = new LoadBalancerProtocol(new PortFinder(), 5079, packetEncryption, keysClient);
             
             _mediaClient = BuildMediaClient(protocolSwitch, settings);
 
             //IPEndPoint loadBalancerEndpoint = new IPEndPoint(settings.LoadBalancerIPAddress, LoadBalancerPort);
             var beepPlayer = BuildBeepPlayer(settings);
 
-            var credentials = new CredentialsProvider()
-            {
-                Email = settings.Email,
-                Password = settings.Password
-            };
-            var webClient = new RopuWebClient("asdf", credentials);
 
-            _ropuClient = new RopuClient(protocolSwitch, servingNodeClient, _mediaClient, callManagementProtocol, settings, beepPlayer, webClient);
+
+            _ropuClient = new RopuClient(protocolSwitch, servingNodeClient, _mediaClient, callManagementProtocol, settings, beepPlayer, webClient, keysClient);
             var ropuClientTask = _ropuClient.Run();
 
             //var consoleTask = TaskCordinator.RunLong(HandleCommands);
