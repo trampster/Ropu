@@ -30,6 +30,19 @@ namespace Ropu.Shared
             await task;
         }
 
+        public static async void DontWait<T>(Func<ValueTask<T>> method)
+        {
+            try
+            {
+                await method();
+            }
+            catch(Exception exception)
+            {
+                Console.Error.WriteLine(exception);
+                Environment.Exit(1);
+            }
+        }
+
         public static async void DontWait(Func<Task> method)
         {
             try
@@ -43,7 +56,7 @@ namespace Ropu.Shared
             }
         }
 
-        public static async Task<bool> Retry(Func<Task<bool>> action)
+        public static async ValueTask<bool> Retry(Func<ValueTask<bool>> action)
         {
             for(int index = 0; index < 3; index++)
             {

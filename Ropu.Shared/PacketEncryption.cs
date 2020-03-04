@@ -27,7 +27,7 @@ namespace Ropu.Shared
             return BitConverter.ToUInt32(sourceIdData);
         }
 
-        public async Task<int> Decrypt(byte[] packetBuffer, int length, byte[] plainText)
+        public async ValueTask<int> Decrypt(byte[] packetBuffer, int length, byte[] plainText)
         {
             (bool isUser, byte keyId) = GetKeyInfo(packetBuffer, length);
 

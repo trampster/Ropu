@@ -67,7 +67,7 @@ namespace Ropu.ServingNode
             });
         }
 
-        async Task Lock(Func<Task> action)
+        async Task Lock(Func<ValueTask> action)
         {
             await _semaphoreSlim.WaitAsync();
             try
@@ -80,7 +80,7 @@ namespace Ropu.ServingNode
             }  
         }
 
-        async Task<T> Lock<T>(Func<Task<T>> action)
+        async ValueTask<T> Lock<T>(Func<ValueTask<T>> action)
         {
             await _semaphoreSlim.WaitAsync();
             try

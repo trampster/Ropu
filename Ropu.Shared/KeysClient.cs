@@ -251,7 +251,7 @@ namespace Ropu.Shared
             return null;
         }
 
-        async Task<bool> CacheMyKeys()
+        async ValueTask<bool> CacheMyKeys()
         {
             var response = await _ropuWebClient.Get<List<EncryptionKey>>($"api/Key/MyKeys");
             if(!response.IsSuccessfulStatusCode)
@@ -277,7 +277,7 @@ namespace Ropu.Shared
             }
         }
 
-        async Task<bool> CacheServices()
+        async ValueTask<bool> CacheServices()
         {
             //TODO: need to get service userIds first then get the keys for that service
             var response = await _ropuWebClient.Get<List<ServiceInfo>>("api/Services/All");      

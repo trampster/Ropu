@@ -38,7 +38,7 @@ namespace Ropu.Shared.Web
             }
         }
 
-        public async Task<bool> Login()
+        public async ValueTask<bool> Login()
         {
             var credentials = new Credentials(){Email = _credentialsProvider.Email, Password = _credentialsProvider.Password};
             var json = JsonConvert.SerializeObject(credentials);
@@ -58,26 +58,26 @@ namespace Ropu.Shared.Web
             return true;
         }
 
-        public async Task<HttpResponseMessage> Post<T>(string uri, T payload)
+        public async ValueTask<HttpResponseMessage> Post<T>(string uri, T payload)
         {
             var json = JsonConvert.SerializeObject(payload);
             return await Do(() => _httpClient.PostAsync(uri, new StringContent(json, Encoding.UTF8, "application/json")));
         }
 
-        public async Task<Response<R>> Post<T, R>(string uri, T payload)
+        public async ValueTask<Response<R>> Post<T, R>(string uri, T payload)
         {
             var json = JsonConvert.SerializeObject(payload);
             var response = await Do(() => _httpClient.PostAsync(uri, new StringContent(json, Encoding.UTF8, "application/json")));
             return new Response<R>(response);
         }
 
-        public async Task<Response<T>> Get<T>(string uri)
+        public async ValueTask<Response<T>> Get<T>(string uri)
         {
             var response = await Do(() => _httpClient.GetAsync(uri)).ConfigureAwait(false);
             return new Response<T>(response);
         }
 
-        async Task<HttpResponseMessage> Do(Func<Task<HttpResponseMessage>> func)
+        async ValueTask<HttpResponseMessage> Do(Func<Task<HttpResponseMessage>> func)
         {
             var response = await func().ConfigureAwait(false);
             if(response.StatusCode == HttpStatusCode.Unauthorized)

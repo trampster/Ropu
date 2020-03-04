@@ -17,7 +17,7 @@ namespace Ropu.Shared.Web
             _serviceType = serviceType;
         }
 
-        public async Task<uint?> GetUserId(CancellationToken cancellationToken)
+        public async ValueTask<uint?> GetUserId(CancellationToken cancellationToken)
         {
             //get user Id
             while(!cancellationToken.IsCancellationRequested)

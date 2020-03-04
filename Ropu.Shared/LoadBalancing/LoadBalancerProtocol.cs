@@ -221,7 +221,7 @@ namespace Ropu.Shared.LoadBalancing
         /// </summary>
         readonly object?[] _requests = new object[ushort.MaxValue];
 
-        async Task<bool> AwaitRequest<H>(
+        async ValueTask<bool> AwaitRequest<H>(
             ushort requestId, H handler, byte[] buffer, IPEndPoint endPoint, 
             ManualResetEvent manualResetEvent, int length) where H : class
         {
@@ -270,7 +270,7 @@ namespace Ropu.Shared.LoadBalancing
             return true;
         }
 
-        public async Task<IPEndPoint?> RequestServingNode(IPEndPoint targetEndPoint)
+        public async ValueTask<IPEndPoint?> RequestServingNode(IPEndPoint targetEndPoint)
         {
             var sendBuffer = _sendBufferPool.Get();
 
@@ -311,7 +311,7 @@ namespace Ropu.Shared.LoadBalancing
             _sendBufferPool.Add(sendBuffer);
         }
 
-        public async Task<bool> SendRegisterServingNode(IPEndPoint mediaEndpoint, IPEndPoint targetEndpoint)
+        public async ValueTask<bool> SendRegisterServingNode(IPEndPoint mediaEndpoint, IPEndPoint targetEndpoint)
         {
             var sendBuffer = _sendBufferPool.Get();
 
@@ -330,7 +330,7 @@ namespace Ropu.Shared.LoadBalancing
             return responseReceived;
         }
 
-        public async Task<bool> SendRegisterCallController(IPEndPoint callControlerEndpoint, IPEndPoint targetEndpoint)
+        public async ValueTask<bool> SendRegisterCallController(IPEndPoint callControlerEndpoint, IPEndPoint targetEndpoint)
         {
             var sendBuffer = _sendBufferPool.Get();
 
@@ -349,7 +349,7 @@ namespace Ropu.Shared.LoadBalancing
             return responseReceived;
         }
 
-        public async Task<bool> SendServingNodes(IEnumerable<IPEndPoint> endPoints, IPEndPoint targetEndpoint)
+        public async ValueTask<bool> SendServingNodes(IEnumerable<IPEndPoint> endPoints, IPEndPoint targetEndpoint)
         {
              var sendBuffer = _sendBufferPool.Get();
 
@@ -373,7 +373,7 @@ namespace Ropu.Shared.LoadBalancing
             return responseReceived;
         }
 
-        public async Task<bool> SendServingNodeRemoved(IPEndPoint servinNodeEndPoint, IPEndPoint targetEndpoint)
+        public async ValueTask<bool> SendServingNodeRemoved(IPEndPoint servinNodeEndPoint, IPEndPoint targetEndpoint)
         {
              var sendBuffer = _sendBufferPool.Get();
 
@@ -392,7 +392,7 @@ namespace Ropu.Shared.LoadBalancing
             return responseReceived;
         }
 
-        public async Task<bool> SendGroupCallControllers(IEnumerable<GroupCallController> callManagers, IPEndPoint targetEndpoint)
+        public async ValueTask<bool> SendGroupCallControllers(IEnumerable<GroupCallController> callManagers, IPEndPoint targetEndpoint)
         {
             var sendBuffer = _sendBufferPool.Get();
 
@@ -418,7 +418,7 @@ namespace Ropu.Shared.LoadBalancing
             return responseReceived;
         }
 
-        public async Task<bool> SendGroupCallControllerRemoved(ushort groupId, IPEndPoint targetEndpoint)
+        public async ValueTask<bool> SendGroupCallControllerRemoved(ushort groupId, IPEndPoint targetEndpoint)
         {
              var sendBuffer = _sendBufferPool.Get();
 
@@ -437,7 +437,7 @@ namespace Ropu.Shared.LoadBalancing
             return responseReceived;
         }
 
-        public async Task<bool> StartCall(ushort callId, ushort groupId, IPEndPoint targetEndpoint)
+        public async ValueTask<bool> StartCall(ushort callId, ushort groupId, IPEndPoint targetEndpoint)
         {
             var sendBuffer = _sendBufferPool.Get();
 
@@ -458,7 +458,7 @@ namespace Ropu.Shared.LoadBalancing
             return repsonseReceived;
         }
 
-        public async Task<bool> SendControllerRegistrationInfo(byte controllerId, ushort refreshInterval, IPEndPoint targetEndpoint)
+        public async ValueTask<bool> SendControllerRegistrationInfo(byte controllerId, ushort refreshInterval, IPEndPoint targetEndpoint)
         {
             var sendBuffer = _sendBufferPool.Get();
 
@@ -479,7 +479,7 @@ namespace Ropu.Shared.LoadBalancing
             return repsonseReceived;
         }
 
-        public async Task<bool> SendControllerRefreshCallController (byte controllerId, IPEndPoint targetEndpoint)
+        public async ValueTask<bool> SendControllerRefreshCallController (byte controllerId, IPEndPoint targetEndpoint)
         {
             var sendBuffer = _sendBufferPool.Get();
 
@@ -511,7 +511,7 @@ namespace Ropu.Shared.LoadBalancing
             _sendBufferPool.Add(sendBuffer);
         }
 
-        async Task<bool> SendAndWaitForAck(ushort requestId, byte[] buffer, int length, IPEndPoint endpoint)
+        async ValueTask<bool> SendAndWaitForAck(ushort requestId, byte[] buffer, int length, IPEndPoint endpoint)
         {
             var manualResetEvent = new ManualResetEvent(false);
 
@@ -523,7 +523,7 @@ namespace Ropu.Shared.LoadBalancing
             return await AwaitRequest(requestId, handler, buffer, endpoint, manualResetEvent, length);
         }
 
-        async Task<bool> AwaitResetEvent(ManualResetEvent resetEvent)
+        async ValueTask<bool> AwaitResetEvent(ManualResetEvent resetEvent)
         {
             return await Task<bool>.Run(() => resetEvent.WaitOne(1000));
         }

@@ -47,7 +47,7 @@ namespace web.Controllers
         }
 
         [HttpPost("[action]")]
-        public async Task<ActionResult<ImageResult>> Upload(IFormFile image)
+        public async ValueTask<ActionResult<ImageResult>> Upload(IFormFile image)
         {
             using (var memoryStream = new MemoryStream())
             {

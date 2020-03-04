@@ -302,7 +302,7 @@ namespace Ropu.Client
 
         readonly ManualResetEvent _heartbeatResetEvent = new ManualResetEvent(false);
 
-        async Task<bool> WaitForEvent(CancellationToken token, ManualResetEvent resetEvent, int milliseconds)
+        async ValueTask<bool> WaitForEvent(CancellationToken token, ManualResetEvent resetEvent, int milliseconds)
         {
             return await Task.Run(() => 
             {
@@ -319,7 +319,7 @@ namespace Ropu.Client
             });
         }
 
-        async Task<bool> WaitForCancel(CancellationToken token, int milliseconds)
+        async ValueTask<bool> WaitForCancel(CancellationToken token, int milliseconds)
         {
             return await Task.Run(() => 
             {

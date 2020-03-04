@@ -14,19 +14,19 @@ namespace Ropu.Shared.Web
         }
         public HttpStatusCode StatusCode => _response.StatusCode;
         
-        public async Task<T> GetJson()
+        public async ValueTask<T> GetJson()
         {
             var json = await _response.Content.ReadAsStringAsync();
             return JsonConvert.DeserializeObject<T>(json);
         }
 
-        public async Task<byte[]> GetBytes()
+        public async ValueTask<byte[]> GetBytes()
         {
             var bytes = await _response.Content.ReadAsByteArrayAsync();
             return bytes;
         }
 
-        public async Task<string> GetString()
+        public async ValueTask<string> GetString()
         {
             return await _response.Content.ReadAsStringAsync();
         }
