@@ -57,10 +57,10 @@ namespace Ropu.ClientUI
             var imageService = new ImageService();
 
             //TODO: get web address from config
-            var groupsClient = new GroupsClient(webClient);
+            var imageClient = new ImageClient(webClient);
+            var groupsClient = new GroupsClient(webClient, imageClient);
             var usersClient = new UsersClient(webClient);
             //settings.UserId = usersClient.GetCurrentUser().Result.Id;
-            var imageClient = new ImageClient(webClient);
             var pttPage = new PttPage(imageService);
 
             var navigator = new Navigator();

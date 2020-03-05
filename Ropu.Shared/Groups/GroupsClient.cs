@@ -10,12 +10,16 @@ namespace Ropu.Shared.Groups
     public class GroupsClient : IGroupsClient
     {
         readonly RopuWebClient _client;
+        readonly ImageClient _imageClient;
         ushort[] _groupIds = new ushort[0];
         bool _haveGroupsIds = false;
 
-        public GroupsClient(RopuWebClient client)
+        readonly Dictionary<ushort, (Group, DateTime)> _groupsCache = new Dictionary<ushort, (Group, DateTime)>();
+
+        public GroupsClient(RopuWebClient client, ImageClient imageClient)
         {
             _client = client;
+            _imageClient = imageClient;
         }
         
         public async Task<IEnumerable<ushort>> GetGroups()
@@ -35,6 +39,14 @@ namespace Ropu.Shared.Groups
 
         public async Task<Group?> Get(ushort groupId)
         {
+            if(_groupsCache.TryGetValue(groupId, out (Group, DateTime) cachedGroup))
+            {
+                if(cachedGroup.Item2 > DateTime.UtcNow)
+                {
+                    //not expired
+                    return cachedGroup.Item1;
+                }
+            }
             var response = await _client.Get<Group>($"api/Groups/{groupId}");
             if(response.StatusCode != HttpStatusCode.OK)
             {
@@ -42,12 +54,9 @@ namespace Ropu.Shared.Groups
             }
             var group = await response.GetJson();
 
-            var imageResponse = await _client.Get<byte[]>($"api/Image/{group.ImageHash}");
-            if(response.StatusCode == HttpStatusCode.OK)
-            {
-                group.Image = await imageResponse.GetBytes();
-            }
+            group.Image = await _imageClient.GetImage(group.ImageHash);
 
+            _groupsCache[groupId] = (group, DateTime.UtcNow + TimeSpan.FromMinutes(5));
             return group;
         }
 
