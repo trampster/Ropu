@@ -46,7 +46,7 @@ namespace Ropu.ServingNode
             var loadBalancerProtocol = new LoadBalancerProtocol(portFinder, StartingLoadBalancerPort, packetEncryption, keysClient);
             var serviceDiscovery = new ServiceDiscovery();
             
-            var groupsClient = new GroupsClient(webClient);
+            var groupsClient = new GroupsClient(webClient, new ImageClient(webClient));
             var registra = new Registra(groupsClient);
             var servingNodes = new ServingNodes(100);
             var groupCallControllerLookup = new GroupCallControllerLookup();

@@ -29,7 +29,7 @@ namespace Ropu.LoadBalancer
                 Password = settings.Password
             };
             var webClient = new RopuWebClient("https://localhost:5001/", credentialsProvider);
-            var groupsClient = new GroupsClient(webClient);
+            var groupsClient = new GroupsClient(webClient, new ImageClient(webClient));
             
 
             var keysClient = new KeysClient(webClient, true);
