@@ -146,11 +146,15 @@ namespace Ropu.Shared
             CachedEncryptionKey? encryption;
             if(_users.TryGetValue(userId, out var keys))
             {
-                encryption = GetTodaysEncryptionInfo(keys);
+                encryption = GetEncryptionInfo(keys, keyId);
                 if(encryption == null)
                 {
-                    //keys are all expired
+                    //no match for keyId, needs to get them again.
                     _users.Remove(userId);
+                }
+                else
+                {
+                    return encryption;
                 }
             }
 
@@ -162,6 +166,7 @@ namespace Ropu.Shared
 
         async Task<List<CachedEncryptionKey>?> RefreshGroupKeys(uint groupId)
         {
+            Console.WriteLine($"KeysClient: RefreshGroupKeys groupId: {groupId}");
             var response = await _ropuWebClient.Get<List<EncryptionKey>>($"api/Key/True/{groupId}");
             if(!response.IsSuccessfulStatusCode)
             {
