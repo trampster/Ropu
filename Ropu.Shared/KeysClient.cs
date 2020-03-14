@@ -121,10 +121,10 @@ namespace Ropu.Shared
                 _users.Remove(userId);
             }
 
-            keys = await RefreshUsersKeys(userId);
-            if(keys == null) return null;
+            var keys1 = await RefreshUsersKeys(userId);
+            if(keys1 == null) return null;
 
-            return GetTodaysEncryptionInfo(keys);
+            return GetTodaysEncryptionInfo(keys1);
         }
 
         async Task<List<CachedEncryptionKey>?> RefreshUsersKeys(uint userId)
@@ -158,10 +158,10 @@ namespace Ropu.Shared
                 }
             }
 
-            keys = await RefreshUsersKeys(userId);
-            if(keys == null) return null;
+            var keys1 = await RefreshUsersKeys(userId);
+            if(keys1 == null) return null;
 
-            return GetEncryptionInfo(keys, keyId);
+            return GetEncryptionInfo(keys1, keyId);
         }
 
         async Task<List<CachedEncryptionKey>?> RefreshGroupKeys(uint groupId)
@@ -192,10 +192,10 @@ namespace Ropu.Shared
                 _groups.Remove(groupId);
             }
 
-            keys = await RefreshGroupKeys(groupId);
-            if(keys == null) return null;
+            var keys1 = await RefreshGroupKeys(groupId);
+            if(keys1 == null) return null;
 
-            return GetTodaysEncryptionInfo(keys);
+            return GetTodaysEncryptionInfo(keys1);
         }
 
         public async Task<CachedEncryptionKey?> GetGroupKey(uint groupId, byte keyId)
@@ -212,10 +212,10 @@ namespace Ropu.Shared
                 _groups.Remove(groupId);
             }
 
-            keys = await RefreshGroupKeys(groupId);
-            if(keys == null) return null;
+            var keys1 = await RefreshGroupKeys(groupId);
+            if(keys1 == null) return null;
 
-            return GetEncryptionInfo(keys, keyId);
+            return GetEncryptionInfo(keys1, keyId);
         }
 
         AesGcmEncryption? GetTodaysEncryption(List<CachedEncryptionKey> keys)

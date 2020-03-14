@@ -124,7 +124,7 @@ namespace Ropu.Shared.Concurrent
             var old = second[index3];
             
             second[index3] = value;
-            if(EqualityComparer<T>.Default.Equals(old, default(T)))
+            if(old == null)
             {
                 _count++;
             }
