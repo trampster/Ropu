@@ -3,3 +3,4 @@ bin
 .vscode
 ClientUI/Install
 *.snap
+*.vs

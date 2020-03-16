@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://xamarin.com/schemas/2014/forms/design"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:skia="clr-namespace:SkiaSharp.Views.Forms;assembly=SkiaSharp.Views.Forms"
+             xmlns:gesture="clr-namespace:RopuForms.Views;assembly=RopuForms"
+             xmlns:tt="clr-namespace:RopuForms.Views.TouchTracking;assembly=RopuForms"
+             mc:Ignorable="d"
+             x:Class="RopuForms.Views.PttPage"
+             >
+    <ContentPage.Content>
+        <Grid BackgroundColor="White">
+            <gesture:PttControl VerticalOptions="FillAndExpand" 
+                                HorizontalOptions="FillAndExpand" 
+                                x:Name="canvisView" 
+                                PttColor="{Binding PttColor}" 
+                                TransmittingAnimationColor="{Binding TransmittingColor}" 
+                                Transmitting="{Binding Transmitting}"  
+                                PttDownCommand="{Binding PttDownCommand}"
+                                PttUpCommand="{Binding PttUpCommand}">
+            </gesture:PttControl>
+
+            <Grid.Effects>
+                <tt:TouchEffect Capture="True"
+                            TouchAction="OnTouchEffectAction" />
+            </Grid.Effects>
+        </Grid>
+    </ContentPage.Content>
+    
+</ContentPage>
