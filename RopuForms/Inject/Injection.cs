@@ -22,11 +22,12 @@ namespace RopuForms.Inject
                     .RegisterSingleton(i => new CredentialsProvider())
                     .RegisterSingleton(i => new RopuWebClient("https://192.168.1.7:5001/", i.Get<CredentialsProvider>()))
                     .RegisterSingleton<INavigationService>(i => new Navigator())
-                    .RegisterSingleton(i => new LoginViewModel(i.Get<IClientSettings>(), i.Get<INavigationService>(), i.Get<RopuWebClient>(), i.Get<CredentialsProvider>()))
+                    .RegisterSingleton(i => new LoginViewModel(i.Get<IClientSettings>(), i.Get<INavigationService>(), i.Get<RopuWebClient>(), i.Get<CredentialsProvider>(), i.Get<ImageService>()))
                     .RegisterSingleton(i => new LoginPage(i.Get<LoginViewModel>()))
                     .RegisterSingleton(i => new MainViewModel(i.Get<IClientSettings>(), i.Get<INavigationService>()))
                     .RegisterSingleton(i => new MainPage(i.Get<MainViewModel>()))
-                    .RegisterSingleton(i => new PttViewModel());
+                    .RegisterSingleton(i => new PttViewModel())
+                    .RegisterSingleton(i => new ImageService());
             }
             return _container.Get<T>();
         }

@@ -8,12 +8,13 @@
     <ContentPage.Content>
         <StackLayout Orientation="Horizontal" Padding="50">
             <StackLayout HorizontalOptions="FillAndExpand" >
+                <Image Source="{Binding RopuIcon}" HeightRequest="200" WidthRequest="200" />
                 <Label Text="{Binding FailureMessage}" FontSize="20" HorizontalOptions="FillAndExpand" TextColor="Red"/>
                 <Label Text="Email" FontSize="20" HorizontalOptions="FillAndExpand"/>
                 <Entry FontSize="20" HorizontalOptions="FillAndExpand" Text="{Binding Email}" />
                 <Label Text="Password" FontSize="20" HorizontalOptions="FillAndExpand"/>
                 <Entry  FontSize="20" HorizontalOptions="FillAndExpand" IsPassword="True" Text="{Binding Password}" />
-                <BoxView HeightRequest="100"/>
+                <BoxView HeightRequest="50"/>
                 <Button FontSize="20" Text="Login" Command="{Binding Login}" />
             </StackLayout>
         </StackLayout>

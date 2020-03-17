@@ -11,6 +11,12 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<EmbeddedResource Include="..\Icon\Ropu256.png" Link="Images\Ropu256.png" >
+			<LogicalName>Ropu256.png</LogicalName>
+		</EmbeddedResource>
+	</ItemGroup>
+
+	<ItemGroup>
 		<ProjectReference Include="../Client/Client.csproj" />
 	</ItemGroup>
 	
@@ -28,5 +34,9 @@
 		<EmbeddedResource Update="Views\PttPage.xaml">
 			<Generator>MSBuild:UpdateDesignTimeXaml</Generator>
 		</EmbeddedResource>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Images\" />
 	</ItemGroup>
 </Project>

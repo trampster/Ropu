@@ -6,6 +6,7 @@ using System.Windows.Input;
 using Ropu.Client;
 using Ropu.Shared.Web;
 using RopuForms.Services;
+using Xamarin.Forms;
 
 namespace RopuForms.ViewModels
 {
@@ -15,17 +16,20 @@ namespace RopuForms.ViewModels
         readonly INavigationService _navigator;
         readonly RopuWebClient _webClient;
         readonly CredentialsProvider _credentialsProvider;
+        readonly ImageService _imageService;
 
         public LoginViewModel(
             IClientSettings clientSettings,
             INavigationService navigator,
             RopuWebClient webClient,
-            CredentialsProvider credentialProvider)
+            CredentialsProvider credentialProvider,
+            ImageService imageService)
         {
             _clientSettings = clientSettings;
             _navigator = navigator;
             _webClient = webClient;
             _credentialsProvider = credentialProvider;
+            _imageService = imageService;
         }
 
         string _email = "";
@@ -50,6 +54,11 @@ namespace RopuForms.ViewModels
         {
             get => _failureMessage;
             set => SetProperty(ref _failureMessage, value);
+        }
+
+        public ImageSource RopuIcon
+        {
+            get => _imageService.Ropu;
         }
 
         public ICommand Login => new AsyncCommand(async () =>
