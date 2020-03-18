@@ -11,8 +11,8 @@
         <views:MenuPage />
     </MasterDetailPage.Master>
 
-    <MasterDetailPage.Detail>
-        <NavigationPage>
+    <MasterDetailPage.Detail >
+        <NavigationPage NavigationPage.HasNavigationBar="False">
             <NavigationPage.Icon>
                 <OnPlatform x:TypeArguments="FileImageSource">
                     <On Platform="iOS" Value="tab_feed.png"/>

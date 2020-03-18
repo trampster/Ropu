@@ -24,6 +24,12 @@ namespace Ropu.Shared.Web
             _httpClient.BaseAddress = new Uri(uri);
         }
 
+        public string ServerAddress
+        {
+            get => _httpClient.BaseAddress.ToString();
+            set => _httpClient.BaseAddress = new Uri(value);
+        }
+
         class JwtResponse
         {
             public JwtResponse()

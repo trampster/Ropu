@@ -27,7 +27,8 @@ namespace RopuForms.Inject
                     .RegisterSingleton(i => new MainViewModel(i.Get<IClientSettings>(), i.Get<INavigationService>()))
                     .RegisterSingleton(i => new MainPage(i.Get<MainViewModel>()))
                     .RegisterSingleton(i => new PttViewModel())
-                    .RegisterSingleton(i => new ImageService());
+                    .RegisterSingleton(i => new ImageService())
+                    .Register(i => new PttPage());
             }
             return _container.Get<T>();
         }

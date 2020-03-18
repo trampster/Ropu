@@ -8,6 +8,7 @@
              xmlns:tt="clr-namespace:RopuForms.Views.TouchTracking;assembly=RopuForms"
              mc:Ignorable="d"
              x:Class="RopuForms.Views.PttPage"
+             NavigationPage.HasNavigationBar="false"
              >
     <ContentPage.Content>
         <Grid BackgroundColor="White">

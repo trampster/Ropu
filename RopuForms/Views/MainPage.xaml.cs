@@ -7,6 +7,7 @@ using Xamarin.Forms.Xaml;
 
 using RopuForms.Models;
 using RopuForms.ViewModels;
+using RopuForms.Inject;
 
 namespace RopuForms.Views
 {
@@ -49,7 +50,7 @@ namespace RopuForms.Views
                         MenuPages.Add(id, new NavigationPage(new AboutPage()));
                         break;
                     case (int)MenuItemType.Ptt:
-                        MenuPages.Add(id, new NavigationPage(new PttPage()));
+                        MenuPages.Add(id, new NavigationPage(Injection.Resolve<PttPage>()));
                         break;
                 }
             }

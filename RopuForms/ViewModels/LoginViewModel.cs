@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using Ropu.Client;
 using Ropu.Shared.Web;
@@ -32,8 +33,26 @@ namespace RopuForms.ViewModels
             _imageService = imageService;
         }
 
-        string _email = "";
+        public string ServerAddress
+        {
+            get => _webClient.ServerAddress;
+            set => _webClient.ServerAddress = value;
+        }
 
+        bool _isServerAddressEditable = false;
+        public bool IsServerAddressEditable
+        {
+            get => _isServerAddressEditable;
+            set => SetProperty(ref _isServerAddressEditable, value);
+        }
+
+        public ICommand ToggleEditServerAddress => new AsyncCommand(async () =>
+        {
+            IsServerAddressEditable = !IsServerAddressEditable;
+            await Task.CompletedTask;
+        });
+
+        string _email = "";
         public string Email
         {
             get => _email;
@@ -41,7 +60,6 @@ namespace RopuForms.ViewModels
         }
 
         string _password = "";
-
         public string Password
         {
             get => _password;
@@ -49,7 +67,6 @@ namespace RopuForms.ViewModels
         }
 
         string _failureMessage = "";
-
         public string FailureMessage
         {
             get => _failureMessage;
