@@ -18,19 +18,29 @@ namespace RopuForms.ViewModels
         readonly RopuWebClient _webClient;
         readonly CredentialsProvider _credentialsProvider;
         readonly ImageService _imageService;
+        readonly ICredentialsStore _credentialsStore;
 
         public LoginViewModel(
             IClientSettings clientSettings,
             INavigationService navigator,
             RopuWebClient webClient,
             CredentialsProvider credentialProvider,
-            ImageService imageService)
+            ImageService imageService,
+            ICredentialsStore credentialsService)
         {
             _clientSettings = clientSettings;
             _navigator = navigator;
             _webClient = webClient;
             _credentialsProvider = credentialProvider;
             _imageService = imageService;
+            _credentialsStore = credentialsService;
+        }
+
+        public override async Task Initialize()
+        {
+            (string email, string password) = await _credentialsStore.Load();
+            Email = email;
+            Password = password;
         }
 
         public string ServerAddress
@@ -80,18 +90,18 @@ namespace RopuForms.ViewModels
 
         public ICommand Login => new AsyncCommand(async () =>
         {
-            Console.WriteLine("Login");
             _credentialsProvider.Password = Password;
             _credentialsProvider.Email = Email;
             try
             {
                 if (await _webClient.Login())
                 {
-                    Console.WriteLine("Login Success");
                     await _navigator.Back();
+                    
+                    await _credentialsStore.Save(Email, Password);
+
                     return;
                 }
-                Console.WriteLine("Login Failure");
                 FailureMessage = "Failed to login";
             }
             catch(HttpRequestException exception)

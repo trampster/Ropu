@@ -22,7 +22,8 @@ namespace RopuForms.Inject
                     .RegisterSingleton(i => new CredentialsProvider())
                     .RegisterSingleton(i => new RopuWebClient("https://192.168.1.7:5001/", i.Get<CredentialsProvider>()))
                     .RegisterSingleton<INavigationService>(i => new Navigator())
-                    .RegisterSingleton(i => new LoginViewModel(i.Get<IClientSettings>(), i.Get<INavigationService>(), i.Get<RopuWebClient>(), i.Get<CredentialsProvider>(), i.Get<ImageService>()))
+                    .RegisterSingleton<ICredentialsStore>(i => new CredentialsStore())
+                    .RegisterSingleton(i => new LoginViewModel(i.Get<IClientSettings>(), i.Get<INavigationService>(), i.Get<RopuWebClient>(), i.Get<CredentialsProvider>(), i.Get<ImageService>(), i.Get<ICredentialsStore>()))
                     .RegisterSingleton(i => new LoginPage(i.Get<LoginViewModel>()))
                     .RegisterSingleton(i => new MainViewModel(i.Get<IClientSettings>(), i.Get<INavigationService>()))
                     .RegisterSingleton(i => new MainPage(i.Get<MainViewModel>()))
@@ -38,7 +39,7 @@ namespace RopuForms.Inject
 
         Injection Register<T>(Func<Injection, T> create)
         {
-            _factories.Add(typeof(T), () => (object)create);
+            _factories.Add(typeof(T), () => (object)create(this));
             return this;
         }
 
