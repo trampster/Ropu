@@ -7,6 +7,7 @@ using Ropu.Shared;
 using Ropu.Shared.Groups;
 using Ropu.Shared.LoadBalancing;
 using Ropu.Shared.Web;
+using Ropu.Shared.WebModels;
 using RopuForms.Services;
 using RopuForms.ViewModels;
 using RopuForms.Views;
@@ -36,7 +37,9 @@ namespace RopuForms.Inject
                     .RegisterSingleton(i => new MainPage(i.Get<MainViewModel>()))
                     .RegisterSingleton(i => new ImageClient(i.Get<RopuWebClient>()))
                     .RegisterSingleton<IGroupsClient>(i => new GroupsClient(i.Get<RopuWebClient>(), i.Get<ImageClient>()))
-                    .RegisterSingleton(i => new KeysClient(i.Get<RopuWebClient>(), false))
+                    .RegisterSingleton<Func<byte[], IAesGcm>>(i => key => new AesGcmWrapper(key))
+                    .RegisterSingleton<Func<EncryptionKey, CachedEncryptionKey>>(i => encryptionKey => new CachedEncryptionKey(encryptionKey, i.Get<Func<byte[], IAesGcm>>()))
+                    .RegisterSingleton(i => new KeysClient(i.Get<RopuWebClient>(), false, i.Get<Func<EncryptionKey, CachedEncryptionKey>>()))
                     .RegisterSingleton(i => new PacketEncryption(i.Get<KeysClient>()))
                     .RegisterSingleton(i => new ProtocolSwitch(ControlPortStarting, i.Get<IPortFinder>(), i.Get<PacketEncryption>(), i.Get<KeysClient>(), i.Get<IClientSettings>()))
                     .RegisterSingleton(i => new ServingNodeClient(i.Get<ProtocolSwitch>()))

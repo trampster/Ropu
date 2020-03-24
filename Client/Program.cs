@@ -38,7 +38,7 @@ namespace Ropu.Client
             var webClient = new RopuWebClient("asdf", credentials);
 
 
-            var keysClient = new KeysClient(webClient, false);
+            var keysClient = new KeysClient(webClient, false, encryptionKey => new CachedEncryptionKey(encryptionKey, key => new AesGcmWrapper(key)));
             var packetEncryption = new PacketEncryption(keysClient);
 
             var protocolSwitch = new ProtocolSwitch(_controlPortStarting, new PortFinder(), packetEncryption, keysClient, settings);
