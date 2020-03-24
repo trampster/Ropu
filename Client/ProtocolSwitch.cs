@@ -22,7 +22,7 @@ namespace Ropu.Client
         
         public ProtocolSwitch(
             ushort startingPort, 
-            PortFinder portFinder, 
+            IPortFinder portFinder, 
             PacketEncryption packetEncryption, 
             KeysClient keysClient,
             IClientSettings clientSettings)

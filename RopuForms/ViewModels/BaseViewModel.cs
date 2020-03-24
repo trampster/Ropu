@@ -58,5 +58,10 @@ namespace RopuForms.ViewModels
         {
             return Task.CompletedTask;
         }
+
+        protected void RaisePropertyChanged([CallerMemberName] string memberName = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(memberName));
+        }
     }
 }

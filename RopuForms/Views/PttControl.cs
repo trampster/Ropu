@@ -27,9 +27,8 @@ namespace RopuForms.Views
 
             _transmittingAnimationAction = AnimateTransmitting;
             _animationTask = RunAnimations();
+        }   
 
-
-        }
         protected override void OnPaintSurface(SKPaintGLSurfaceEventArgs e)
         {
             base.OnPaintSurface(e);

@@ -6,17 +6,11 @@ using System;
 
 namespace Ropu.Shared
 {
-    public class PortFinder : IPortFinder
+    public class MobilePortFinder : IPortFinder
     {
         int[] GetActivePortsInRange(int startingPort)
         {
-            IPGlobalProperties properties = IPGlobalProperties.GetIPGlobalProperties();
-
-            var portsInRange = properties.GetActiveUdpListeners()
-                .Where(endPoint => endPoint.Port >= startingPort)
-                .Select(endPoint => endPoint.Port)
-                .ToArray();
-            return portsInRange;
+            return new int[0]; //on android we can't know this so will just have to keep trying until it works.
         }
 
         public int BindToAvailablePort(Socket socket, IPAddress address, int startingPort)

@@ -27,7 +27,7 @@ namespace Ropu.Shared.LoadBalancing
         ILoadBalancerClientMessageHandler? _clientMessageHandler;
 
         public LoadBalancerProtocol(
-            PortFinder portFinder, 
+            IPortFinder portFinder, 
             ushort startingPort, 
             PacketEncryption packetEncryption, 
             KeysClient keysClient)
@@ -241,15 +241,25 @@ namespace Ropu.Shared.LoadBalancing
              _requests[requestId] = handler;
 
             var packet = _sendBufferPool.Get();
-            int packetLength = _packetEncryption.CreateEncryptedPacket(buffer.AsSpan(0, length), packet, false, userId.Value, keyInfo);
+            try
+            {
+                int packetLength = _packetEncryption.CreateEncryptedPacket(buffer.AsSpan(0, length), packet, false, userId.Value, keyInfo);
 
-            _socket.SendTo(packet, 0, packetLength, SocketFlags.None, endPoint);
-            bool acknowledged = await AwaitResetEvent(manualResetEvent);
-            
-            _sendBufferPool.Add(packet);
+                _socket.SendTo(packet, 0, packetLength, SocketFlags.None, endPoint);
+                bool acknowledged = await AwaitResetEvent(manualResetEvent);
 
-            _requests[requestId] = null;
-            return acknowledged;
+                _sendBufferPool.Add(packet);
+
+                _requests[requestId] = null;
+                return acknowledged;
+            }
+            catch(Exception exception)
+            {
+                Console.Error.WriteLine(exception);
+                throw exception;
+            }
+
+
         }
 
         bool SendToEncrypted(byte[] buffer, int length, IPEndPoint endPoint)

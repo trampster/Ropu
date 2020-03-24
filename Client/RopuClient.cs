@@ -270,7 +270,7 @@ namespace Ropu.Client
                 }
 
                 string endPoint = await response.GetString();
-                if(endPoint == null)
+                if(endPoint == null || endPoint == string.Empty)
                 {
                     Console.Error.WriteLine($"Failed to get LoadBalancer IP Endpoint.");
                     await Task.Delay(5000);

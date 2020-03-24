@@ -1,6 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using Client.NoAudio;
 using Ropu.Client;
+using Ropu.Client.JitterBuffer;
+using Ropu.Shared;
+using Ropu.Shared.Groups;
+using Ropu.Shared.LoadBalancing;
 using Ropu.Shared.Web;
 using RopuForms.Services;
 using RopuForms.ViewModels;
@@ -15,6 +20,8 @@ namespace RopuForms.Inject
 
         public static T Resolve<T>() where T : class
         {
+            const ushort ControlPortStarting = 5061;
+
             if (_container == null)
             {
                 _container = new Injection()
@@ -27,7 +34,26 @@ namespace RopuForms.Inject
                     .RegisterSingleton(i => new LoginPage(i.Get<LoginViewModel>()))
                     .RegisterSingleton(i => new MainViewModel(i.Get<IClientSettings>(), i.Get<INavigationService>()))
                     .RegisterSingleton(i => new MainPage(i.Get<MainViewModel>()))
-                    .RegisterSingleton(i => new PttViewModel())
+                    .RegisterSingleton(i => new ImageClient(i.Get<RopuWebClient>()))
+                    .RegisterSingleton<IGroupsClient>(i => new GroupsClient(i.Get<RopuWebClient>(), i.Get<ImageClient>()))
+                    .RegisterSingleton(i => new KeysClient(i.Get<RopuWebClient>(), false))
+                    .RegisterSingleton(i => new PacketEncryption(i.Get<KeysClient>()))
+                    .RegisterSingleton(i => new ProtocolSwitch(ControlPortStarting, i.Get<IPortFinder>(), i.Get<PacketEncryption>(), i.Get<KeysClient>(), i.Get<IClientSettings>()))
+                    .RegisterSingleton(i => new ServingNodeClient(i.Get<ProtocolSwitch>()))
+                    .RegisterSingleton<IJitterBuffer>(i => new AdaptiveJitterBuffer(2, 50))
+                    .RegisterSingleton<IAudioSource>(i => new NoAudioSource())
+                    .RegisterSingleton<IAudioCodec>(i => new NoAudioCodec())
+                    .RegisterSingleton<IAudioPlayer>(i => new NoAudioPlayer())
+                    .RegisterSingleton<IPortFinder>(i => new MobilePortFinder())
+                    .RegisterSingleton<IMediaClient>(i => new MediaClient(
+                        i.Get<ProtocolSwitch>(), i.Get<IAudioSource>(), i.Get<IAudioPlayer>(), i.Get<IAudioCodec>(), i.Get<IJitterBuffer>(), i.Get<IClientSettings>()))
+                    .RegisterSingleton(i => new LoadBalancerProtocol(i.Get<IPortFinder>(), 5079, i.Get<PacketEncryption>(), i.Get<KeysClient>()))
+                    .RegisterSingleton<IBeepPlayer>(i => new NoBeepPlayer())
+                    .RegisterSingleton(i => new RopuClient(
+                        i.Get<ProtocolSwitch>(), i.Get<ServingNodeClient>(), i.Get<IMediaClient>(), i.Get<LoadBalancerProtocol>(), 
+                        i.Get<IClientSettings>(), i.Get<IBeepPlayer>(), i.Get<RopuWebClient>(), i.Get<KeysClient>()))
+                    .Register<IUsersClient>(i => new UsersClient(i.Get<RopuWebClient>()))
+                    .RegisterSingleton(i => new PttViewModel(i.Get<RopuClient>(), i.Get<IClientSettings>(), i.Get<IGroupsClient>(), i.Get<IUsersClient>(), i.Get<ImageClient>()))
                     .RegisterSingleton(i => new ImageService())
                     .Register(i => new PttPage());
             }
