@@ -21,5 +21,10 @@ namespace Ropu.Shared
         {
             _aesGcm.Encrypt(nonce, plaintext, ciphertext, tag);
         }
+
+        public void Dispose()
+        {
+            _aesGcm.Dispose();
+        }
     }
 }

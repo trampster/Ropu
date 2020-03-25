@@ -21,7 +21,7 @@ namespace Ropu.Shared.Tests
                 0x22,0x5f,0x67,0x5b,0x5e,0xf6,0x96,0xe7,0xab,0x3e,0x7f,0x54,0xfe,0xc1,0x65,0x6c
             };
 
-            var aesCounterMode = new AesGcmEncryption(key);
+            var aesCounterMode = new AesGcmEncryption(key, new AesGcmWrapper(key));
 
             byte[] cipherText = new byte[16];
             byte[] tag = new byte[12];
