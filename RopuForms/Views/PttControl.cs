@@ -133,7 +133,9 @@ namespace RopuForms.Views
             }
             set
             {
-                _circle.Color = value.ToSKColor();
+                var color = value.ToSKColor();
+                _circle.Color = color;
+                _transmittingIndicator.CircleColor = color;
                 InvalidateSurface();
             }
         }
@@ -243,7 +245,7 @@ namespace RopuForms.Views
                 }
             }
 
-            if (_buttonFingers.Count > 0)
+            if (startingFingerCount == 0 && _buttonFingers.Count > 0)
             {
                 _circle.PenWidth = 45;
                 InvalidateSurface();

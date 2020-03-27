@@ -113,6 +113,7 @@ namespace Ropu.Client
                 }
             };
             _unregistered.AddTransition(EventId.RegistrationResponseReceived, () => _registered);
+            _unregistered.AddTransition(EventId.PttDown, () => _unregistered);
             _stateManager.AddState(_unregistered);
 
             //deregistering
@@ -137,6 +138,7 @@ namespace Ropu.Client
             };
             _startingCall.AddTransition(EventId.CallStartFailed, () => _registered);
             _startingCall.AddTransition(EventId.PttUp, () => _registered);
+            _startingCall.AddTransition(EventId.PttDown, () => _startingCall);
             _stateManager.AddState(_startingCall);
 
             //in call idle
