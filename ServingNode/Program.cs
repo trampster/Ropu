@@ -38,8 +38,8 @@ namespace Ropu.ServingNode
                 Email = settings.Email,
                 Password = settings.Password
             };
-            var webClient = new RopuWebClient("https://localhost:5001", credentialsProvider); 
-            var keysClient = new KeysClient(webClient, true);
+            var webClient = new RopuWebClient("https://192.168.1.7:5001", credentialsProvider); 
+            var keysClient = new KeysClient(webClient, true, encryptionKey => new CachedEncryptionKey(encryptionKey, key => new AesGcmWrapper(key)));
             var packetEncryption = new PacketEncryption(keysClient);
 
             var mediaProtocol = new RopuProtocol(portFinder, StartingServingNodePort, packetEncryption, keysClient);

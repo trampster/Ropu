@@ -7,10 +7,12 @@ namespace Ropu.Shared
     public class CachedEncryptionKey
     {
         int _packetCounter = 0;
+        readonly Func<byte[], IAesGcm> _aesGcmFactory;
 
-        public CachedEncryptionKey(EncryptionKey key)
+        public CachedEncryptionKey(EncryptionKey key, Func<byte[], IAesGcm> aesGcmFactory)
         {
             Key = key;
+            _aesGcmFactory = aesGcmFactory;
         }
 
         EncryptionKey Key
@@ -50,7 +52,8 @@ namespace Ropu.Shared
             {
                 if(_aesGcmEncryption == null)
                 {
-                    _aesGcmEncryption = new AesGcmEncryption(GetKeyMaterial());
+                    var keyMaterial = GetKeyMaterial();
+                    _aesGcmEncryption = new AesGcmEncryption(keyMaterial, _aesGcmFactory(keyMaterial));
                 }
                 return _aesGcmEncryption;
             }

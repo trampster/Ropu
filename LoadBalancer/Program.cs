@@ -28,11 +28,11 @@ namespace Ropu.LoadBalancer
                 Email = settings.Email,
                 Password = settings.Password
             };
-            var webClient = new RopuWebClient("https://localhost:5001/", credentialsProvider);
+            var webClient = new RopuWebClient("https://192.168.1.7:5001/", credentialsProvider);
             var groupsClient = new GroupsClient(webClient, new ImageClient(webClient));
             
 
-            var keysClient = new KeysClient(webClient, true);
+            var keysClient = new KeysClient(webClient, true, encryptionKey => new CachedEncryptionKey(encryptionKey, key => new AesGcmWrapper(key)));
             var packetEncryption = new PacketEncryption(keysClient);
             var loadBalancerProtocol = new LoadBalancerProtocol(new PortFinder(), 5069, packetEncryption, keysClient);
             

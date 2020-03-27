@@ -1,11 +1,10 @@
 using System;
-using System.Security.Cryptography;
 
 namespace Ropu.Shared
 {
     public class AesGcmEncryption
     {
-        AesGcm _aesGcm;
+        IAesGcm _aesGcm;
 
         [ThreadStatic]
         static byte[] _nounceBuffer = new byte[0];
@@ -13,15 +12,15 @@ namespace Ropu.Shared
         static bool _threadInitialized = false;
         readonly byte[] _key;
 
-        public AesGcmEncryption(byte[] key)
+        public AesGcmEncryption(byte[] key, IAesGcm aesGcm)
         {
             _key = key;
-            _aesGcm = new AesGcm(key);
+            _aesGcm = aesGcm;
         }
 
         public void Encrypt(Span<byte> input, int packetCounter, Span<byte> output, Span<byte> tag)
         {
-            if(!_threadInitialized)
+            if (!_threadInitialized)
             {
                 _nounceBuffer = new byte[12];
             }
@@ -41,7 +40,7 @@ namespace Ropu.Shared
 
         public void Decrypt(Span<byte> input, int packetCounter, Span<byte> output, Span<byte> tag)
         {
-            if(!_threadInitialized)
+            if (!_threadInitialized)
             {
                 _nounceBuffer = new byte[12];
             }

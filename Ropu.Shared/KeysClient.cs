@@ -15,13 +15,15 @@ namespace Ropu.Shared
         readonly Dictionary<uint, List<CachedEncryptionKey>> _groups = new Dictionary<uint, List<CachedEncryptionKey>>();
         readonly List<CachedEncryptionKey> _myKeys = new List<CachedEncryptionKey>();
         readonly RopuWebClient _ropuWebClient;
+        readonly Func<EncryptionKey, CachedEncryptionKey> _cachedEncryiptonKeyFactory;
 
         readonly bool _cacheAllServices;
 
-        public KeysClient(RopuWebClient ropuWebClient, bool cacheAllServices)
+        public KeysClient(RopuWebClient ropuWebClient, bool cacheAllServices, Func<EncryptionKey, CachedEncryptionKey> cachedEncryiptonKeyFactory)
         {
             _ropuWebClient = ropuWebClient;
             _cacheAllServices = cacheAllServices;
+            _cachedEncryiptonKeyFactory = cachedEncryiptonKeyFactory;
         }
 
         public async Task ExpireKey(CancellationToken cancellationToken)
@@ -135,7 +137,7 @@ namespace Ropu.Shared
                 Console.Error.WriteLine($"Failed to find a key for user with UserId {userId}");
                 return null;
             }
-            var keys = (await response.GetJson()).Select(key => new CachedEncryptionKey(key)).ToList();
+            var keys = (await response.GetJson()).Select(key => _cachedEncryiptonKeyFactory(key)).ToList();
             _users.Remove(userId);
             _users.Add(userId, keys);
             return keys;
@@ -173,7 +175,7 @@ namespace Ropu.Shared
                 Console.Error.WriteLine($"Failed to get a key for group with GroupId {groupId} with response code {response.StatusCode}");
                 return null;
             }
-            var keys = (await response.GetJson()).Select(key => new CachedEncryptionKey(key)).ToList();
+            var keys = (await response.GetJson()).Select(key => _cachedEncryiptonKeyFactory(key)).ToList();
             _groups.Add(groupId, keys);
             return keys;
         }
@@ -265,7 +267,7 @@ namespace Ropu.Shared
                 return false;
             }
             _myKeys.Clear();
-            var keys = (await response.GetJson()).Select(key => new CachedEncryptionKey(key));
+            var keys = (await response.GetJson()).Select(key => _cachedEncryiptonKeyFactory(key));
             _myKeys.AddRange(keys);
             return true;
         }
@@ -307,7 +309,7 @@ namespace Ropu.Shared
 
             foreach(var entity in entities)
             {
-                var keys = entity.Keys.Select(key => new CachedEncryptionKey(key)).ToList();
+                var keys = entity.Keys.Select(key => _cachedEncryiptonKeyFactory(key)).ToList();
                 if(!_users.TryAdd(entity.UserOrGroupId, keys))
                 {
                     _users[entity.UserOrGroupId] = keys;
