@@ -31,7 +31,7 @@ namespace Ropu.Client.Opus
 
     public static class OpusNativeMethods
     {
-        const string OPUS_LIB = "libopus.so.0.7.0";
+        const string OPUS_LIB = "opus";
         /// <summary>
         /// Allocates and initializes an encoder state.
         /// </summary>

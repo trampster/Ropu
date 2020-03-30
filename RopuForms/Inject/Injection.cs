@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Client.NoAudio;
 using Ropu.Client;
 using Ropu.Client.JitterBuffer;
+using Ropu.Client.Opus;
 using Ropu.Shared;
 using Ropu.Shared.Groups;
 using Ropu.Shared.LoadBalancing;
@@ -46,7 +47,7 @@ namespace RopuForms.Inject
                     .RegisterSingleton(i => new ServingNodeClient(i.Get<ProtocolSwitch>()))
                     .RegisterSingleton<IJitterBuffer>(i => new AdaptiveJitterBuffer(2, 50))
                     .RegisterSingleton<IAudioSource>(i => new NoAudioSource())
-                    .RegisterSingleton<IAudioCodec>(i => new NoAudioCodec())
+                    .RegisterSingleton<IAudioCodec>(i => new OpusCodec())
                     .RegisterSingleton<IAudioPlayer>(i => new NoAudioPlayer())
                     .RegisterSingleton<IPortFinder>(i => new MobilePortFinder())
                     .RegisterSingleton<IMediaClient>(i => new MediaClient(
