@@ -39,6 +39,7 @@
     <MandroidI18n />
     <AndroidSupportedAbis>
     </AndroidSupportedAbis>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -67,13 +68,20 @@
     <PackageReference Include="Xamarin.Essentials" Version="1.3.1" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AAudio\AllowedCapturePolicy.cs" />
+    <Compile Include="AAudio\ContentType.cs" />
     <Compile Include="AAudio\Direction.cs" />
     <Compile Include="AAudio\AAudioResult.cs" />
     <Compile Include="AAudio\Format.cs" />
+    <Compile Include="AAudio\InputPreset.cs" />
+    <Compile Include="AAudio\PerformanceMode.cs" />
+    <Compile Include="AAudio\SessionId.cs" />
     <Compile Include="AAudio\SharingMode.cs" />
     <Compile Include="AAudio\AAudioSource.cs" />
+    <Compile Include="AAudio\Stream.cs" />
     <Compile Include="AAudio\StreamBuilder.cs" />
     <Compile Include="AAudio\NativeMethods.cs" />
+    <Compile Include="AAudio\Usage.cs" />
     <Compile Include="MainActivity.cs" />
     <Compile Include="PageRender.cs" />
     <Compile Include="Resources\Resource.designer.cs" />

@@ -30,5 +30,31 @@ namespace RopuForms.Droid.AAudio
 
         [DllImport(AAudioLib)]
         public static extern void AAudioStreamBuilder_setBufferCapacityInFrames(IntPtr builder, int numFrames);
+
+        [DllImport(AAudioLib)]
+        public static extern void AAudioStreamBuilder_setSamplesPerFrame(IntPtr builder, int samplesPerFrame);
+
+        [DllImport(AAudioLib)]
+        public static extern void AAudioStreamBuilder_setPerformanceMode(IntPtr buidler, PerformanceMode mode);
+
+        [DllImport(AAudioLib)]
+        public static extern void AAudioStreamBuilder_setUsage(IntPtr buidler, Usage mode);
+
+        [DllImport(AAudioLib)]
+        public static extern void AAudioStreamBuilder_setContentType(IntPtr buidler, ContentType mode);
+
+        [DllImport(AAudioLib)]
+        public static extern void AAudioStreamBuilder_setInputPreset(IntPtr buidler, InputPreset inputPreset);
+
+        [DllImport(AAudioLib)]
+        public static extern void AAudioStreamBuilder_setAllowedCapturePolicy(IntPtr buidler, AllowedCapturePolicy capturePolicy);
+
+        [DllImport(AAudioLib)]
+        public static extern void AAudioStreamBuilder_setSessionId(IntPtr builder, SessionId sessionId);
+
+        public delegate void DataCallback(IntPtr stream, IntPtr userData, IntPtr audioData, int numFrames);
+
+        [DllImport(AAudioLib)]
+        public static extern void AAudioStreamBuilder_setDataCallback(IntPtr builder, DataCallback dataCallback, IntPtr userData);
     }
 }

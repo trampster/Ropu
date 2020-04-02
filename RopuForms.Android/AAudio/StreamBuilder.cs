@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 
 namespace RopuForms.Droid.AAudio
 {
@@ -85,6 +86,190 @@ namespace RopuForms.Droid.AAudio
         public int NumFrames
         {
             set => NativeMethods.AAudioStreamBuilder_setBufferCapacityInFrames(_streamBuilderPtr, value);
+        }
+
+        /// <summary>
+        /// Identical to ChannelCount
+        /// </summary>
+        public int SamplesPerFrame
+        { 
+            set => NativeMethods.AAudioStreamBuilder_setSamplesPerFrame(_streamBuilderPtr, value);
+        }
+
+        /// <summary>
+        /// Set the requested performance mode.
+        ///
+        /// Supported modes are None, PowerSaving and LowLatency.
+        ///
+        /// The default, if you do not call this function, is None.
+        ///
+        /// You may not get the mode you requested.
+        /// You can call AudioStream.PerformanceMode
+        /// to find out the final mode for the stream.
+        /// </summary>
+        public PerformanceMode PerformanceMode
+        {
+            set => NativeMethods.AAudioStreamBuilder_setPerformanceMode(_streamBuilderPtr, value);
+        }
+
+        /// <summary>
+        /// Set the intended use case for the stream.
+        /// The AAudio system will use this information to optimize the
+        /// behavior of the stream.
+        /// This could, for example, affect how volume and focus is handled for the stream.
+        /// 
+        /// The default, if you do not call this function, is Media.
+        ///
+        /// Added in API level 28.
+        /// </summary>
+        public Usage Usage
+        {
+            set => NativeMethods.AAudioStreamBuilder_setUsage(_streamBuilderPtr, value);
+        }
+
+        /// <summary>
+        /// Set the type of audio data that the stream will carry.
+        ///
+        /// The AAudio system will use this information to optimize the
+        /// behavior of the stream.
+        /// This could, for example, affect whether a stream is paused when a notification occurs.
+        /// The default, if you do not call this function, is Music.
+        /// 
+        /// Added in API level 28.
+        /// </summary>
+        public ContentType ContentType
+        {
+            set => NativeMethods.AAudioStreamBuilder_setContentType(_streamBuilderPtr, value);
+        }
+
+        /// <summary>
+        /// Set the input(capture) preset for the stream.
+        /// The AAudio system will use this information to optimize the
+        /// behavior of the stream.
+        /// This could, for example, affect which microphones are used and how the
+        /// recorded data is processed.
+        ///
+        /// The default, if you do not call this function, is VoiceRecognition
+        /// That is because VoiceRecognition is the preset with the lowest latency
+        /// on many platforms.
+        ///
+        /// Added in API level 28.
+        /// </summary>
+        public InputPreset InputPreset
+        {
+            set => NativeMethods.AAudioStreamBuilder_setInputPreset(_streamBuilderPtr, value);
+        }
+
+        /// <summary>
+        /// Specify whether this stream audio may or may not be captured by other apps or the system.
+        ///
+        /// The default is {@link #AAUDIO_ALLOW_CAPTURE_BY_ALL}.
+        ///
+        /// Note that an application can also set its global policy, in which case the most restrictive
+        /// policy is always applied.
+        /// 
+        /// Added in API level 29.
+        /// </summary>
+        public AllowedCapturePolicy AllowedCapturePolicy
+        {
+            set => NativeMethods.AAudioStreamBuilder_setAllowedCapturePolicy(_streamBuilderPtr, value);
+        }
+
+        /// <summary>
+        /// Set the requested session ID.
+        ///
+        /// The session ID can be used to associate a stream with effects processors.
+        /// The effects are controlled using the Android AudioEffect Java API.
+        ///
+        /// The default, if you do not call this function, is None
+        ///
+        /// If set to Allocate then a session ID will be allocated
+        /// when the stream is opened.
+        ///
+        /// The allocated session ID can be obtained by calling AudioStream.SessionId
+        /// and then used with this function when opening another stream.
+        ///
+        /// This allows effects to be shared between streams.
+        ///
+        /// Session IDs from AAudio can be used with the Android Java APIs and vice versa.
+        /// So a session ID from an AAudio stream can be passed to Java
+        /// and effects applied using the Java AudioEffect API.
+        ///
+        /// Note that allocating or setting a session ID may result in a stream with higher latency.
+        ///
+        /// Allocated session IDs will always be positive and nonzero.
+        ///
+        /// Added in API level 28.
+        /// </summary>
+        public SessionId SessionId
+        {
+            set => NativeMethods.AAudioStreamBuilder_setSessionId(_streamBuilderPtr, value);
+        }
+
+        public class AudioData
+        {
+            IntPtr _audioDataPointer;
+            int _numFrames;
+
+            public IntPtr AudioDataPointer
+            {
+                set => _audioDataPointer = value;
+            }
+
+            public int NumFrames
+            {
+                set => _numFrames = value;
+                get => _numFrames;
+            }
+
+            public Span<float> AsFloat(int samplesPerFrame)
+            {
+                unsafe
+                {
+                    return new Span<float>(_audioDataPointer.ToPointer(), _numFrames * samplesPerFrame);
+                }
+            }
+
+            public Span<short> AsShort(int samplesPerFrame)
+            {
+                unsafe
+                {
+                    return new Span<short>(_audioDataPointer.ToPointer(), _numFrames * samplesPerFrame);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Request that AAudio call this functions when the stream is running.
+        ///
+        /// Note that when using this callback, the audio data will be passed in or out
+        /// of the function as an argument.
+        /// So you cannot call Stream.Write() or Stream.Read()
+        /// on the same stream that has an active data callback.
+        ///
+        /// The callback function will start being called after Stream.RequestStart()
+        /// is called.
+        /// It will stop being called after Stream.RequestPause() or
+        /// AudioStream.RequestStop() is called.
+        /// 
+        /// This callback function will be called on a real-time thread owned by AAudio
+        ///
+        /// Note that the AAudio callbacks will never be called simultaneously from multiple threads.
+        /// </summary>
+        /// <param name="callback">Callback</param>
+        /// <param name="dataHolder">
+        /// object which will hold the audio buffers, this instance will be passed to the callbacks
+        /// and will allow access to the span to use to read/write the audio data.
+        /// </param>
+        public void SetAudioDataCallback(Action<AudioData> callback, AudioData dataHolder)
+        {
+            NativeMethods.DataCallback dataCallback = (streamPtr, userDataPtr, audioDataPtr, numFrames) =>
+            {
+                dataHolder.NumFrames = numFrames;
+                dataHolder.AudioDataPointer = audioDataPtr;
+                callback(dataHolder);
+            };
+            NativeMethods.AAudioStreamBuilder_setDataCallback(_streamBuilderPtr, dataCallback, IntPtr.Zero);
         }
     }
 }
