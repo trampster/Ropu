@@ -8,7 +8,7 @@ namespace RopuForms.Droid.AAudio
         public const string AAudioLib = "aaudio";
 
         [DllImport(AAudioLib)]
-        public static extern AAudioResult AAudio_createStreamBuilder(ref IntPtr streamBuilder);
+        public static extern Result AAudio_createStreamBuilder(ref IntPtr streamBuilder);
 
         [DllImport(AAudioLib)]
         public static extern void AAudioStreamBuilder_setDeviceId(IntPtr builder, int deviceId);
@@ -60,7 +60,7 @@ namespace RopuForms.Droid.AAudio
         [DllImport(AAudioLib)]
         public static extern void AAudioStreamBuilder_setFramesPerDataCallback(IntPtr builder, int numFrames);
 
-        public delegate void ErrorCallback(IntPtr stream, IntPtr userData, AAudioResult result);
+        public delegate void ErrorCallback(IntPtr stream, IntPtr userData, Result result);
 
         [DllImport(AAudioLib)]
         public static extern void AAudioStreamBuilder_setErrorCallback(IntPtr builder, ErrorCallback callback, IntPtr userData);
@@ -70,5 +70,44 @@ namespace RopuForms.Droid.AAudio
 
         [DllImport(AAudioLib)]
         public static extern void AAudioStreamBuilder_delete(IntPtr builder);
+
+        [DllImport(AAudioLib)]
+        public static extern void AAudioStream_close(IntPtr stream);
+
+        [DllImport(AAudioLib)]
+        public static extern Result AAudioStream_requestStart(IntPtr stream);
+
+        [DllImport(AAudioLib)]
+        public static extern Result AAudioStream_requestPause(IntPtr stream);
+
+        [DllImport(AAudioLib)]
+        public static extern Result AAudioStream_requestFlush(IntPtr stream);
+
+        [DllImport(AAudioLib)]
+        public static extern Result AAudioStream_requestStop(IntPtr stream);
+
+        [DllImport(AAudioLib)]
+        public static extern StreamState AAudioStream_getState(IntPtr stream);
+
+        [DllImport(AAudioLib)]
+        public static extern Result AAudioStream_waitForStateChange(IntPtr stream, StreamState inputState, out StreamState nextState, long timeoutNanoseconds);
+
+        [DllImport(AAudioLib)]
+        public static extern Result AAudioStream_read(IntPtr stream, short[] buffer, int numFrames, long timeoutNanoseconds);
+        
+        [DllImport(AAudioLib)]
+        public static extern Result AAudioStream_read(IntPtr stream, float[] buffer, int numFrames, long timeoutNanoseconds);
+
+        [DllImport(AAudioLib)]
+        public static extern Result AAudioStream_write(IntPtr stream, short[] buffer, int numFrames, long timeoutNanoseconds);
+
+        [DllImport(AAudioLib)]
+        public static extern Result AAudioStream_write(IntPtr stream, float[] buffer, int numFrames, long timeoutNanoseconds);
+
+        [DllImport(AAudioLib)]
+        public static extern Result AAudioStream_setBufferSizeInFrames(IntPtr stream, int numFrame);
+
+        [DllImport(AAudioLib)]
+        public static extern int AAudioStream_getBufferSizeInFrames(IntPtr stream);
     }
 }

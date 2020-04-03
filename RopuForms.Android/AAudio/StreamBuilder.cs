@@ -217,7 +217,7 @@ namespace RopuForms.Droid.AAudio
             }
 
             public int NumFrames
-            {s
+            {
                 get => _numFrames;
             }
 
@@ -308,7 +308,7 @@ namespace RopuForms.Droid.AAudio
         ///
         /// Note that the AAudio callbacks will never be called simultaneously from multiple threads.
         /// </summary>
-        public Action<AAudioResult> ErrorCallback
+        public Action<Result> ErrorCallback
         {
             set
             {

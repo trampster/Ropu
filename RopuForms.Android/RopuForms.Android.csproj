@@ -72,7 +72,7 @@
     <Compile Include="AAudio\Constants.cs" />
     <Compile Include="AAudio\ContentType.cs" />
     <Compile Include="AAudio\Direction.cs" />
-    <Compile Include="AAudio\AAudioResult.cs" />
+    <Compile Include="AAudio\Result.cs" />
     <Compile Include="AAudio\Format.cs" />
     <Compile Include="AAudio\InputPreset.cs" />
     <Compile Include="AAudio\PerformanceMode.cs" />
@@ -82,6 +82,7 @@
     <Compile Include="AAudio\Stream.cs" />
     <Compile Include="AAudio\StreamBuilder.cs" />
     <Compile Include="AAudio\NativeMethods.cs" />
+    <Compile Include="AAudio\StreamState.cs" />
     <Compile Include="AAudio\Usage.cs" />
     <Compile Include="MainActivity.cs" />
     <Compile Include="PageRender.cs" />
