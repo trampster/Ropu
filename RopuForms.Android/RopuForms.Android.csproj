@@ -69,6 +69,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AAudio\AllowedCapturePolicy.cs" />
+    <Compile Include="AAudio\Constants.cs" />
     <Compile Include="AAudio\ContentType.cs" />
     <Compile Include="AAudio\Direction.cs" />
     <Compile Include="AAudio\AAudioResult.cs" />

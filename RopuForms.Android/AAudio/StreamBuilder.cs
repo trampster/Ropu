@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 
 namespace RopuForms.Droid.AAudio
 {
-    public class StreamBuilder
+    public class StreamBuilder : IDisposable
     {
         readonly IntPtr _streamBuilderPtr;
         public StreamBuilder()
@@ -206,19 +205,19 @@ namespace RopuForms.Droid.AAudio
             set => NativeMethods.AAudioStreamBuilder_setSessionId(_streamBuilderPtr, value);
         }
 
-        public class AudioData
+        public struct AudioData
         {
-            IntPtr _audioDataPointer;
-            int _numFrames;
+            readonly IntPtr _audioDataPointer;
+            readonly int _numFrames;
 
-            public IntPtr AudioDataPointer
+            public AudioData(IntPtr audioDataPointer, int numFrames)
             {
-                set => _audioDataPointer = value;
+                _audioDataPointer = audioDataPointer;
+                _numFrames = numFrames;
             }
 
             public int NumFrames
-            {
-                set => _numFrames = value;
+            {s
                 get => _numFrames;
             }
 
@@ -257,19 +256,101 @@ namespace RopuForms.Droid.AAudio
         /// Note that the AAudio callbacks will never be called simultaneously from multiple threads.
         /// </summary>
         /// <param name="callback">Callback</param>
-        /// <param name="dataHolder">
-        /// object which will hold the audio buffers, this instance will be passed to the callbacks
-        /// and will allow access to the span to use to read/write the audio data.
-        /// </param>
-        public void SetAudioDataCallback(Action<AudioData> callback, AudioData dataHolder)
+        public void SetAudioDataCallback(Action<AudioData> callback)
         {
             NativeMethods.DataCallback dataCallback = (streamPtr, userDataPtr, audioDataPtr, numFrames) =>
             {
-                dataHolder.NumFrames = numFrames;
-                dataHolder.AudioDataPointer = audioDataPtr;
-                callback(dataHolder);
+                callback(new AudioData(audioDataPtr, numFrames));
             };
             NativeMethods.AAudioStreamBuilder_setDataCallback(_streamBuilderPtr, dataCallback, IntPtr.Zero);
         }
+
+
+        /// <summary>
+        /// Set the requested data callback buffer size in frames.
+        ///
+        /// The default, if you do not call this function, is Contants.Unspecified.
+        ///
+        /// For the lowest possible latency, do not call this function. AAudio will then
+        /// call the dataProc callback function with whatever size is optimal.
+        ///
+        /// That size may vary from one callback to another.
+        ///
+        /// Only use this function if the application requires a specific number of frames for processing.
+        ///
+        /// The application might, for example, be using an FFT that requires
+        /// a specific power-of-two sized buffer.
+        ///
+        /// AAudio may need to add additional buffering in order to adapt between the internal
+        /// buffer size and the requested buffer size.
+        ///
+        /// If you do call this function then the requested size should be less than
+        /// half the buffer capacity, to allow double buffering.
+        /// </summary>
+        public int FramesPerDataCallback
+        {
+            set => NativeMethods.AAudioStreamBuilder_setFramesPerDataCallback(_streamBuilderPtr, value);
+        }
+        
+        /// <summary>
+        /// Request that AAudio call this function if any error occurs or the stream is disconnected.
+        ///
+        /// It will be called, for example, if a headset or a USB device is unplugged causing the stream's
+        /// device to be unavailable or "disconnected".
+        /// Another possible cause of error would be a timeout or an unanticipated internal error.
+        ///
+        /// In response, this function should signal or create another thread to stop
+        /// and close this stream. The other thread could then reopen a stream on another device.
+        /// Do not stop or close the stream, or reopen the new stream, directly from this callback.
+        ///
+        /// This callback will not be called because of actions by the application, such as stopping
+        /// or closing a stream.
+        ///
+        /// Note that the AAudio callbacks will never be called simultaneously from multiple threads.
+        /// </summary>
+        public Action<AAudioResult> ErrorCallback
+        {
+            set
+            {
+                NativeMethods.ErrorCallback callback = (stream, userData, result) => value(result);
+                NativeMethods.AAudioStreamBuilder_setErrorCallback(_streamBuilderPtr, callback, IntPtr.Zero);
+            }
+        }
+
+        /// <summary>
+        /// Open a stream based on the options in the StreamBuilder.
+        /// </summary>
+        public Stream OpenStream()
+        {
+            IntPtr streamPtr;
+            NativeMethods.AAudioStreamBuilder_openStream(_streamBuilderPtr, out streamPtr);
+            return new Stream(streamPtr);
+        }
+
+        #region IDisposable Support
+        bool disposedValue = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                NativeMethods.AAudioStreamBuilder_delete(_streamBuilderPtr);
+
+                disposedValue = true;
+            }
+        }
+
+        ~StreamBuilder()
+        {
+            Dispose(false);
+        }
+
+        // This code added to correctly implement the disposable pattern.
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        #endregion
     }
 }

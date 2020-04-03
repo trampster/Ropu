@@ -56,5 +56,19 @@ namespace RopuForms.Droid.AAudio
 
         [DllImport(AAudioLib)]
         public static extern void AAudioStreamBuilder_setDataCallback(IntPtr builder, DataCallback dataCallback, IntPtr userData);
+
+        [DllImport(AAudioLib)]
+        public static extern void AAudioStreamBuilder_setFramesPerDataCallback(IntPtr builder, int numFrames);
+
+        public delegate void ErrorCallback(IntPtr stream, IntPtr userData, AAudioResult result);
+
+        [DllImport(AAudioLib)]
+        public static extern void AAudioStreamBuilder_setErrorCallback(IntPtr builder, ErrorCallback callback, IntPtr userData);
+
+        [DllImport(AAudioLib)]
+        public static extern void AAudioStreamBuilder_openStream(IntPtr builder, out IntPtr stream);
+
+        [DllImport(AAudioLib)]
+        public static extern void AAudioStreamBuilder_delete(IntPtr builder);
     }
 }
