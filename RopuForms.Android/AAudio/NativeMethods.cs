@@ -109,5 +109,62 @@ namespace RopuForms.Droid.AAudio
 
         [DllImport(AAudioLib)]
         public static extern int AAudioStream_getBufferSizeInFrames(IntPtr stream);
+
+        [DllImport(AAudioLib)]
+        public static extern int AAudioStream_getFramesPerBurst(IntPtr stream);
+
+        [DllImport(AAudioLib)]
+        public static extern int AAudioStream_getBufferCapacityInFrames(IntPtr stream);
+
+        [DllImport(AAudioLib)]
+        public static extern int AAudioStream_getFramesPerDataCallback(IntPtr stream);
+
+        [DllImport(AAudioLib)]
+        public static extern int AAudioStream_getXRunCount(IntPtr stream);
+
+        [DllImport(AAudioLib)]
+        public static extern int AAudioStream_getSampleRate(IntPtr stream);
+
+        [DllImport(AAudioLib)]
+        public static extern int AAudioStream_getChannelCount(IntPtr stream);
+
+        [DllImport(AAudioLib)]
+        public static extern int AAudioStream_getSamplesPerFrame(IntPtr stream);
+
+        [DllImport(AAudioLib)]
+        public static extern Format AAudioStream_getFormat(IntPtr stream);
+
+        [DllImport(AAudioLib)]
+        public static extern SharingMode AAudioStream_getSharingMode(IntPtr stream);
+
+        [DllImport(AAudioLib)]
+        public static extern PerformanceMode AAudioStream_getPerformanceMode(IntPtr stream);
+
+        [DllImport(AAudioLib)]
+        public static extern Direction AAudioStream_getDirection(IntPtr stream);
+
+        [DllImport(AAudioLib)]
+        public static extern long AAudioStream_getFramesWritten(IntPtr stream);
+
+        [DllImport(AAudioLib)]
+        public static extern long AAudioStream_getFramesRead(IntPtr stream);
+
+        [DllImport(AAudioLib)]
+        public static extern SessionId AAudioStream_getSessionId(IntPtr stream);
+
+        [DllImport(AAudioLib)]
+        public static extern Result AAudioStream_getTimestamp(IntPtr stream, ClockId clockId, out long framePosition, out long timeNanoseconds);
+
+        [DllImport(AAudioLib)]
+        public static extern Usage AAudioStream_getUsage(IntPtr stream);
+
+        [DllImport(AAudioLib)]
+        public static extern ContentType AAudioStream_getContentType(IntPtr stream);
+
+        [DllImport(AAudioLib)]
+        public static extern InputPreset AAudioStream_getInputPreset(IntPtr stream);
+
+        [DllImport(AAudioLib)]
+        public static extern AllowedCapturePolicy AAudioStream_getAllowedCapturePolicy(IntPtr stream);
     }
 }
