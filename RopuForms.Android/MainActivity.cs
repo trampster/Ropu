@@ -1,6 +1,4 @@
-﻿using System;
-
-using Android.App;
+﻿using Android.App;
 using Android.Content.PM;
 using Android.Runtime;
 using Android.OS;
@@ -28,7 +26,7 @@ namespace RopuForms.Droid
             LoadApplication(new App());
         }
 
-        void RegisterTypes(Injection injection)
+        async void RegisterTypes(Injection injection)
         {
             injection.RegisterSingleton<IAudioSource>(i => new AAudioSource());
         }

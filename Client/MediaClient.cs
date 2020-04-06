@@ -62,7 +62,7 @@ namespace Ropu.Client
                     _audioSource.ReadAudio(audio);
                     if(!_sendingAudio)
                     {
-                        return; //nothing available
+                        break; //nothing available
                     }
                     if(_clientSettings.UserId == null) throw new InvalidOperationException("Cannot send audio because no UserId is set");
                     SendMediaPacket(groupId, _sequenceNumber, _clientSettings.UserId.Value, audio);

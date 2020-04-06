@@ -117,7 +117,15 @@ namespace RopuForms.Droid.AAudio
         /// <returns>The number of frames actually read or a negative error.</returns>
         public Result Read(short[] buffer, int numFrames, long timeoutNanoseconds)
         {
-            return NativeMethods.AAudioStream_read(_streamPtr, buffer, numFrames, timeoutNanoseconds);
+            Console.WriteLine($"Stream.Read IntPtr = {_streamPtr.ToInt64()}");
+            unsafe
+            {
+                fixed (short* pByte = buffer)
+                {
+                    IntPtr intPtr = new IntPtr((void*)pByte);
+                    return NativeMethods.AAudioStream_read(_streamPtr, intPtr, numFrames, timeoutNanoseconds);
+                }
+            }
         }
 
         /// <summary>
@@ -140,7 +148,14 @@ namespace RopuForms.Droid.AAudio
         /// <returns>The number of frames actually read or a negative error.</returns>
         public Result Read(float[] buffer, int numFrames, long timeoutNanoseconds)
         {
-            return NativeMethods.AAudioStream_read(_streamPtr, buffer, numFrames, timeoutNanoseconds);
+            unsafe
+            {
+                fixed (float* pByte = buffer)
+                {
+                    IntPtr intPtr = new IntPtr((void*)pByte);
+                    return NativeMethods.AAudioStream_read(_streamPtr, intPtr, numFrames, timeoutNanoseconds);
+                }
+            }
         }
 
         /// <summary>

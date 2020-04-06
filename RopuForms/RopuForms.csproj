@@ -11,7 +11,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<EmbeddedResource Include="..\Icon\Ropu256.png" Link="Images\Ropu256.png" >
+		<EmbeddedResource Include="..\Icon\Ropu256.png" Link="Images\Ropu256.png">
 			<LogicalName>Ropu256.png</LogicalName>
 		</EmbeddedResource>
 	</ItemGroup>
@@ -24,7 +24,7 @@
 		<PackageReference Include="Singularity" Version="0.17.2" />
 		<PackageReference Include="SkiaSharp.Views.Forms" Version="1.68.1.1" />
 		<PackageReference Include="Xamarin.Forms" Version="4.3.0.908675" />
-		<PackageReference Include="Xamarin.Essentials" Version="1.3.1" />
+		<PackageReference Include="Xamarin.Essentials" Version="1.5.2" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -66,7 +66,7 @@ namespace RopuForms.Droid.AAudio
         public static extern void AAudioStreamBuilder_setErrorCallback(IntPtr builder, ErrorCallback callback, IntPtr userData);
 
         [DllImport(AAudioLib)]
-        public static extern void AAudioStreamBuilder_openStream(IntPtr builder, out IntPtr stream);
+        public static extern Result AAudioStreamBuilder_openStream(IntPtr builder, out IntPtr stream);
 
         [DllImport(AAudioLib)]
         public static extern void AAudioStreamBuilder_delete(IntPtr builder);
@@ -93,10 +93,10 @@ namespace RopuForms.Droid.AAudio
         public static extern Result AAudioStream_waitForStateChange(IntPtr stream, StreamState inputState, out StreamState nextState, long timeoutNanoseconds);
 
         [DllImport(AAudioLib)]
-        public static extern Result AAudioStream_read(IntPtr stream, short[] buffer, int numFrames, long timeoutNanoseconds);
+        public static extern Result AAudioStream_read(IntPtr stream, IntPtr buffer, int numFrames, long timeoutNanoseconds);
         
-        [DllImport(AAudioLib)]
-        public static extern Result AAudioStream_read(IntPtr stream, float[] buffer, int numFrames, long timeoutNanoseconds);
+        //[DllImport(AAudioLib)]
+        //public static extern Result AAudioStream_read(IntPtr stream, float[] buffer, int numFrames, long timeoutNanoseconds);
 
         [DllImport(AAudioLib)]
         public static extern Result AAudioStream_write(IntPtr stream, short[] buffer, int numFrames, long timeoutNanoseconds);

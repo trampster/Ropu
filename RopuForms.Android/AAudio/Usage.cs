@@ -52,7 +52,7 @@
         /// <summary>
         /// Use this for user interface sounds, beeps, etcetera.
         /// </summary>
-        AAUDIO_USAGE_ASSISTANCE_SONIFICATION = 13,
+        AssistanceSonification = 13,
 
         /// <summary>
         /// Use this for game audio and sound effects.

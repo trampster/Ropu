@@ -7,6 +7,7 @@ using Ropu.Shared.Web;
 using RopuForms.Services;
 using Xamarin.Forms;
 using Ropu.Shared;
+using Xamarin.Essentials;
 
 namespace RopuForms.ViewModels
 {
@@ -56,8 +57,12 @@ namespace RopuForms.ViewModels
                 _idleGroupImage = idleGroup.Image;
             }
 
+            PermissionStatus status = await Permissions.CheckStatusAsync<Permissions.Speech>();
+            if(status != PermissionStatus.Granted)
+            {
+                await Permissions.RequestAsync<Permissions.Speech>();
+            }
             await _ropuClient.Run();
-
         }
 
         bool InCall(StateId state)

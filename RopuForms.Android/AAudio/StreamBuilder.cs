@@ -34,7 +34,7 @@ namespace RopuForms.Droid.AAudio
 
         /// <summary>
         /// Request a mode for sharing the device.
-        /// The default, if you do not call this function, is AAUDIO_SHARING_MODE_SHARED.
+        /// The default, if you do not call this function, is SharingMode.Shared.
         /// The requested sharing mode may not be available.The application can query for the actual mode after the stream is opened.
         /// Available since API level 26.
         /// </summary>
@@ -45,7 +45,7 @@ namespace RopuForms.Droid.AAudio
 
         /// <summary>
         /// Request a sample rate in Hertz.
-        /// The default, if you do not call this function, is AAUDIO_UNSPECIFIED.An optimal value will then be chosen when the stream is opened.After opening a stream with an unspecified value, the application must query for the actual value, which may vary by device.
+        /// The default, if you do not call this function, is Contants.Unspecified. An optimal value will then be chosen when the stream is opened.After opening a stream with an unspecified value, the application must query for the actual value, which may vary by device.
         /// If an exact value is specified then an opened stream will use that value.If a stream cannot be opened with the specified value then the open will fail.
         /// Available since API level 26.
         /// </summary>
@@ -162,7 +162,7 @@ namespace RopuForms.Droid.AAudio
         /// <summary>
         /// Specify whether this stream audio may or may not be captured by other apps or the system.
         ///
-        /// The default is {@link #AAUDIO_ALLOW_CAPTURE_BY_ALL}.
+        /// The default is AllowCaptureByAll.
         ///
         /// Note that an application can also set its global policy, in which case the most restrictive
         /// policy is always applied.
@@ -320,11 +320,19 @@ namespace RopuForms.Droid.AAudio
         /// <summary>
         /// Open a stream based on the options in the StreamBuilder.
         /// </summary>
-        public Stream OpenStream()
+        public Result OpenStream(out Stream stream)
         {
             IntPtr streamPtr;
-            NativeMethods.AAudioStreamBuilder_openStream(_streamBuilderPtr, out streamPtr);
-            return new Stream(streamPtr);
+            var result = NativeMethods.AAudioStreamBuilder_openStream(_streamBuilderPtr, out streamPtr);
+            if (result == Result.OK)
+            {
+                stream = new Stream(streamPtr);
+            }
+            else
+            {
+                stream = null;
+            }
+            return result;
         }
 
         #region IDisposable Support

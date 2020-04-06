@@ -102,6 +102,8 @@ namespace Ropu.Client
             _stateManager.AddState(_registered);
             _registered.AddTransition(EventId.CallRequest, () => _startingCall);
             _registered.AddTransition(EventId.PttDown, () => _startingCall);
+            _registered.AddTransition(EventId.RegistrationResponseReceived, () => _registered);
+
 
             //unregistered
             _unregistered = new RopuState(StateId.Unregistered)
@@ -114,6 +116,7 @@ namespace Ropu.Client
             };
             _unregistered.AddTransition(EventId.RegistrationResponseReceived, () => _registered);
             _unregistered.AddTransition(EventId.PttDown, () => _unregistered);
+            _unregistered.AddTransition(EventId.PttUp, () => _unregistered);
             _stateManager.AddState(_unregistered);
 
             //deregistering
@@ -176,7 +179,7 @@ namespace Ropu.Client
                 {
                     if(_clientSettings.UserId == null) throw new InvalidOperationException("UserId is not set");
                     _servingNodeClient.SendFloorRequest(_callGroup, _clientSettings.UserId.Value);
-                    var ignore = _mediaClient.StartSendingAudio(_callGroup);
+                    StartSendingAudio();
                     return new Task(() => {});
                 },
                 Exit = newState =>
@@ -220,6 +223,11 @@ namespace Ropu.Client
             _stateManager.AddTransitionToAll(EventId.FloorTaken, () => _inCallReceiveing, IsRegistered);
             _stateManager.AddTransitionToAll(EventId.FloorGranted, () => _inCallTransmitting, stateId => stateId != StateId.InCallReleasingFloor);
 
+        }
+
+        async void StartSendingAudio()
+        {
+            await _mediaClient.StartSendingAudio(_callGroup);
         }
 
         bool IsRegistered(StateId stateId)
@@ -428,7 +436,7 @@ namespace Ropu.Client
             {
                 _callGroup = IdleGroup;
             }
-            var ignore = _mediaClient.StartSendingAudio(_callGroup);
+            StartSendingAudio();//var ignore = _mediaClient.StartSendingAudio(_callGroup);
 
             while(!token.IsCancellationRequested)
             {
