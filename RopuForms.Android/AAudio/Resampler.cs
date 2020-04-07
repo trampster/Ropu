@@ -2,7 +2,7 @@
 
 namespace RopuForms.Droid.AAudio
 {
-	class DownSampler
+	public class Resampler
 	{
 		int _index = 0;
 		short[] _history = new short[256];
@@ -42,11 +42,42 @@ namespace RopuForms.Droid.AAudio
 			}
 		}
 
+		public void UpSample(Span<short> input, Span<short> output)
+		{
+			Expand(input, output);
+			LowFilter(output);
+		}
+
 		public void DownSample(Span<short> input, Span<short> output)
 		{
 			LowFilter(input);
-
 			Decimate(input, output, 6);
+		}
+
+		void Gain(Span<short> output, float gain)
+		{
+			for(int index = 0; index < output.Length; index++)
+			{
+				output[index] = (short)( output[index] * gain);
+			}
+		}
+
+		void Expand(Span<short> input, Span<short> output)
+		{
+			int ratio = output.Length / input.Length;
+			short last = 0;
+			for (int outputIndex = 0; outputIndex < output.Length; outputIndex++)
+			{
+				if((outputIndex % ratio) == 0)
+				{
+					last = input[outputIndex / ratio];
+					output[outputIndex] = last;
+				}
+				else
+				{
+					output[outputIndex] = last;
+				}
+			}
 		}
 
 		void Decimate(Span<short> input, Span<short> output, int ratio)

@@ -68,12 +68,13 @@
     <PackageReference Include="Xamarin.Essentials" Version="1.5.2" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AAudio\AAudioPlayer.cs" />
     <Compile Include="AAudio\AllowedCapturePolicy.cs" />
     <Compile Include="AAudio\ClockId.cs" />
     <Compile Include="AAudio\Constants.cs" />
     <Compile Include="AAudio\ContentType.cs" />
     <Compile Include="AAudio\Direction.cs" />
-    <Compile Include="AAudio\DownSampler.cs" />
+    <Compile Include="AAudio\Resampler.cs" />
     <Compile Include="AAudio\Result.cs" />
     <Compile Include="AAudio\Format.cs" />
     <Compile Include="AAudio\InputPreset.cs" />

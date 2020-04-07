@@ -65,7 +65,6 @@ namespace RopuForms
                 .RegisterSingleton(i => new ServingNodeClient(i.Get<ProtocolSwitch>()))
                 .RegisterSingleton<IJitterBuffer>(i => new AdaptiveJitterBuffer(2, 50))
                 .RegisterSingleton<IAudioCodec>(i => new OpusCodec())
-                .RegisterSingleton<IAudioPlayer>(i => new NoAudioPlayer())
                 .RegisterSingleton<IPortFinder>(i => new MobilePortFinder())
                 .RegisterSingleton<IMediaClient>(i => new MediaClient(
                     i.Get<ProtocolSwitch>(), i.Get<IAudioSource>(), i.Get<IAudioPlayer>(), i.Get<IAudioCodec>(), i.Get<IJitterBuffer>(), i.Get<IClientSettings>()))

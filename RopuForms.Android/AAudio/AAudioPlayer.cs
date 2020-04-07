@@ -1,15 +1,16 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Ropu.Client;
 
 namespace RopuForms.Droid.AAudio
 {
-    public class AAudioSource : IAudioSource
+    public class AAudioPlayer : IAudioPlayer
     {
         Stream _stream;
         readonly Resampler _resampler;
 
-        public AAudioSource(Resampler resampler)
+        public AAudioPlayer(Resampler resampler)
         {
             _resampler = resampler;
         }
@@ -21,14 +22,13 @@ namespace RopuForms.Droid.AAudio
                 _numFrames = 160 * 6;
                 streamBuilder.ChannelCount = 1;
                 streamBuilder.ContentType = ContentType.Speech;
-                streamBuilder.Direction = Direction.Input;
+                streamBuilder.Direction = Direction.Output;
                 streamBuilder.ErrorCallback = StreamError;
                 streamBuilder.Format = Format.PcmI16;
-                streamBuilder.InputPreset = InputPreset.VoiceRecognition; // often provides the lowest latency
                 streamBuilder.NumFrames = _numFrames * 2;
                 streamBuilder.PerformanceMode = PerformanceMode.LowLatency; //might need to change this if in background mode
                 streamBuilder.SampleRate = 48000;
-                streamBuilder.Usage = Usage.VoiceCommunication;
+                streamBuilder.Usage = Usage.Media;
                 var result = streamBuilder.OpenStream(out _stream);
                 if(result != Result.OK)
                 {
@@ -50,47 +50,36 @@ namespace RopuForms.Droid.AAudio
         short[] _buffer = new short[160 * 6];
         int _numFrames;
 
-        public void ReadAudio(short[] buffer)
-        {
-            if (_stream == null)
-            {
-                throw new InvalidOperationException("You must call start before ReadAudio");
-            }
-
-            var result = (int)_stream.Read(_buffer, _numFrames, 10000*1000000L);
-            if(result == _numFrames)
-            {
-                try
-                {
-                    _resampler.DownSample(_buffer, buffer);
-                }
-                catch(Exception exception)
-                {
-                    Console.WriteLine($"DownSample threw exception {exception}");
-                    throw;
-                }
-                return;
-            }
-            if(result < 0)
-            {
-                Console.Error.WriteLine($"Failed to read audio with result {(Result)(result)}");
-                return;
-            }
-            if(result >= 0)
-            {
-                Console.Error.WriteLine($"Unexpected ammount of samples read expected 960 but got {result}, State {_stream.State}");
-            }
-        }
-
-        public void Start()
+        public void PlayAudio(short[] buffer)
         {
             if (_stream == null)
             {
                 OpenStream();
             }
+            if(buffer.Any(u => u != 0))
+            {
+                Console.WriteLine("Found none zero");
+            }
+
+            _resampler.UpSample(buffer, _buffer);
+
+            var result = (int)_stream.Write(_buffer, _numFrames, 10000*1000000L);
+            if(result == _numFrames)
+            {
+                return;
+            }
+            if(result < 0)
+            {
+                Console.Error.WriteLine($"Failed to write audio with result {(Result)(result)}");
+                return;
+            }
+            if(result >= 0)
+            {
+                Console.Error.WriteLine($"Unexpected ammount of samples written expected 960 but got {result}, State {_stream.State}");
+            }
         }
 
-        public void Stop()
+        void Stop()
         {
             _stream?.Dispose();
             _stream = null;

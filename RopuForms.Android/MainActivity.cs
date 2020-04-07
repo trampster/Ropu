@@ -5,6 +5,7 @@ using Android.OS;
 using RopuForms.Inject;
 using Ropu.Client;
 using RopuForms.Droid.AAudio;
+using System.Threading.Tasks;
 
 namespace RopuForms.Droid
 {
@@ -28,7 +29,10 @@ namespace RopuForms.Droid
 
         async void RegisterTypes(Injection injection)
         {
-            injection.RegisterSingleton<IAudioSource>(i => new AAudioSource());
+            injection.Register<Resampler>(i => new Resampler());
+            injection.RegisterSingleton<IAudioSource>(i => new AAudioSource(i.Get<Resampler>()));
+            injection.RegisterSingleton<IAudioPlayer>(i => new AAudioPlayer(i.Get<Resampler>()));
+            await Task.CompletedTask;
         }
 
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
