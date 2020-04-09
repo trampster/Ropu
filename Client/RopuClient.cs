@@ -113,6 +113,9 @@ namespace Ropu.Client
                 }
             };
             _unregistered.AddTransition(EventId.RegistrationResponseReceived, () => _registered);
+            _unregistered.AddTransition(EventId.FloorIdle, () => _unregistered);
+            _unregistered.AddTransition(EventId.FloorTaken, () => _unregistered);
+            _unregistered.AddTransition(EventId.CallEnded, () => _unregistered);
             _stateManager.AddState(_unregistered);
 
             //deregistering
@@ -142,10 +145,13 @@ namespace Ropu.Client
             //in call idle
             _inCallIdle = new RopuState(StateId.InCallIdle);
             _inCallIdle.AddTransition(EventId.PttDown, () => _inCallRequestingFloor);
+            _inCallIdle.AddTransition(EventId.PttUp, () => _inCallIdle);
             _stateManager.AddState(_inCallIdle);
 
             //in call receiving
             _inCallReceiveing = new RopuState(StateId.InCallReceiving);
+            _inCallReceiveing.AddTransition(EventId.PttDown, () => _inCallReceiveing);
+            _inCallReceiveing.AddTransition(EventId.PttUp, () => _inCallReceiveing);
             _stateManager.AddState(_inCallReceiveing);
 
             //in call transmitting

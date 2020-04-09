@@ -49,7 +49,7 @@ namespace Ropu.Client.StateModel
         public IState<Id, EventT> SetState(IState<Id, EventT> newState, IState<Id, EventT> expected)
         {
             IState<Id, EventT> original = Interlocked.CompareExchange(ref _current, newState, expected);
-            if(original == expected)
+            if(original == expected && original != newState)
             {
                 expected.RunExit(newState);
                 newState.RunEntry();

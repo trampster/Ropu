@@ -17,9 +17,9 @@ namespace Ropu.Client.PulseAudio
             Marshal.StructureToPtr(sampleSpec, sampleSpecPtr, true);
             
             BufferAttributes bufferAttributes;
-            bufferAttributes.maxlength = 160*2*2;
+            bufferAttributes.maxlength = 160*12;
             bufferAttributes.tlength = 160*2;
-            bufferAttributes.prebuf = 160*2;
+            bufferAttributes.prebuf = 160*12;
             bufferAttributes.minreq = 160*2;
             bufferAttributes.fragsize = 160*2;
             IntPtr bufferAttributesPtr = Marshal.AllocHGlobal(Marshal.SizeOf(bufferAttributes));
