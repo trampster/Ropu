@@ -65,15 +65,35 @@ namespace Ropu.Client
             return buffer;
         }
 
+        void PlaySilence(int frames)
+        {
+            for(int index = 0; index < frames; index++)
+            {
+                _audioPlayer.PlayAudio(_silence);
+            }
+        }
+
         void Play(short[] audio)
         {
+            Console.WriteLine("PlayBeep");
             const double attenationFactor = 1d/160d;
-            int attenuationIndex = 0;
+
+            //attenuate start of tone
+            int attenuationIndex = 160;
+            for(int index = 0; index < 160; index++)
+            {
+                attenuationIndex--;
+                audio[index] = (short) (audio[index] * (1-(attenationFactor*attenuationIndex)));
+            }
+
+            //attenuate end of tone
+            attenuationIndex = 0;
             for(int index = audio.Length -161; index < audio.Length; index++)
             {
                 attenuationIndex++;
                 audio[index] = (short) (audio[index] * (1-(attenationFactor*attenuationIndex)));
             }
+
             for(int audioIndex = 0; audioIndex < audio.Length; audioIndex += 160)
             {
                 for(int index = 0; index < _buffer.Length; index++)
