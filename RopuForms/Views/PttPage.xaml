@@ -19,7 +19,10 @@
                                 TransmittingAnimationColor="{Binding TransmittingColor}" 
                                 Transmitting="{Binding Transmitting}"  
                                 PttDownCommand="{Binding PttDownCommand}"
-                                PttUpCommand="{Binding PttUpCommand}">
+                                PttUpCommand="{Binding PttUpCommand}"
+                                TalkerImage="{Binding TalkerImage}"
+                                Talker="{Binding Talker}"
+                                ReceivingAnimationColor="{Binding ReceivingColor}">
             </gesture:PttControl>
 
             <Grid.Effects>

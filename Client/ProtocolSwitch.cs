@@ -90,8 +90,16 @@ namespace Ropu.Client
             while(true)
             {
                 int ammountRead = _socket.ReceiveFrom(_buffer, ref any);
-
-                int payloadLength = await _packetEncryption.Decrypt(_buffer, ammountRead, payload);
+                int payloadLength;
+                try
+                {
+                    payloadLength = await _packetEncryption.Decrypt(_buffer, ammountRead, payload);
+                }
+                catch(Exception exception)
+                {
+                    Console.Error.WriteLine($"Failed to decrypt packet with Exception {exception}");
+                    continue;
+                }
 
                 HandlePacket(payload.AsSpan(0, payloadLength), ((IPEndPoint)any).Address);
             }

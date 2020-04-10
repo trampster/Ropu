@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Reflection;
+using SkiaSharp;
 using Xamarin.Forms;
 
 namespace RopuForms.Services
@@ -30,5 +32,16 @@ namespace RopuForms.Services
         }
         public ImageSource Knot => ImageSource.FromFile(Path.Combine(_imageFolder, "knot32.png"));
         public ImageSource Rope => ImageSource.FromFile(Path.Combine(_imageFolder, "rope32.png"));
+
+        public SKImage RopeSKImage()
+        {
+            string resourceID = "RopuForms.rope.svg";
+            Assembly assembly = GetType().GetTypeInfo().Assembly;
+
+            using (Stream stream = assembly.GetManifestResourceStream(resourceID))
+            {
+                return SKImage.FromEncodedData(stream);
+            }
+        }
     }
 }

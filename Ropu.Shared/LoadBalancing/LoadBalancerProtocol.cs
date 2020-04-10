@@ -71,8 +71,16 @@ namespace Ropu.Shared.LoadBalancing
                 int read = _socket.ReceiveFrom(buffer, ref any);
                 //var result = await _socket.ReceiveFromAsync(arraySegment, SocketFlags.None, any);
                 // int read = result.ReceivedBytes;
-
-                int payloadLength = await _packetEncryption.Decrypt(buffer, read, payload);
+                int payloadLength = 0;
+                try
+                {
+                    payloadLength = await _packetEncryption.Decrypt(buffer, read, payload);
+                }
+                catch(Exception exception)
+                {
+                    Console.Error.WriteLine($"Failed to decrypted packet with exception {exception}");
+                    continue;
+                }
                 
                 HandlePacket(payload, payloadLength, (IPEndPoint)any);
             }

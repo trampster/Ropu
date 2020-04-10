@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using RopuForms.Services;
 using RopuForms.Views.TouchTracking;
 using SkiaSharp;
 using SkiaSharp.Views.Forms;
@@ -15,19 +16,89 @@ namespace RopuForms.Views
     {
         readonly PttCircle _circle;
         readonly TransmittingIndicator _transmittingIndicator;
+        readonly TransmittingIndicator _receivingIndicator;
+        readonly ImageLabel _talkerDrawable;
         readonly Action _transmittingAnimationAction;
+        readonly Action _receivingAnimationAction;
         readonly Task _animationTask;
 
         public PttControl()
         {
             _circle = new PttCircle();
             _circle.PenWidth = 30;
+            
             _transmittingIndicator = new TransmittingIndicator();
             _transmittingIndicator.Hidden = true;
-
             _transmittingAnimationAction = AnimateTransmitting;
+
+            _receivingIndicator = new TransmittingIndicator();
+            _receivingIndicator.Hidden = true;
+            _receivingAnimationAction = AnimateReceiving;
+
+            _talkerDrawable = new ImageLabel();
+            _talkerDrawable.Text = "Franky";
+
             _animationTask = RunAnimations();
-        }   
+        }
+
+        public static readonly BindableProperty TalkerProperty = BindableProperty.Create(
+                                         propertyName: "Talker",
+                                         returnType: typeof(string),
+                                         declaringType: typeof(PttControl),
+                                         defaultValue: null,
+                                         defaultBindingMode: BindingMode.TwoWay,
+                                         propertyChanged: TalkerPropertyChanged);
+
+        static void TalkerPropertyChanged(BindableObject bindable, object oldValue, object newValue)
+        {
+            var control = (PttControl)bindable;
+            control.Talker = (string?)newValue;
+        }
+
+        public string? Talker
+        {
+            get => _talkerDrawable.Text;
+            set
+            {
+                if (value == null)
+                {
+                    _receivingIndicator.Hidden = true;
+                    RemoveAnimation(_receivingAnimationAction);
+                }
+                else
+                {
+                    _receivingIndicator.Hidden = false;
+                    AddAnimation(_receivingAnimationAction);
+                }
+                _talkerDrawable.Hidden = value == null;
+                _talkerDrawable.Text = value == null ? "" : value;
+                InvalidateSurface();
+            }
+        }
+
+        public static readonly BindableProperty TalkerImageProperty = BindableProperty.Create(
+                                         propertyName: "TalkerImage",
+                                         returnType: typeof(byte[]),
+                                         declaringType: typeof(PttControl),
+                                         defaultValue: null,
+                                         defaultBindingMode: BindingMode.TwoWay,
+                                         propertyChanged: TalkerImagePropertyChanged);
+
+        static void TalkerImagePropertyChanged(BindableObject bindable, object oldValue, object newValue)
+        {
+            var control = (PttControl)bindable;
+            control.TalkerImage = (byte[]?)newValue;
+        }
+
+        public byte[]? TalkerImage
+        {
+            set
+            {
+                if (value == null) return;
+                _talkerDrawable.Image = SKImage.FromEncodedData(value);
+                InvalidateSurface();
+            }
+        }
 
         protected override void OnPaintSurface(SKPaintGLSurfaceEventArgs e)
         {
@@ -37,7 +108,7 @@ namespace RopuForms.Views
             var canvas = surface.Canvas;
             canvas.Clear();
 
-            const int padding = 5;
+            const int padding = 10;
 
             _circle.Text = "Avengers";
 
@@ -48,6 +119,17 @@ namespace RopuForms.Views
             _transmittingIndicator.MinRadius = radius;
             _transmittingIndicator.MaxRadius = radius + (radius / 2);
             _transmittingIndicator.Draw(canvas);
+
+            _talkerDrawable.X = (int)CanvasSize.Width - _talkerDrawable.Width - padding;
+            _talkerDrawable.Y = padding;
+            _talkerDrawable.Draw(canvas);
+
+            _receivingIndicator.X = _talkerDrawable.X + (_talkerDrawable.Width / 2);
+            _receivingIndicator.Y = _talkerDrawable.Y + (_talkerDrawable.Height / 2);
+            int receivingRadius = (int)(Math.Max(_talkerDrawable.Width, _talkerDrawable.Height) * 0.75);
+            _receivingIndicator.MinRadius = receivingRadius;
+            _receivingIndicator.MaxRadius = receivingRadius + receivingRadius;
+            _receivingIndicator.Draw(canvas);
         }
 
         int DrawPttCircle(SKCanvas graphics, int topSpace, int padding)
@@ -89,6 +171,14 @@ namespace RopuForms.Views
             fraction += 0.01f;
             if (fraction > 1) fraction = 0;
             _transmittingIndicator.AnimationFraction = fraction;
+        }
+
+        void AnimateReceiving()
+        {
+            float fraction = _receivingIndicator.AnimationFraction;
+            fraction += 0.01f;
+            if (fraction > 1) fraction = 0;
+            _receivingIndicator.AnimationFraction = fraction;
         }
 
         async Task RunAnimations()
@@ -137,6 +227,28 @@ namespace RopuForms.Views
                 _circle.Color = color;
                 _transmittingIndicator.CircleColor = color;
                 InvalidateSurface();
+            }
+        }
+
+        public static readonly BindableProperty ReceivingAnimationColorProperty = BindableProperty.Create(
+                                                 propertyName: "ReceivingAnimationColor",
+                                                 returnType: typeof(Color),
+                                                 declaringType: typeof(PttControl),
+                                                 defaultValue: Color.Black,
+                                                 defaultBindingMode: BindingMode.TwoWay,
+                                                 propertyChanged: ReceivingAnimationColorPropertyChanged);
+
+        static void ReceivingAnimationColorPropertyChanged(BindableObject bindable, object oldValue, object newValue)
+        {
+            var control = (PttControl)bindable;
+            control.ReceivingAnimationColor = (Color)newValue;
+        }
+
+        public Color ReceivingAnimationColor
+        {
+            set
+            {
+                _receivingIndicator.CircleColor = value.ToSKColor();
             }
         }
 

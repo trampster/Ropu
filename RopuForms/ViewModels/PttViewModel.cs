@@ -177,6 +177,14 @@ namespace RopuForms.ViewModels
         public readonly static Color Gray = Color.FromRgb(0x99, 0x99, 0x99);
         public readonly static Color Red = Color.FromRgb(0xFF, 0x69, 0x61);
 
+        Color _receivingColor = Red;
+        public Color ReceivingColor
+        {
+            get => _receivingColor;
+            set => SetProperty(ref _receivingColor, value);
+        }
+
+
         Color _pttColor = Blue;
         public Color PttColor
         {
