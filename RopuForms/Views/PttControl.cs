@@ -36,7 +36,7 @@ namespace RopuForms.Views
             _receivingAnimationAction = AnimateReceiving;
 
             _talkerDrawable = new ImageLabel();
-            _talkerDrawable.Text = "Franky";
+            _talkerDrawable.Text = null;
 
             _animationTask = RunAnimations();
         }
@@ -60,7 +60,7 @@ namespace RopuForms.Views
             get => _talkerDrawable.Text;
             set
             {
-                if (value == null)
+                if (value == null || value == "")
                 {
                     _receivingIndicator.Hidden = true;
                     RemoveAnimation(_receivingAnimationAction);

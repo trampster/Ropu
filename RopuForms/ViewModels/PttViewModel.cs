@@ -185,7 +185,7 @@ namespace RopuForms.ViewModels
         }
 
 
-        Color _pttColor = Blue;
+        Color _pttColor = Gray;
         public Color PttColor
         {
             get => _pttColor;
