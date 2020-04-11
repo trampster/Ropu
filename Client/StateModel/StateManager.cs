@@ -40,6 +40,20 @@ namespace Ropu.Client.StateModel
             }
         }
 
+        public void CheckEventsAreHandledByAll(EventT[] events)
+        {
+            foreach(var state in _states)
+            {
+                foreach(var eventType in events)
+                {
+                    if(!state.HasTransition(eventType))
+                    {
+                        throw new Exception($"State {state.Identifier} is missing a transition for {eventType}");
+                    }
+                }
+            }
+        }
+
         /// <summary>
         /// Changes the current state to new  if the current state is expected
         /// </summary>
@@ -49,7 +63,7 @@ namespace Ropu.Client.StateModel
         public IState<Id, EventT> SetState(IState<Id, EventT> newState, IState<Id, EventT> expected)
         {
             IState<Id, EventT> original = Interlocked.CompareExchange(ref _current, newState, expected);
-            if(original == expected)
+            if(original == expected && original != newState)
             {
                 expected.RunExit(newState);
                 newState.RunEntry();

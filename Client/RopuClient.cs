@@ -8,6 +8,7 @@ using Ropu.Shared.LoadBalancing;
 using Ropu.Shared.ControlProtocol;
 using Ropu.Shared.Web;
 using System.Globalization;
+using System.Linq;
 
 namespace Ropu.Client
 {
@@ -78,10 +79,13 @@ namespace Ropu.Client
             _retryTimer = new Ropu.Shared.Timer();
             _keysClient = keysClient;
 
+            var allEvents = (EventId[])Enum.GetValues(typeof(EventId));
+
             //start
             _start = new RopuState(StateId.Start);
             _stateManager = new StateManager<StateId, EventId>(_start);
             _stateManager.AddState(_start);
+            _start.AddTransitions(allEvents, () => _start);
 
             //registered
             _registered = new RopuState(StateId.Registered)
@@ -103,7 +107,8 @@ namespace Ropu.Client
             _registered.AddTransition(EventId.CallRequest, () => _startingCall);
             _registered.AddTransition(EventId.PttDown, () => _startingCall);
             _registered.AddTransition(EventId.RegistrationResponseReceived, () => _registered);
-
+            _registered.AddTransition(EventId.CallStartFailed, () => _registered);
+            _registered.AddTransition(EventId.PttUp, () => _registered);
 
             //unregistered
             _unregistered = new RopuState(StateId.Unregistered)
@@ -115,8 +120,14 @@ namespace Ropu.Client
                 }
             };
             _unregistered.AddTransition(EventId.RegistrationResponseReceived, () => _registered);
-            _unregistered.AddTransition(EventId.PttDown, () => _unregistered);
+            _unregistered.AddTransition(EventId.FloorIdle, () => _unregistered);
+            _unregistered.AddTransition(EventId.FloorTaken, () => _unregistered);
+            _unregistered.AddTransition(EventId.CallEnded, () => _unregistered);
+            _unregistered.AddTransition(EventId.CallRequest, () => _unregistered);
+            _unregistered.AddTransition(EventId.CallStartFailed, () => _unregistered);
+            _unregistered.AddTransition(EventId.HeartbeatFailed, () => _unregistered);
             _unregistered.AddTransition(EventId.PttUp, () => _unregistered);
+            _unregistered.AddTransition(EventId.PttDown, () => _unregistered);
             _stateManager.AddState(_unregistered);
 
             //deregistering
@@ -125,6 +136,7 @@ namespace Ropu.Client
                 Entry = async token => await Deregister(token),
             };
             _deregistering.AddTransition(EventId.DeregistrationResponseReceived, () => _unregistered);
+            _deregistering.AddTransitions(allEvents.Where(e => e != EventId.DeregistrationResponseReceived), () => _deregistering);
             _stateManager.AddState(_deregistering);
 
             //starting call
@@ -140,17 +152,29 @@ namespace Ropu.Client
                 }
             };
             _startingCall.AddTransition(EventId.CallStartFailed, () => _registered);
-            _startingCall.AddTransition(EventId.PttUp, () => _registered);
+            _startingCall.AddTransition(EventId.PttUp, () => _startingCall);
             _startingCall.AddTransition(EventId.PttDown, () => _startingCall);
+            _startingCall.AddTransition(EventId.RegistrationResponseReceived, () => _startingCall);
+            _startingCall.AddTransition(EventId.CallRequest, () => _startingCall);
+
             _stateManager.AddState(_startingCall);
 
             //in call idle
             _inCallIdle = new RopuState(StateId.InCallIdle);
             _inCallIdle.AddTransition(EventId.PttDown, () => _inCallRequestingFloor);
+            _inCallIdle.AddTransition(EventId.PttUp, () => _inCallIdle);
+            _inCallIdle.AddTransition(EventId.RegistrationResponseReceived, () => _inCallIdle);
+            _inCallIdle.AddTransition(EventId.CallRequest, () => _inCallIdle);
+            _inCallIdle.AddTransition(EventId.CallStartFailed, () => _registered);
             _stateManager.AddState(_inCallIdle);
 
             //in call receiving
             _inCallReceiveing = new RopuState(StateId.InCallReceiving);
+            _inCallReceiveing.AddTransition(EventId.PttDown, () => _inCallReceiveing);
+            _inCallReceiveing.AddTransition(EventId.PttUp, () => _inCallReceiveing);
+            _inCallReceiveing.AddTransition(EventId.RegistrationResponseReceived, () => _inCallReceiveing);
+            _inCallReceiveing.AddTransition(EventId.CallRequest, () => _inCallReceiveing);
+            _inCallReceiveing.AddTransition(EventId.CallStartFailed, () => _registered);
             _stateManager.AddState(_inCallReceiveing);
 
             //in call transmitting
@@ -170,6 +194,11 @@ namespace Ropu.Client
                 }
             };
             _inCallTransmitting.AddTransition(EventId.PttUp, () => _inCallReleasingFloor);
+            _inCallTransmitting.AddTransition(EventId.RegistrationResponseReceived, () => _inCallTransmitting);
+            _inCallTransmitting.AddTransition(EventId.CallRequest, () => _inCallTransmitting);
+            _inCallTransmitting.AddTransition(EventId.CallStartFailed, () => _inCallTransmitting);
+            _inCallTransmitting.AddTransition(EventId.PttDown, () => _inCallTransmitting);
+
             _stateManager.AddState(_inCallTransmitting);
 
             //in call requesting floor
@@ -191,19 +220,33 @@ namespace Ropu.Client
                     }
                 }
             };
+            _inCallRequestingFloor.AddTransition(EventId.RegistrationResponseReceived, () => _inCallReleasingFloor);
+            _inCallRequestingFloor.AddTransition(EventId.CallRequest, () => _inCallReleasingFloor);
+            _inCallRequestingFloor.AddTransition(EventId.CallStartFailed, () => _registered);
+            _inCallRequestingFloor.AddTransition(EventId.PttDown, () => _inCallRequestingFloor);
+            _inCallRequestingFloor.AddTransition(EventId.PttUp, () => _inCallIdle);
             _stateManager.AddState(_inCallRequestingFloor);
 
             //in call releasing floor
             _inCallReleasingFloor = new RopuState(StateId.InCallReleasingFloor)
             {
-                Entry = token => 
+                Entry = async token => 
                 {
                     if(_clientSettings.UserId == null) throw new InvalidOperationException("UserId is not set");
-                    _servingNodeClient.SendFloorReleased(_callGroup, _clientSettings.UserId.Value);
-                    return new Task(() => {});
-                }   
+                    while(!token.IsCancellationRequested)
+                    {
+                        _servingNodeClient.SendFloorReleased(_callGroup, _clientSettings.UserId.Value);
+                        await Task.Run(() => token.WaitHandle.WaitOne(1000));
+                    }
+                }
             };
             _inCallReleasingFloor.AddTransition(EventId.FloorGranted, () => _inCallReleasingFloor);
+            _inCallReleasingFloor.AddTransition(EventId.RegistrationResponseReceived, () => _inCallReleasingFloor);
+            _inCallReleasingFloor.AddTransition(EventId.CallRequest, () => _inCallReleasingFloor);
+            _inCallReleasingFloor.AddTransition(EventId.CallStartFailed, () => _registered);
+            _inCallReleasingFloor.AddTransition(EventId.PttDown, () => _inCallRequestingFloor);
+            _inCallReleasingFloor.AddTransition(EventId.PttUp, () => _inCallReleasingFloor);
+
             _stateManager.AddState(_inCallReleasingFloor);
 
 
@@ -216,12 +259,16 @@ namespace Ropu.Client
                 StateChanged?.Invoke(this, args);
             };
             
-            _stateManager.AddTransitionToAll(EventId.HeartbeatFailed, () => _unregistered, stateId => stateId != StateId.Unregistered);
-            _stateManager.AddTransitionToAll(EventId.NotRegistered, () => _unregistered, stateId => stateId != StateId.Unregistered);
+            _stateManager.AddTransitionToAll(EventId.HeartbeatFailed, () => _unregistered, stateId => true);
+            _stateManager.AddTransitionToAll(EventId.NotRegistered, () => _unregistered, stateId => true);
             _stateManager.AddTransitionToAll(EventId.CallEnded, () => _registered, stateId => stateId != StateId.Unregistered && stateId != StateId.Start && stateId != StateId.Deregistering);
             _stateManager.AddTransitionToAll(EventId.FloorIdle, () => _inCallIdle, IsRegistered);
             _stateManager.AddTransitionToAll(EventId.FloorTaken, () => _inCallReceiveing, IsRegistered);
             _stateManager.AddTransitionToAll(EventId.FloorGranted, () => _inCallTransmitting, stateId => stateId != StateId.InCallReleasingFloor);
+            _stateManager.AddTransitionToAll(EventId.DeregistrationResponseReceived, () => _unregistered, stateId => true);
+
+
+            _stateManager.CheckEventsAreHandledByAll((EventId[])Enum.GetValues(typeof(EventId)));
 
         }
 

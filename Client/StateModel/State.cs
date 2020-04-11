@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -24,6 +25,14 @@ namespace Ropu.Client.StateModel
         public void AddTransition(EventT eventId, Func<IState<Id, EventT>> getState)
         {
             _transitions.Add(new Transition<EventT, IState<Id, EventT> >(eventId, getState));
+        }
+
+        public void AddTransitions(IEnumerable<EventT> eventIds, Func<IState<Id, EventT>> getState)
+        {
+            foreach(var eventId in eventIds)
+            {
+                _transitions.Add(new Transition<EventT, IState<Id, EventT> >(eventId, getState));
+            }
         }
 
         public IState<Id, EventT> Transition(EventT eventType)
@@ -64,6 +73,11 @@ namespace Ropu.Client.StateModel
             _entryTask = null;
 
             Exit(newState);
+        }
+
+        public bool HasTransition(EventT eventType)
+        {
+            return _transitions.Any(t => t.Event.Equals(eventType));
         }
     }
 }

@@ -47,7 +47,7 @@ namespace Ropu.ClientUI
             var mediaClient = new MediaClient(protocolSwitch, audioSource, audioPlayer, audioCodec, jitterBuffer, settings);
             var callManagementProtocol = new LoadBalancerProtocol(new PortFinder(), 5079, packetEncryption, keysClient);
 
-            var beepPlayer = new BeepPlayer(new PulseAudioSimple(StreamDirection.Record, "RopuBeeps"));
+            var beepPlayer = new BeepPlayer(new PulseAudioSimple(StreamDirection.Playback, "RopuBeeps"));
             
 
             var ropuClient = new RopuClient(protocolSwitch, servingNodeClient, mediaClient, callManagementProtocol, settings, beepPlayer, webClient, keysClient);
