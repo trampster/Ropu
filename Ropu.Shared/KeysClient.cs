@@ -176,7 +176,7 @@ namespace Ropu.Shared
                 return null;
             }
             var keys = (await response.GetJson()).Select(key => _cachedEncryiptonKeyFactory(key)).ToList();
-            _groups.Add(groupId, keys);
+            _groups.TryAdd(groupId, keys);
             return keys;
         }
 
