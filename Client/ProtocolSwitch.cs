@@ -161,7 +161,6 @@ namespace Ropu.Client
             }
             var packet =  SendBufferEncrypted();
             int packetLength = _packetEncryption.CreateEncryptedPacket(buffer.AsSpan(0,  length), packet, false, userId.Value, keyInfo);
-            Console.WriteLine($"ProtocolSwitch SendToEncrypted length {packetLength}");
             _socket.SendTo(packet, 0, packetLength, SocketFlags.None, endPoint);
             return true;
         }

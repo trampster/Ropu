@@ -16,6 +16,10 @@ namespace Ropu.Client.StateModel
 
         void AddTransition(EventT eventId, Func<IState<Id, EventT>> getState);
 
+        void AddTransitions(IEnumerable<EventT> eventIds, Func<IState<Id, EventT>> getState);
+
+        bool HasTransition(EventT eventType);
+
         void RunEntry();
 
         void RunExit(IState<Id, EventT> newState);

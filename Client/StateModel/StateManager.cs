@@ -40,6 +40,20 @@ namespace Ropu.Client.StateModel
             }
         }
 
+        public void CheckEventsAreHandledByAll(EventT[] events)
+        {
+            foreach(var state in _states)
+            {
+                foreach(var eventType in events)
+                {
+                    if(!state.HasTransition(eventType))
+                    {
+                        throw new Exception($"State {state.Identifier} is missing a transition for {eventType}");
+                    }
+                }
+            }
+        }
+
         /// <summary>
         /// Changes the current state to new  if the current state is expected
         /// </summary>
