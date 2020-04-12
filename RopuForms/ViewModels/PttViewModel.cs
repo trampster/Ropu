@@ -18,14 +18,17 @@ namespace RopuForms.ViewModels
         readonly IGroupsClient _groupsClient;
         readonly IUsersClient _usersClient;
         readonly ImageClient _imageClient;
+        readonly RopuWebClient _webClient;
 
         public PttViewModel(
             RopuClient ropuClient,
             IClientSettings clientSettings,
             IGroupsClient groupsClient,
             IUsersClient usersClient,
-            ImageClient imageClient)
+            ImageClient imageClient,
+            RopuWebClient webClient)
         {
+            _webClient = webClient;
             _ropuClient = ropuClient;
             _ropuClient.StateChanged += async (sender, args) =>
             {
@@ -42,6 +45,7 @@ namespace RopuForms.ViewModels
 
         public override async Task Initialize()
         {
+            await _webClient.WaitForLogin();
             _clientSettings.UserId = (await _usersClient.GetCurrentUser())?.Id;
 
             if (_clientSettings.UserId == null) throw new InvalidOperationException("UserId is not set");

@@ -2,6 +2,7 @@ using System;
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Ropu.Shared.WebModels;
@@ -44,6 +45,13 @@ namespace Ropu.Shared.Web
             }
         }
 
+        public async Task WaitForLogin()
+        {
+            await Task.Run(() => _manualResetEvent.WaitOne());
+        }
+
+        readonly ManualResetEvent _manualResetEvent = new ManualResetEvent(false);
+
         public async ValueTask<bool> Login()
         {
             var credentials = new Credentials(){Email = _credentialsProvider.Email, Password = _credentialsProvider.Password};
@@ -52,6 +60,7 @@ namespace Ropu.Shared.Web
             var response = await _httpClient.PostAsync($"api/Login", new StringContent(json, Encoding.UTF8, "application/json"));
             if(response.StatusCode != HttpStatusCode.OK)
             {
+                _manualResetEvent.Reset();
                 return false;
             }
             _jwt = Newtonsoft.Json.JsonConvert.DeserializeObject<JwtResponse>(await response.Content.ReadAsStringAsync()).Token;
@@ -61,6 +70,7 @@ namespace Ropu.Shared.Web
             }
             _httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + _jwt);
 
+            _manualResetEvent.Set();
             return true;
         }
 

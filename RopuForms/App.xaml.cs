@@ -74,7 +74,7 @@ namespace RopuForms
                     i.Get<ProtocolSwitch>(), i.Get<ServingNodeClient>(), i.Get<IMediaClient>(), i.Get<LoadBalancerProtocol>(),
                     i.Get<IClientSettings>(), i.Get<IBeepPlayer>(), i.Get<RopuWebClient>(), i.Get<KeysClient>()))
                 .Register<IUsersClient>(i => new UsersClient(i.Get<RopuWebClient>()))
-                .RegisterSingleton(i => new PttViewModel(i.Get<RopuClient>(), i.Get<IClientSettings>(), i.Get<IGroupsClient>(), i.Get<IUsersClient>(), i.Get<ImageClient>()))
+                .RegisterSingleton(i => new PttViewModel(i.Get<RopuClient>(), i.Get<IClientSettings>(), i.Get<IGroupsClient>(), i.Get<IUsersClient>(), i.Get<ImageClient>(), i.Get<RopuWebClient>()))
                 .RegisterSingleton(i => new ImageService())
                 .Register(i => new PttPage());
         }
