@@ -47,13 +47,7 @@ namespace RopuForms.Views
             _animationTask = RunAnimations();
         }
 
-        public static readonly BindableProperty CallGroupProperty = BindableProperty.Create(
-            propertyName: "CallGroup",
-            returnType: typeof(string),
-            declaringType: typeof(PttControl),
-            defaultValue: null,
-            defaultBindingMode: BindingMode.TwoWay,
-            propertyChanged: (bindable, oldValue, newValue) => ((PttControl)bindable).CallGroup = (string?)newValue);
+        public static readonly BindableProperty CallGroupProperty = Bindings.Create<PttControl, string>("CallGroup", (control, oldValue, newValue) => control.CallGroup = newValue);
 
         public string? CallGroup
         {
@@ -66,20 +60,7 @@ namespace RopuForms.Views
             }
         }
 
-        public delegate void PropertyChanged<TControl, TProperty>(TControl control, TProperty oldValue, TProperty newValue);
-
-        public static BindableProperty CreateBinding<TProperty, TControl>(string propertyName, PropertyChanged<TControl, TProperty> propertyChanged )
-        {
-            return BindableProperty.Create(
-                propertyName: propertyName,
-                returnType: typeof(TProperty),
-                declaringType: typeof(TControl),
-                defaultValue: null,
-                defaultBindingMode: BindingMode.TwoWay,
-                propertyChanged: (bindable, oldValue, newValue) => propertyChanged((TControl)(object)bindable, (TProperty)oldValue, (TProperty)newValue));
-        }
-
-        public static readonly BindableProperty CallGroupImageProperty = CreateBinding<byte[]?, PttControl>("CallGroupImage", (control, oldValue, newValue) => control.CallGroupImage = newValue);
+        public static readonly BindableProperty CallGroupImageProperty = Bindings.Create<PttControl, byte[]?>("CallGroupImage", (control, oldValue, newValue) => control.CallGroupImage = newValue);
 
         public byte[]? CallGroupImage
         {
@@ -91,19 +72,7 @@ namespace RopuForms.Views
             }
         }
 
-        public static readonly BindableProperty TalkerProperty = BindableProperty.Create(
-                                         propertyName: "Talker",
-                                         returnType: typeof(string),
-                                         declaringType: typeof(PttControl),
-                                         defaultValue: null,
-                                         defaultBindingMode: BindingMode.TwoWay,
-                                         propertyChanged: TalkerPropertyChanged);
-
-        static void TalkerPropertyChanged(BindableObject bindable, object oldValue, object newValue)
-        {
-            var control = (PttControl)bindable;
-            control.Talker = (string?)newValue;
-        }
+        public static readonly BindableProperty TalkerProperty = Bindings.Create<PttControl, string>("Talker", (control, oldValue, newValue) => control.Talker = newValue);
 
         public string? Talker
         {
@@ -126,19 +95,7 @@ namespace RopuForms.Views
             }
         }
 
-        public static readonly BindableProperty TalkerImageProperty = BindableProperty.Create(
-                                         propertyName: "TalkerImage",
-                                         returnType: typeof(byte[]),
-                                         declaringType: typeof(PttControl),
-                                         defaultValue: null,
-                                         defaultBindingMode: BindingMode.TwoWay,
-                                         propertyChanged: TalkerImagePropertyChanged);
-
-        static void TalkerImagePropertyChanged(BindableObject bindable, object oldValue, object newValue)
-        {
-            var control = (PttControl)bindable;
-            control.TalkerImage = (byte[]?)newValue;
-        }
+        public static readonly BindableProperty TalkerImageProperty = Bindings.Create<PttControl, byte[]?>("TalkerImage", (control, oldValue, newValue) => control.TalkerImage = newValue);
 
         public byte[]? TalkerImage
         {
@@ -150,20 +107,7 @@ namespace RopuForms.Views
             }
         }
 
-
-        public static readonly BindableProperty IdleGroupProperty = BindableProperty.Create(
-                                         propertyName: "IdleGroup",
-                                         returnType: typeof(string),
-                                         declaringType: typeof(PttControl),
-                                         defaultValue: null,
-                                         defaultBindingMode: BindingMode.TwoWay,
-                                         propertyChanged: IdleGroupPropertyChanged);
-
-        static void IdleGroupPropertyChanged(BindableObject bindable, object oldValue, object newValue)
-        {
-            var control = (PttControl)bindable;
-            control.IdleGroup = (string?)newValue;
-        }
+        public static readonly BindableProperty IdleGroupProperty = Bindings.Create<PttControl, string>("IdleGroup", (control, oldValue, newValue) => control.IdleGroup = newValue);
 
         public string IdleGroup
         {
@@ -175,19 +119,7 @@ namespace RopuForms.Views
             }
         }
 
-        public static readonly BindableProperty IdleGroupImageProperty = BindableProperty.Create(
-                                         propertyName: "TalkerImage",
-                                         returnType: typeof(byte[]),
-                                         declaringType: typeof(PttControl),
-                                         defaultValue: null,
-                                         defaultBindingMode: BindingMode.TwoWay,
-                                         propertyChanged: IdleGroupImagePropertyChanged);
-
-        static void IdleGroupImagePropertyChanged(BindableObject bindable, object oldValue, object newValue)
-        {
-            var control = (PttControl)bindable;
-            control.IdleGroupImage = (byte[]?)newValue;
-        }
+        public static readonly BindableProperty IdleGroupImageProperty = Bindings.Create<PttControl, byte[]?>("TalkerImage", (control, oldValue, newValue) => control.IdleGroupImage = newValue);
 
         public byte[]? IdleGroupImage
         {
@@ -322,6 +254,8 @@ namespace RopuForms.Views
             return distanceSquared <= radiusSquared;
         }
 
+        public static readonly BindableProperty PttColorProperty = Bindings.Create<PttControl, Color>("PttColor", (control, oldValue, newValue) => control.PttColor = newValue);
+
         public Color PttColor
         {
             get
@@ -337,19 +271,7 @@ namespace RopuForms.Views
             }
         }
 
-        public static readonly BindableProperty ReceivingAnimationColorProperty = BindableProperty.Create(
-                                                 propertyName: "ReceivingAnimationColor",
-                                                 returnType: typeof(Color),
-                                                 declaringType: typeof(PttControl),
-                                                 defaultValue: Color.Black,
-                                                 defaultBindingMode: BindingMode.TwoWay,
-                                                 propertyChanged: ReceivingAnimationColorPropertyChanged);
-
-        static void ReceivingAnimationColorPropertyChanged(BindableObject bindable, object oldValue, object newValue)
-        {
-            var control = (PttControl)bindable;
-            control.ReceivingAnimationColor = (Color)newValue;
-        }
+        public static readonly BindableProperty ReceivingAnimationColorProperty = Bindings.Create<PttControl, Color>("ReceivingAnimationColor", (control, oldValue, newValue) => control.ReceivingAnimationColor = oldValue);
 
         public Color ReceivingAnimationColor
         {
@@ -359,19 +281,7 @@ namespace RopuForms.Views
             }
         }
 
-        public static readonly BindableProperty PttColorProperty = BindableProperty.Create(
-                                                 propertyName: "PttColor",
-                                                 returnType: typeof(Color),
-                                                 declaringType: typeof(PttControl),
-                                                 defaultValue: Color.Black,
-                                                 defaultBindingMode: BindingMode.TwoWay,
-                                                 propertyChanged: PttColorPropertyChanged);
-
-        static void PttColorPropertyChanged(BindableObject bindable, object oldValue, object newValue)
-        {
-            var control = (PttControl)bindable;
-            control.PttColor = (Color)newValue;
-        }
+        public static readonly BindableProperty TransmittingAnimationColorProperty = Bindings.Create<PttControl, Color>("TransmittingAnimationColor", (control, oldValue, newValue) => control.TransmittingAnimationColor = newValue);
 
         public Color TransmittingAnimationColor
         {
@@ -381,19 +291,7 @@ namespace RopuForms.Views
             }
         }
 
-        public static readonly BindableProperty TransmittingAnimationColorProperty = BindableProperty.Create(
-                                                 propertyName: "TransmittingAnimationColor",
-                                                 returnType: typeof(Color),
-                                                 declaringType: typeof(PttControl),
-                                                 defaultValue: Color.Black,
-                                                 defaultBindingMode: BindingMode.TwoWay,
-                                                 propertyChanged: TransmittingAnimationColorPropertyChanged);
-
-        static void TransmittingAnimationColorPropertyChanged(BindableObject bindable, object oldValue, object newValue)
-        {
-            var control = (PttControl)bindable;
-            control.TransmittingAnimationColor = (Color)newValue;
-        }
+        public static readonly BindableProperty TransmittingProperty = Bindings.Create<PttControl, bool>("Transmitting", (control, oldValue, newValue) => control.Transmitting = newValue);
 
         bool _transmitting = false;
         public bool Transmitting
@@ -413,20 +311,6 @@ namespace RopuForms.Views
                 _transmitting = value;
                 InvalidateSurface();
             }
-        }
-
-        public static readonly BindableProperty TransmittingProperty = BindableProperty.Create(
-                                                 propertyName: "Transmitting",
-                                                 returnType: typeof(bool),
-                                                 declaringType: typeof(PttControl),
-                                                 defaultValue: false,
-                                                 defaultBindingMode: BindingMode.TwoWay,
-                                                 propertyChanged: TransmittingrPropertyChanged);
-
-        static void TransmittingrPropertyChanged(BindableObject bindable, object oldValue, object newValue)
-        {
-            var control = (PttControl)bindable;
-            control.Transmitting = (bool)newValue;
         }
 
         public void OnTouchEffectAction(object sender, TouchActionEventArgs args)
