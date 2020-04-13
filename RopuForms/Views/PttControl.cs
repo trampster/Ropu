@@ -18,6 +18,7 @@ namespace RopuForms.Views
         readonly TransmittingIndicator _transmittingIndicator;
         readonly TransmittingIndicator _receivingIndicator;
         readonly ImageLabel _talkerDrawable;
+        readonly IdleGroup _idleGroupDrawable;
         readonly Action _transmittingAnimationAction;
         readonly Action _receivingAnimationAction;
         readonly Task _animationTask;
@@ -37,6 +38,8 @@ namespace RopuForms.Views
 
             _talkerDrawable = new ImageLabel();
             _talkerDrawable.Text = null;
+
+            _idleGroupDrawable = new IdleGroup();
 
             _animationTask = RunAnimations();
         }
@@ -100,6 +103,55 @@ namespace RopuForms.Views
             }
         }
 
+
+        public static readonly BindableProperty IdleGroupProperty = BindableProperty.Create(
+                                         propertyName: "IdleGroup",
+                                         returnType: typeof(string),
+                                         declaringType: typeof(PttControl),
+                                         defaultValue: null,
+                                         defaultBindingMode: BindingMode.TwoWay,
+                                         propertyChanged: IdleGroupPropertyChanged);
+
+        static void IdleGroupPropertyChanged(BindableObject bindable, object oldValue, object newValue)
+        {
+            var control = (PttControl)bindable;
+            control.IdleGroup = (string?)newValue;
+        }
+
+        public string IdleGroup
+        {
+            get => _idleGroupDrawable.GroupName;
+            set
+            {
+                _idleGroupDrawable.GroupName = value;
+                InvalidateSurface();
+            }
+        }
+
+        public static readonly BindableProperty IdleGroupImageProperty = BindableProperty.Create(
+                                         propertyName: "TalkerImage",
+                                         returnType: typeof(byte[]),
+                                         declaringType: typeof(PttControl),
+                                         defaultValue: null,
+                                         defaultBindingMode: BindingMode.TwoWay,
+                                         propertyChanged: IdleGroupImagePropertyChanged);
+
+        static void IdleGroupImagePropertyChanged(BindableObject bindable, object oldValue, object newValue)
+        {
+            var control = (PttControl)bindable;
+            control.IdleGroupImage = (byte[]?)newValue;
+        }
+
+        public byte[]? IdleGroupImage
+        {
+            set
+            {
+                if (value == null) return;
+                _idleGroupDrawable.Image = SKImage.FromEncodedData(value);
+                InvalidateSurface();
+            }
+        }
+
         protected override void OnPaintSurface(SKPaintGLSurfaceEventArgs e)
         {
             base.OnPaintSurface(e);
@@ -123,6 +175,10 @@ namespace RopuForms.Views
             _talkerDrawable.X = (int)CanvasSize.Width - _talkerDrawable.Width - padding;
             _talkerDrawable.Y = padding;
             _talkerDrawable.Draw(canvas);
+
+            _idleGroupDrawable.X = (int)CanvasSize.Width - _idleGroupDrawable.Width - padding;
+            _idleGroupDrawable.Y = (int)CanvasSize.Height - _idleGroupDrawable.Height - padding;
+            _idleGroupDrawable.Draw(canvas);
 
             _receivingIndicator.X = _talkerDrawable.X + (_talkerDrawable.Width / 2);
             _receivingIndicator.Y = _talkerDrawable.Y + (_talkerDrawable.Height / 2);

@@ -22,6 +22,8 @@
                                 PttUpCommand="{Binding PttUpCommand}"
                                 TalkerImage="{Binding TalkerImage}"
                                 Talker="{Binding Talker}"
+                                IdleGroup="{Binding IdleGroup}"
+                                IdleGroupImage="{Binding IdleGroupImage}"
                                 ReceivingAnimationColor="{Binding ReceivingColor}">
             </gesture:PttControl>
 

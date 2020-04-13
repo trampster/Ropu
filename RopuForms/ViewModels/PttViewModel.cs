@@ -57,8 +57,8 @@ namespace RopuForms.ViewModels
 
             if (idleGroup != null)
             {
-                _idleGroup = idleGroup.Name;
-                _idleGroupImage = idleGroup.Image;
+                IdleGroup = idleGroup.Name;
+                IdleGroupImage = idleGroup.Image;
             }
 
             PermissionStatus status = await Permissions.CheckStatusAsync<Permissions.Speech>();
