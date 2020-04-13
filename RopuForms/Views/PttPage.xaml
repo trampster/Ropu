@@ -24,6 +24,8 @@
                                 Talker="{Binding Talker}"
                                 IdleGroup="{Binding IdleGroup}"
                                 IdleGroupImage="{Binding IdleGroupImage}"
+                                CallGroup="{Binding CallGroup}"
+                                CallGroupImage="{Binding CallGroupImage}"
                                 ReceivingAnimationColor="{Binding ReceivingColor}">
             </gesture:PttControl>
 

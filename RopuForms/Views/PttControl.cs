@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using RopuForms.Services;
 using RopuForms.Views.TouchTracking;
 using SkiaSharp;
 using SkiaSharp.Views.Forms;
 using Xamarin.Forms;
+using Ropu.Shared;
 
 namespace RopuForms.Views
 {
@@ -17,6 +16,7 @@ namespace RopuForms.Views
         readonly PttCircle _circle;
         readonly TransmittingIndicator _transmittingIndicator;
         readonly TransmittingIndicator _receivingIndicator;
+        readonly ImageLabel _callGroupDrawable;
         readonly ImageLabel _talkerDrawable;
         readonly IdleGroup _idleGroupDrawable;
         readonly Action _transmittingAnimationAction;
@@ -39,9 +39,56 @@ namespace RopuForms.Views
             _talkerDrawable = new ImageLabel();
             _talkerDrawable.Text = null;
 
+            _callGroupDrawable = new ImageLabel();
+            _callGroupDrawable.Text = "";
+
             _idleGroupDrawable = new IdleGroup();
 
             _animationTask = RunAnimations();
+        }
+
+        public static readonly BindableProperty CallGroupProperty = BindableProperty.Create(
+            propertyName: "CallGroup",
+            returnType: typeof(string),
+            declaringType: typeof(PttControl),
+            defaultValue: null,
+            defaultBindingMode: BindingMode.TwoWay,
+            propertyChanged: (bindable, oldValue, newValue) => ((PttControl)bindable).CallGroup = (string?)newValue);
+
+        public string? CallGroup
+        {
+            get => _callGroupDrawable.Text;
+            set
+            {
+                _callGroupDrawable.Hidden = value == null || value == string.Empty;
+                _callGroupDrawable.Text = value.EmptyIfNull();
+                InvalidateSurface();
+            }
+        }
+
+        public delegate void PropertyChanged<TControl, TProperty>(TControl control, TProperty oldValue, TProperty newValue);
+
+        public static BindableProperty CreateBinding<TProperty, TControl>(string propertyName, PropertyChanged<TControl, TProperty> propertyChanged )
+        {
+            return BindableProperty.Create(
+                propertyName: propertyName,
+                returnType: typeof(TProperty),
+                declaringType: typeof(TControl),
+                defaultValue: null,
+                defaultBindingMode: BindingMode.TwoWay,
+                propertyChanged: (bindable, oldValue, newValue) => propertyChanged((TControl)(object)bindable, (TProperty)oldValue, (TProperty)newValue));
+        }
+
+        public static readonly BindableProperty CallGroupImageProperty = CreateBinding<byte[]?, PttControl>("CallGroupImage", (control, oldValue, newValue) => control.CallGroupImage = newValue);
+
+        public byte[]? CallGroupImage
+        {
+            set
+            {
+                if (value == null) return;
+                _callGroupDrawable.Image = SKImage.FromEncodedData(value);
+                InvalidateSurface();
+            }
         }
 
         public static readonly BindableProperty TalkerProperty = BindableProperty.Create(
@@ -163,6 +210,10 @@ namespace RopuForms.Views
             const int padding = 10;
 
             _circle.Text = "Avengers";
+
+            _callGroupDrawable.X = padding;
+            _callGroupDrawable.Y = padding;
+            _callGroupDrawable.Draw(canvas);
 
             int radius = DrawPttCircle(canvas, 50, padding);
 
