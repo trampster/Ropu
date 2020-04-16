@@ -38,7 +38,6 @@ namespace Ropu.ClientUI.ViewModels
             _clientSettings = clientSettings;
 
             _state = _ropuClient.State.ToString();
-
         }
 
         public override async Task Initialize()
@@ -53,8 +52,8 @@ namespace Ropu.ClientUI.ViewModels
             var idleGroup = await _groupsClient.Get(_ropuClient.IdleGroup);
             if(idleGroup != null)
             {
-                _idleGroup = idleGroup.Name;
-                _idleGroupImage = idleGroup.Image;
+                IdleGroup = idleGroup.Name;
+                IdleGroupImage = idleGroup.Image;
             }
 
             await _ropuClient.Run();

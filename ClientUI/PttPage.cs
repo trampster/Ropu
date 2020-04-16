@@ -292,7 +292,12 @@ namespace Ropu.ClientUI
         {
             set
             {
-                if(value == null) return;
+                if(value == null) 
+                {
+                    _callGroupDrawable.Hidden = true;
+                    return;
+                }
+                _callGroupDrawable.Hidden = false;
                 _callGroupDrawable.Image = new Bitmap(value);
                 Invalidate();
             }
@@ -355,7 +360,12 @@ namespace Ropu.ClientUI
         {
             set
             {
-                if(value == null) return;
+                if(value == null)
+                {
+                    _idleGroupDrawable.Hidden = true;
+                    return;
+                } 
+                _idleGroupDrawable.Hidden = false;
                 _idleGroupDrawable.Image = new Bitmap(value);
                 Invalidate();
             }
