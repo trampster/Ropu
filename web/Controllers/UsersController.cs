@@ -4,6 +4,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Ropu.Shared.Web.Models;
 using Ropu.Shared.WebModels;
 using Ropu.Web.Models;
 using Ropu.Web.Services;

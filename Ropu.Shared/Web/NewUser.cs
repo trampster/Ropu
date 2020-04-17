@@ -1,6 +1,5 @@
-using System.Collections.Generic;
 
-namespace Ropu.Web.Models
+namespace Ropu.Shared.Web.Models
 {
     public class NewUser
     {

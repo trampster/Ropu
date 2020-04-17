@@ -64,7 +64,10 @@ namespace Ropu.ClientUI
             var pttPage = new PttPage(imageService);
 
             var navigator = new Navigator();
+            
             navigator.Register(() => new LoginView(new LoginViewModel(settings, navigator, webClient, credentialsProvider), imageService));
+            
+            navigator.Register(() => new SignupPage(new SignupViewModel(navigator, usersClient)));
 
             var pttView = new PttView(new PttViewModel(ropuClient, settings, groupsClient, usersClient, imageClient), pttPage);
             navigator.Register(() => pttView);

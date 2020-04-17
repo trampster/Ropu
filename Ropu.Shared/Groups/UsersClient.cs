@@ -3,6 +3,7 @@ using System.IO;
 using System.Net;
 using System.Threading.Tasks;
 using Ropu.Shared.Web;
+using Ropu.Shared.Web.Models;
 using Ropu.Shared.WebModels;
 
 namespace Ropu.Shared.Groups
@@ -36,6 +37,17 @@ namespace Ropu.Shared.Groups
                 return null;
             }
             return await response.GetJson().ConfigureAwait(false);
+        }
+
+        public async ValueTask<bool> Create(NewUser newUser)
+        {
+            var response = await _client.Post($"api/users/create", newUser);
+            if(response.StatusCode == HttpStatusCode.OK)
+            {
+                return true;
+            }
+            Console.Error.WriteLine($"Failed to create user {newUser.Name}");
+            return false;
         }
     }
 }
