@@ -1,4 +1,5 @@
-﻿using Eto.Forms;
+﻿using Eto.Drawing;
+using Eto.Forms;
 using Ropu.ClientUI.ViewModels;
 
 namespace Ropu.ClientUI.Views
@@ -16,7 +17,7 @@ namespace Ropu.ClientUI.Views
             emailBox.TextBinding.BindDataContext<SignupViewModel>(m => m.Email);
 
             var nameBox = new TextBox();
-            emailBox.TextBinding.BindDataContext<SignupViewModel>(m => m.Name);
+            nameBox.TextBinding.BindDataContext<SignupViewModel>(m => m.Name);
 
             var passwordBox = new PasswordBox();
             passwordBox.TextBinding.BindDataContext<SignupViewModel>(m => m.Password);
@@ -27,7 +28,10 @@ namespace Ropu.ClientUI.Views
             var signupButton = new Button(){Text = "Signup"};
             signupButton.Command = _signupViewModel.Signup;
 
-            var errorLabel = new Label(){};
+            var errorLabel = new Label()
+            {
+                TextColor = Color.FromArgb(0xFF,0,0,0xFF)
+            };
             errorLabel.TextBinding.BindDataContext<SignupViewModel>(m => m.FailureMessage);
 
             var layout = new DynamicLayout();
@@ -36,6 +40,7 @@ namespace Ropu.ClientUI.Views
                 layout.BeginVertical();
                     layout.AddSpace();
                     layout.Add(errorLabel);
+                    layout.AddSpace();
                     layout.Add(new Label(){Text = "Email"});
                     layout.Add(emailBox);
                     layout.Add(new Label(){Text = "Name"});

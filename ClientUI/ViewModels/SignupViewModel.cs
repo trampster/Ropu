@@ -1,8 +1,5 @@
 ﻿using System.Windows.Input;
-using Ropu.Client;
-using Ropu.Shared.Web;
 using Ropu.ClientUI.Views;
-using System;
 using Ropu.Shared.Web.Models;
 using Ropu.Shared.Groups;
 
@@ -67,6 +64,16 @@ namespace Ropu.ClientUI.ViewModels
                 FailureMessage = "Passwords don't match";
                 return;
             }
+            if(!Email.Contains("@") || Email.Contains(' '))
+            {
+                FailureMessage = "Email is invalid";
+                return;
+            }
+            if(Name == null || Name == "")
+            {
+                FailureMessage = "Name is a requried field";
+                return;
+            }
             var newUser = new NewUser()
             {
                 Name = Name,
@@ -78,7 +85,7 @@ namespace Ropu.ClientUI.ViewModels
                 _navigator.Show<LoginView>();
                 return;
             }
-            FailureMessage = "Failed to login";
+            FailureMessage = "Failed to signup";
         });
     }
 }

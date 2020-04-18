@@ -64,5 +64,11 @@ namespace Ropu.ClientUI.ViewModels
             Console.WriteLine("Login Failure");
             FailureMessage = "Failed to login";
         });
+
+        public ICommand Signup => new AsyncCommand(async () => 
+        {
+            _navigator.Show<SignupPage>();
+            await Task.CompletedTask;
+        });
     }
 }

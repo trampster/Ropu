@@ -1,6 +1,7 @@
 using System;
 using System.Net;
 using System.Net.Http;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -74,23 +75,45 @@ namespace Ropu.Shared.Web
             return true;
         }
 
-        public async ValueTask<HttpResponseMessage> Post<T>(string uri, T payload)
+        public async ValueTask<Response> Post<T>(string uri, T payload)
         {
-            var json = JsonConvert.SerializeObject(payload);
-            return await Do(() => _httpClient.PostAsync(uri, new StringContent(json, Encoding.UTF8, "application/json")));
+            try
+            {
+                var json = JsonConvert.SerializeObject(payload);
+                var response =  await Do(() => _httpClient.PostAsync(uri, new StringContent(json, Encoding.UTF8, "application/json")));
+                return new Response(response);
+            }
+            catch(HttpRequestException exception)
+            {
+                return new Response(exception);
+            }
         }
 
         public async ValueTask<Response<R>> Post<T, R>(string uri, T payload)
         {
             var json = JsonConvert.SerializeObject(payload);
-            var response = await Do(() => _httpClient.PostAsync(uri, new StringContent(json, Encoding.UTF8, "application/json")));
-            return new Response<R>(response);
+            try
+            {
+                var response = await Do(() => _httpClient.PostAsync(uri, new StringContent(json, Encoding.UTF8, "application/json")));
+                return new Response<R>(response);
+            }
+            catch(HttpRequestException exception)
+            {
+                return new Response<R>(exception);
+            }
         }
 
         public async ValueTask<Response<T>> Get<T>(string uri)
         {
-            var response = await Do(() => _httpClient.GetAsync(uri)).ConfigureAwait(false);
-            return new Response<T>(response);
+            try
+            {
+                var response = await Do(() => _httpClient.GetAsync(uri)).ConfigureAwait(false);
+                return new Response<T>(response);
+            }
+            catch(HttpRequestException exception)
+            {
+                return new Response<T>(exception);
+            }
         }
 
         async ValueTask<HttpResponseMessage> Do(Func<Task<HttpResponseMessage>> func)

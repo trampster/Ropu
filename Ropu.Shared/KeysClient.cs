@@ -132,7 +132,7 @@ namespace Ropu.Shared
         async Task<List<CachedEncryptionKey>?> RefreshUsersKeys(uint userId)
         {
             var response = await _ropuWebClient.Get<List<EncryptionKey>>($"api/Key/False/{userId}");
-            if(!response.IsSuccessfulStatusCode)
+            if(!response.IsSuccessful)
             {
                 Console.Error.WriteLine($"Failed to find a key for user with UserId {userId}");
                 return null;
@@ -170,7 +170,7 @@ namespace Ropu.Shared
         {
             Console.WriteLine($"KeysClient: RefreshGroupKeys groupId: {groupId}");
             var response = await _ropuWebClient.Get<List<EncryptionKey>>($"api/Key/True/{groupId}");
-            if(!response.IsSuccessfulStatusCode)
+            if(!response.IsSuccessful)
             {
                 Console.Error.WriteLine($"Failed to get a key for group with GroupId {groupId} with response code {response.StatusCode}");
                 return null;
@@ -261,7 +261,7 @@ namespace Ropu.Shared
         async ValueTask<bool> CacheMyKeys()
         {
             var response = await _ropuWebClient.Get<List<EncryptionKey>>($"api/Key/MyKeys");
-            if(!response.IsSuccessfulStatusCode)
+            if(!response.IsSuccessful)
             {
                 Console.Error.WriteLine($"Failed to get my keys with reponse code {response.StatusCode}");
                 return false;

@@ -42,7 +42,7 @@ namespace Ropu.Shared.Groups
         public async ValueTask<bool> Create(NewUser newUser)
         {
             var response = await _client.Post($"api/users/create", newUser);
-            if(response.StatusCode == HttpStatusCode.OK)
+            if(response.IsSuccessful)
             {
                 return true;
             }

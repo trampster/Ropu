@@ -84,7 +84,7 @@ namespace Ropu.LoadBalancer
                     IPEndPoint = _settings.PublicIPEndpoint
                 });
 
-                if(response.StatusCode != HttpStatusCode.OK)
+                if(!response.IsSuccessful)
                 {
                     Console.Error.WriteLine($"Failed to update the web with the load balancer status {response.ReasonPhrase}");
                 }

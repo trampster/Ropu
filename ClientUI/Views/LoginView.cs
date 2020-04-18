@@ -22,6 +22,9 @@ namespace Ropu.ClientUI.Views
             var loginButton = new Button(){Text = "Login"};
             loginButton.Command = loginViewModel.Login;
 
+            var signupButton = new Button(){Text = "Signup"};
+            signupButton.Command = loginViewModel.Signup;
+
             var errorLabel = new Label(){};
             errorLabel.TextBinding.BindDataContext<LoginViewModel>(m => m.FailureMessage);
 
@@ -39,6 +42,7 @@ namespace Ropu.ClientUI.Views
                     layout.AddSpace();
                     layout.Add(loginButton);
                     layout.AddSpace();
+                    layout.Add(signupButton);
                     layout.AddSpace();
                 layout.EndVertical();
                 layout.AddSpace();

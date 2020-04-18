@@ -46,7 +46,7 @@ namespace Ropu.Shared.Web
             while(!cancellationToken.IsCancellationRequested)
             {
                 var response = await _webClient.Post<ServiceInfo, byte>("api/Services/Register", serviceInfo);
-                if(!response.IsSuccessfulStatusCode)
+                if(!response.IsSuccessful)
                 {
                     await Console.Error.WriteLineAsync("Failed to register service");
                     await Task.Delay(5000);
