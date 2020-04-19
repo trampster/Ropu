@@ -86,7 +86,7 @@ namespace Ropu.LoadBalancer
 
                 if(!response.IsSuccessful)
                 {
-                    Console.Error.WriteLine($"Failed to update the web with the load balancer status {response.ReasonPhrase}");
+                    Console.Error.WriteLine($"Failed to update the web with the load balancer status {response.StatusCode}");
                 }
                 await Task.Delay(5000);
             }

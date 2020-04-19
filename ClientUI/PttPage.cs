@@ -362,10 +362,10 @@ namespace Ropu.ClientUI
             {
                 if(value == null)
                 {
-                    _idleGroupDrawable.Hidden = true;
+                    //_idleGroupDrawable.Hidden = true;
                     return;
                 } 
-                _idleGroupDrawable.Hidden = false;
+                //_idleGroupDrawable.Hidden = false;
                 _idleGroupDrawable.Image = new Bitmap(value);
                 Invalidate();
             }

@@ -25,7 +25,7 @@ namespace Ropu.ClientUI.Views
             var retypePassordBox = new PasswordBox();
             retypePassordBox.TextBinding.BindDataContext<SignupViewModel>(m => m.RetypePassword);
 
-            var signupButton = new Button(){Text = "Signup"};
+            var signupButton = new Button(){Text = "Sign up"};
             signupButton.Command = _signupViewModel.Signup;
 
             var errorLabel = new Label()

@@ -47,13 +47,21 @@ namespace Ropu.ClientUI.ViewModels
             if(_clientSettings.UserId == null) throw new InvalidOperationException("UserId is not set");
 
             var groups = (await _groupsClient.GetUsersGroups(_clientSettings.UserId.Value));
-            _ropuClient.IdleGroup = groups[0];
+            _ropuClient.IdleGroup = groups.Length == 0 ? null : (ushort?)groups[0];
 
-            var idleGroup = await _groupsClient.Get(_ropuClient.IdleGroup);
-            if(idleGroup != null)
+            if(_ropuClient.IdleGroup != null)
             {
-                IdleGroup = idleGroup.Name;
-                IdleGroupImage = idleGroup.Image;
+                var idleGroup = await _groupsClient.Get(_ropuClient.IdleGroup.Value);
+                if(idleGroup != null)
+                {
+                    IdleGroup = idleGroup.Name;
+                    IdleGroupImage = idleGroup.Image;
+                }
+            }
+            else
+            {
+                IdleGroup = "None";
+                IdleGroupImage = null;
             }
 
             await _ropuClient.Run();
@@ -81,6 +89,7 @@ namespace Ropu.ClientUI.ViewModels
             switch (state)
             {
                 case StateId.Start:
+                case StateId.NoGroup:
                 case StateId.Unregistered:
                     PttColor = Gray;
                     break;
@@ -102,13 +111,11 @@ namespace Ropu.ClientUI.ViewModels
 
             Transmitting = state == StateId.InCallTransmitting;
 
-            var callGroup = InCall(state) ? await _groupsClient.Get(_ropuClient.CallGroup) : null;
+            var callGroup = InCall(state) && _ropuClient.CallGroup.HasValue ? await _groupsClient.Get(_ropuClient.CallGroup.Value) : null;
             CallGroup = callGroup?.Name == null ? "" : callGroup.Name;
             CallGroupImage = callGroup?.Image;
 
-            CircleText = (InCall(state) ? 
-                (await _groupsClient.Get(_ropuClient.CallGroup))?.Name : 
-                (await _groupsClient.Get(_ropuClient.IdleGroup))?.Name).EmptyIfNull();
+            await SetupCircleText(state);
 
             var user = state == StateId.InCallReceiving ? 
                 (_ropuClient.Talker.HasValue ? await _usersClient.Get(_ropuClient.Talker.Value) : null) :
@@ -118,6 +125,18 @@ namespace Ropu.ClientUI.ViewModels
             {
                 TalkerImage = await _imageClient.GetImage(user.ImageHash);
             }
+        }
+
+        async Task SetupCircleText(StateId state)
+        {
+            if(state == StateId.NoGroup)
+            {
+                CircleText = "None";
+                return;
+            }
+            CircleText = (InCall(state) && _ropuClient.CallGroup.HasValue ? 
+                (await _groupsClient.Get(_ropuClient.CallGroup.Value))?.Name : 
+                _ropuClient.IdleGroup.HasValue ? (await _groupsClient.Get(_ropuClient.IdleGroup.Value))?.Name : null).EmptyIfNull();
         }
 
         string _state = "";
@@ -150,7 +169,7 @@ namespace Ropu.ClientUI.ViewModels
 
         public string GroupId
         {
-            get => _ropuClient.IdleGroup.ToString();
+            get => _ropuClient.IdleGroup == null ? "" : _ropuClient.IdleGroup.Value.ToString();
             set
             {
 

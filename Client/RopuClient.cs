@@ -25,6 +25,7 @@ namespace Ropu.Client
         RopuState _start;
         RopuState _registered;
         RopuState _unregistered;
+        RopuState _noGroup;
         RopuState _deregistering;
         RopuState _startingCall;
         RopuState _inCallIdle;
@@ -45,11 +46,11 @@ namespace Ropu.Client
         /// this is the group the user has selected, it is the group to be called when they PTT and 
         /// the group to return to after the call
         /// </summary>
-        ushort _idleGroup;
+        ushort? _idleGroup;
         /// <summary>
         /// The group of the current call, or the call we are trying to start
         /// </summary>
-        ushort _callGroup;
+        ushort? _callGroup;
 
         Task? _heartbeatTask;
         CancellationTokenSource _heartbeatCancellationTokenSource = new CancellationTokenSource();
@@ -109,8 +110,10 @@ namespace Ropu.Client
             _registered.AddTransition(EventId.RegistrationResponseReceived, () => _registered);
             _registered.AddTransition(EventId.CallStartFailed, () => _registered);
             _registered.AddTransition(EventId.PttUp, () => _registered);
+            _registered.AddTransition(EventId.GroupSelected, () => _registered);
 
             //unregistered
+            _noGroup = new RopuState(StateId.NoGroup);
             _unregistered = new RopuState(StateId.Unregistered)
             {
                 Entry = async token => 
@@ -119,7 +122,7 @@ namespace Ropu.Client
                     await Register(token);
                 }
             };
-            _unregistered.AddTransition(EventId.RegistrationResponseReceived, () => _registered);
+            _unregistered.AddTransition(EventId.RegistrationResponseReceived, () => IdleGroup == null ? _noGroup : _registered);
             _unregistered.AddTransition(EventId.FloorIdle, () => _unregistered);
             _unregistered.AddTransition(EventId.FloorTaken, () => _unregistered);
             _unregistered.AddTransition(EventId.CallEnded, () => _unregistered);
@@ -128,7 +131,15 @@ namespace Ropu.Client
             _unregistered.AddTransition(EventId.HeartbeatFailed, () => _unregistered);
             _unregistered.AddTransition(EventId.PttUp, () => _unregistered);
             _unregistered.AddTransition(EventId.PttDown, () => _unregistered);
+            _unregistered.AddTransition(EventId.GroupSelected, () => _unregistered);
+
             _stateManager.AddState(_unregistered);
+
+            //no group
+            _noGroup.AddTransition(EventId.PttUp, () => _noGroup);
+            _noGroup.AddTransition(EventId.PttDown, () => _noGroup);
+            _noGroup.AddTransition(EventId.GroupSelected, () => _registered);
+            _unregistered.AddTransition(EventId.HeartbeatFailed, () => _unregistered);
 
             //deregistering
             _deregistering = new RopuState(StateId.Deregistering)
@@ -137,7 +148,9 @@ namespace Ropu.Client
             };
             _deregistering.AddTransition(EventId.DeregistrationResponseReceived, () => _unregistered);
             _deregistering.AddTransitions(allEvents.Where(e => e != EventId.DeregistrationResponseReceived), () => _deregistering);
+            _deregistering.AddTransition(EventId.GroupSelected, () => _deregistering);
             _stateManager.AddState(_deregistering);
+
 
             //starting call
             _startingCall = new RopuState(StateId.StartingCall)
@@ -156,6 +169,7 @@ namespace Ropu.Client
             _startingCall.AddTransition(EventId.PttDown, () => _startingCall);
             _startingCall.AddTransition(EventId.RegistrationResponseReceived, () => _startingCall);
             _startingCall.AddTransition(EventId.CallRequest, () => _startingCall);
+            _startingCall.AddTransition(EventId.GroupSelected, () => _startingCall);
 
             _stateManager.AddState(_startingCall);
 
@@ -166,6 +180,7 @@ namespace Ropu.Client
             _inCallIdle.AddTransition(EventId.RegistrationResponseReceived, () => _inCallIdle);
             _inCallIdle.AddTransition(EventId.CallRequest, () => _inCallIdle);
             _inCallIdle.AddTransition(EventId.CallStartFailed, () => _registered);
+            _inCallIdle.AddTransition(EventId.GroupSelected, () => _inCallIdle);
             _stateManager.AddState(_inCallIdle);
 
             //in call receiving
@@ -175,6 +190,7 @@ namespace Ropu.Client
             _inCallReceiveing.AddTransition(EventId.RegistrationResponseReceived, () => _inCallReceiveing);
             _inCallReceiveing.AddTransition(EventId.CallRequest, () => _inCallReceiveing);
             _inCallReceiveing.AddTransition(EventId.CallStartFailed, () => _registered);
+            _inCallReceiveing.AddTransition(EventId.GroupSelected, () => _inCallReceiveing);
             _stateManager.AddState(_inCallReceiveing);
 
             //in call transmitting
@@ -198,6 +214,7 @@ namespace Ropu.Client
             _inCallTransmitting.AddTransition(EventId.CallRequest, () => _inCallTransmitting);
             _inCallTransmitting.AddTransition(EventId.CallStartFailed, () => _inCallTransmitting);
             _inCallTransmitting.AddTransition(EventId.PttDown, () => _inCallTransmitting);
+            _inCallTransmitting.AddTransition(EventId.GroupSelected, () => _inCallTransmitting);
 
             _stateManager.AddState(_inCallTransmitting);
 
@@ -206,10 +223,11 @@ namespace Ropu.Client
             {
                 Entry = token => 
                 {
+                    if(_callGroup == null) return Task.CompletedTask;
                     if(_clientSettings.UserId == null) throw new InvalidOperationException("UserId is not set");
-                    _servingNodeClient.SendFloorRequest(_callGroup, _clientSettings.UserId.Value);
+                    _servingNodeClient.SendFloorRequest(_callGroup.Value, _clientSettings.UserId.Value);
                     StartSendingAudio();
-                    return new Task(() => {});
+                    return Task.CompletedTask;
                 },
                 Exit = newState =>
                 {
@@ -225,6 +243,7 @@ namespace Ropu.Client
             _inCallRequestingFloor.AddTransition(EventId.CallStartFailed, () => _registered);
             _inCallRequestingFloor.AddTransition(EventId.PttDown, () => _inCallRequestingFloor);
             _inCallRequestingFloor.AddTransition(EventId.PttUp, () => _inCallIdle);
+            _inCallRequestingFloor.AddTransition(EventId.GroupSelected, () => _inCallRequestingFloor);
             _stateManager.AddState(_inCallRequestingFloor);
 
             //in call releasing floor
@@ -232,10 +251,11 @@ namespace Ropu.Client
             {
                 Entry = async token => 
                 {
+                    if(_callGroup == null) throw new InvalidOperationException("No call group");
                     if(_clientSettings.UserId == null) throw new InvalidOperationException("UserId is not set");
                     while(!token.IsCancellationRequested)
                     {
-                        _servingNodeClient.SendFloorReleased(_callGroup, _clientSettings.UserId.Value);
+                        _servingNodeClient.SendFloorReleased(_callGroup.Value, _clientSettings.UserId.Value);
                         await Task.Run(() => token.WaitHandle.WaitOne(1000));
                     }
                 }
@@ -246,6 +266,7 @@ namespace Ropu.Client
             _inCallReleasingFloor.AddTransition(EventId.CallStartFailed, () => _registered);
             _inCallReleasingFloor.AddTransition(EventId.PttDown, () => _inCallRequestingFloor);
             _inCallReleasingFloor.AddTransition(EventId.PttUp, () => _inCallReleasingFloor);
+            _inCallReleasingFloor.AddTransition(EventId.GroupSelected, () => _inCallReleasingFloor);
 
             _stateManager.AddState(_inCallReleasingFloor);
 
@@ -267,14 +288,13 @@ namespace Ropu.Client
             _stateManager.AddTransitionToAll(EventId.FloorGranted, () => _inCallTransmitting, stateId => stateId != StateId.InCallReleasingFloor);
             _stateManager.AddTransitionToAll(EventId.DeregistrationResponseReceived, () => _unregistered, stateId => true);
 
-
             _stateManager.CheckEventsAreHandledByAll((EventId[])Enum.GetValues(typeof(EventId)));
-
         }
 
         async void StartSendingAudio()
         {
-            await _mediaClient.StartSendingAudio(_callGroup);
+            if(_callGroup == null) throw new InvalidOperationException("Call group is not set");
+            await _mediaClient.StartSendingAudio(_callGroup.Value);
         }
 
         bool IsRegistered(StateId stateId)
@@ -474,26 +494,27 @@ namespace Ropu.Client
             _stateManager.HandleEvent(EventId.CallRequest);
         }
 
-        public ushort CallGroup => _callGroup;
+        public ushort? CallGroup => _callGroup;
 
         async Task StartCall(CancellationToken token)
         {
-            if(_clientSettings.UserId == null) throw new InvalidOperationException("UserId is not set");
-            if(_callGroup == 0)
+            if(IdleGroup == null)
             {
-                _callGroup = IdleGroup;
+                throw new InvalidOperationException("Cannot start call because we have no group");
             }
+            if(_clientSettings.UserId == null) throw new InvalidOperationException("UserId is not set");
+            _callGroup = IdleGroup;
             StartSendingAudio();//var ignore = _mediaClient.StartSendingAudio(_callGroup);
 
             while(!token.IsCancellationRequested)
             {
                 Console.WriteLine($"sending StartGroupCall for group {_callGroup} {_protocolSwitch.ServingNodeEndpoint}");
-                _servingNodeClient.StartGroupCall(_clientSettings.UserId.Value, _callGroup);
+                _servingNodeClient.StartGroupCall(_clientSettings.UserId.Value, _callGroup.Value);
                 await WaitForCancel(token, 1000);
             }
         }
 
-        public ushort IdleGroup
+        public ushort? IdleGroup
         {
             get => _idleGroup;
             set => _idleGroup = value;

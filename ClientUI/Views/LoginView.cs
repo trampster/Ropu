@@ -22,7 +22,7 @@ namespace Ropu.ClientUI.Views
             var loginButton = new Button(){Text = "Login"};
             loginButton.Command = loginViewModel.Login;
 
-            var signupButton = new Button(){Text = "Signup"};
+            var signupButton = new LinkButton(){Text = "Sign up"};
             signupButton.Command = loginViewModel.Signup;
 
             var errorLabel = new Label(){};

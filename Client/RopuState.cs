@@ -7,6 +7,7 @@ namespace Ropu.Client
         Start,
         Unregistered,
         Registered,
+        NoGroup,
         StartingCall,
         InCallIdle,
         InCallTransmitting,
@@ -29,7 +30,8 @@ namespace Ropu.Client
         CallEnded,
         FloorIdle,
         FloorTaken, //someone else got the floor
-        FloorGranted //we got the floor
+        FloorGranted, //we got the floor
+        GroupSelected
     }
 
     public class RopuState : State<StateId, EventId>
