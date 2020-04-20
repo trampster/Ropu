@@ -20,7 +20,7 @@ namespace RopuForms.ViewModels
         {
             if (_clientSettings.UserId == null)
             {
-                await _navigator.ShowModal<LoginPage>();
+                await _navigator.ShowModal<LoginViewModel>();
             }
         }
     }

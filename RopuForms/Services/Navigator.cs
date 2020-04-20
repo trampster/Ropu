@@ -10,9 +10,9 @@ namespace RopuForms.Services
         readonly Dictionary<Type, Func<Page>> _viewLookup = new Dictionary<Type, Func<Page>>();
         Page _rootPage;
 
-        public void Register<T>(Func<T> baseViewModelFactory) where T : Page
+        public void Register<VM,V>(Func<V> baseViewModelFactory) where V : Page
         {
-            _viewLookup.Add(typeof(T), baseViewModelFactory);
+            _viewLookup.Add(typeof(VM), baseViewModelFactory);
         }
 
         public void AddRootPage(Page page)

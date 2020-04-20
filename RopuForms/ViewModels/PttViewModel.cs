@@ -8,6 +8,7 @@ using RopuForms.Services;
 using Xamarin.Forms;
 using Ropu.Shared;
 using Xamarin.Essentials;
+using Ropu.Gui.Shared.Services;
 
 namespace RopuForms.ViewModels
 {

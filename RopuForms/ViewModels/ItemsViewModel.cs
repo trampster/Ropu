@@ -25,34 +25,36 @@ namespace RopuForms.ViewModels
             {
                 var newItem = item as Item;
                 Items.Add(newItem);
-                await DataStore.AddItemAsync(newItem);
+                //await DataStore.AddItemAsync(newItem);
+                await Task.CompletedTask;
             });
         }
 
         async Task ExecuteLoadItemsCommand()
         {
-            if (IsBusy)
-                return;
+            await Task.CompletedTask;
+            //if (IsBusy)
+            //    return;
 
-            IsBusy = true;
+            //IsBusy = true;
 
-            try
-            {
-                Items.Clear();
-                var items = await DataStore.GetItemsAsync(true);
-                foreach (var item in items)
-                {
-                    Items.Add(item);
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex);
-            }
-            finally
-            {
-                IsBusy = false;
-            }
+            //try
+            //{
+            //    Items.Clear();
+            //    var items = await DataStore.GetItemsAsync(true);
+            //    foreach (var item in items)
+            //    {
+            //        Items.Add(item);
+            //    }
+            //}
+            //catch (Exception ex)
+            //{
+            //    Debug.WriteLine(ex);
+            //}
+            //finally
+            //{
+            //    IsBusy = false;
+            //}
         }
     }
 }
