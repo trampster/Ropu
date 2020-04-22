@@ -30,6 +30,11 @@ namespace RopuForms.Services
             await _rootPage.Navigation.PushModalAsync(view, false);
         }
 
+        public async Task PopModal()
+        {
+            await _rootPage.Navigation.PopModalAsync();
+        }
+
         public async Task Back()
         {
             await _rootPage.Navigation.PopModalAsync();

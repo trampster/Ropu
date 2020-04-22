@@ -11,8 +11,8 @@ namespace RopuForms.Views
         public SignupPage(SignupViewModel signupViewModel)
         {
             _signupViewModel = signupViewModel;
-            BindingContext = _signupViewModel;
             InitializeComponent();
+            BindingContext = _signupViewModel;
         }
     }
 }

@@ -5,6 +5,9 @@ namespace Ropu.Gui.Shared.Services
     public interface INavigator
     {
         Task ShowModal<T>();
+
         Task Back();
+
+        Task PopModal();
     }
 }

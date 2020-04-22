@@ -57,6 +57,11 @@ namespace Ropu.Gui.Shared.ViewModels
             set => SetProperty(ref _failureMessage, value);
         }
 
+        public ICommand Cancel => new AsyncCommand(async () =>
+        {
+            await _navigator.PopModal();
+        });
+
         public ICommand Signup => new AsyncCommand(async () => 
         {
             if(Password != RetypePassword)
@@ -82,7 +87,7 @@ namespace Ropu.Gui.Shared.ViewModels
             };
             if(await _usersClient.Create(newUser))
             {
-                //_navigator.Show<LoginViewModel>();
+                await _navigator.PopModal();
                 return;
             }
             FailureMessage = "Failed to signup";

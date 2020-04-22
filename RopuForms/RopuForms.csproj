@@ -21,6 +21,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <EmbeddedResource Include="..\Icon\back.svg" Link="Images\back.svg" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<ProjectReference Include="../Client/Client.csproj" />
 		<ProjectReference Include="..\Gui.Shared\Ropu.Gui.Shared.csproj" />
 	</ItemGroup>
