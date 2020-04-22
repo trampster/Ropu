@@ -1,14 +1,12 @@
 ﻿using System;
-using System.Threading.Tasks;
+using Ropu.Gui.Shared.Services;
 using Xamarin.Forms;
 
 namespace RopuForms.Services
 {
-    public interface INavigationService
+    public interface INavigationService : INavigator
     {
-        void Register<T>(Func<T> baseViewModelFactory) where T : Page;
+        void Register<VM,V>(Func<V> baseViewModelFactory) where V : Page;
         void AddRootPage(Page page);
-        Task ShowModal<T>();
-        Task Back();
     }
 }

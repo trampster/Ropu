@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Ropu.Client;
+using Ropu.Gui.Shared.Services;
+using Ropu.Gui.Shared.ViewModels;
 using Ropu.Shared.Web;
 using RopuForms.Services;
 using Xamarin.Forms;
@@ -60,6 +62,11 @@ namespace RopuForms.ViewModels
         {
             IsServerAddressEditable = !IsServerAddressEditable;
             await Task.CompletedTask;
+        });
+
+        public ICommand Signup => new AsyncCommand(async () =>
+        {
+            await _navigator.ShowModal<SignupViewModel>();
         });
 
         string _email = "";

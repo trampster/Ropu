@@ -15,6 +15,8 @@ using Ropu.Shared.OpenSsl;
 using Client.NoAudio;
 using Ropu.Client.Opus;
 using Ropu.Shared.LoadBalancing;
+using Ropu.Gui.Shared.ViewModels;
+using Ropu.Gui.Shared.Services;
 
 namespace RopuForms
 {
@@ -32,7 +34,8 @@ namespace RopuForms
             var navigationService = Injection.Resolve<INavigationService>();
             Console.WriteLine("Register LoginPage with navigation service");
 
-            navigationService.Register<LoginPage>(() => Injection.Resolve<LoginPage>());
+            navigationService.Register<LoginViewModel, LoginPage>(() => Injection.Resolve<LoginPage>());
+            navigationService.Register<SignupViewModel, SignupPage>(() => Injection.Resolve<SignupPage>());
 
             var mainPage = Injection.Resolve<MainPage>();
 
@@ -48,11 +51,15 @@ namespace RopuForms
             injection
                 .RegisterSingleton<IClientSettings>(i => new FormsClientSettings())
                 .RegisterSingleton(i => new CredentialsProvider())
+                .RegisterSingleton(i => new UsersClient(i.Get<RopuWebClient>()))
                 .RegisterSingleton(i => new RopuWebClient("https://192.168.1.7:5001/", i.Get<CredentialsProvider>()))
                 .RegisterSingleton<INavigationService>(i => new Navigator())
+                .RegisterSingleton<INavigator>(i => i.Get<INavigationService>())
                 .RegisterSingleton<ICredentialsStore>(i => new CredentialsStore())
                 .RegisterSingleton(i => new LoginViewModel(i.Get<IClientSettings>(), i.Get<INavigationService>(), i.Get<RopuWebClient>(), i.Get<CredentialsProvider>(), i.Get<ImageService>(), i.Get<ICredentialsStore>()))
                 .RegisterSingleton(i => new LoginPage(i.Get<LoginViewModel>()))
+                .RegisterSingleton(i => new SignupViewModel(i.Get<INavigator>(), i.Get<UsersClient>()))
+                .RegisterSingleton(i => new SignupPage(i.Get<SignupViewModel>()))
                 .RegisterSingleton(i => new MainViewModel(i.Get<IClientSettings>(), i.Get<INavigationService>()))
                 .RegisterSingleton(i => new MainPage(i.Get<MainViewModel>()))
                 .RegisterSingleton(i => new ImageClient(i.Get<RopuWebClient>()))
@@ -82,7 +89,7 @@ namespace RopuForms
         protected override async void OnStart()
         {
             //var navigationService = Injection.Get<INavigationService>();
-            //await navigationService.ShowModal<LoginPage>();
+            //await navigationService.ShowModal<LoginViewModel>();
             await Injection.Resolve<MainViewModel>().Initialize();
         }
 

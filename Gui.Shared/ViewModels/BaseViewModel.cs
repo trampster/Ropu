@@ -5,11 +5,11 @@ using System.Runtime.CompilerServices;
 
 //using Xamarin.Forms;
 
-using RopuForms.Models;
-using RopuForms.Services;
+//using RopuForms.Models;
+//using RopuForms.Services;
 using System.Threading.Tasks;
 
-namespace RopuForms.ViewModels
+namespace Ropu.Gui.Shared.ViewModels
 {
     public class BaseViewModel : INotifyPropertyChanged
     {
