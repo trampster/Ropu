@@ -52,7 +52,7 @@ namespace RopuForms.ViewModels
             if (_clientSettings.UserId == null) throw new InvalidOperationException("UserId is not set");
 
             var groups = (await _groupsClient.GetUsersGroups(_clientSettings.UserId.Value));
-            _ropuClient.IdleGroup = groups[0];
+            _ropuClient.IdleGroup = groups.Length == 0 ? null : (ushort?)groups[0];
 
             if (_ropuClient.IdleGroup != null)
             {
@@ -99,6 +99,7 @@ namespace RopuForms.ViewModels
             switch (state)
             {
                 case StateId.Start:
+                case StateId.NoGroup:
                 case StateId.Unregistered:
                     PttColor = Gray;
                     break;
