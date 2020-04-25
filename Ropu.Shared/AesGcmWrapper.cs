@@ -1,15 +1,15 @@
 ﻿using System;
-using System.Security.Cryptography;
+using Crypto = System.Security.Cryptography;
 
 namespace Ropu.Shared
 {
     public class AesGcmWrapper : IAesGcm
     {
-        readonly AesGcm _aesGcm;
+        readonly Crypto.AesGcm _aesGcm;
 
         public AesGcmWrapper(byte[] key)
         {
-            _aesGcm = new AesGcm(key);
+            _aesGcm = new Crypto.AesGcm(key);
         }
 
         public void Decrypt(ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> ciphertext, ReadOnlySpan<byte> tag, Span<byte> plaintext)

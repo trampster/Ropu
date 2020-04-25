@@ -64,7 +64,7 @@ namespace RopuForms
                 .RegisterSingleton(i => new MainPage(i.Get<MainViewModel>()))
                 .RegisterSingleton(i => new ImageClient(i.Get<RopuWebClient>()))
                 .RegisterSingleton<IGroupsClient>(i => new GroupsClient(i.Get<RopuWebClient>(), i.Get<ImageClient>()))
-                .RegisterSingleton<Func<byte[], IAesGcm>>(i => key => new AesGcmOpenSsl(key))
+                .RegisterSingleton<Func<byte[], IAesGcm>>(i => key => new AesGcmOpenSslWrapper(key))
                 .RegisterSingleton<Func<EncryptionKey, CachedEncryptionKey>>(i => encryptionKey => new CachedEncryptionKey(encryptionKey, i.Get<Func<byte[], IAesGcm>>()))
                 .RegisterSingleton(i => new KeysClient(i.Get<RopuWebClient>(), false, i.Get<Func<EncryptionKey, CachedEncryptionKey>>()))
                 .RegisterSingleton(i => new PacketEncryption(i.Get<KeysClient>()))
