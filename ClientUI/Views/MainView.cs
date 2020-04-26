@@ -17,6 +17,10 @@ namespace Ropu.ClientUI.Views
             {
                 Content = view;
             });
+            _navigator.SetCurrentViewGetter(() =>
+            {
+                return Content;
+            });
             Title = "Ropu Client";
             ClientSize = new Size(300, 500);
 

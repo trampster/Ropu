@@ -9,7 +9,7 @@ namespace Ropu.ClientUI
     public class Navigator : INavigator
     {
         readonly Dictionary<Type, Func<Control>> _viewLookup;
-        readonly Queue<Action> _backQueue = new Queue<Action>();
+        readonly Stack<Action> _backStack = new Stack<Action>();
 
         Action<Control> _changeView = control => {};
 
@@ -25,9 +25,13 @@ namespace Ropu.ClientUI
                 throw new Exception($"No view registered for type {typeof(T)}");
             }
             var view = _viewLookup[typeof(T)]();
+            if(_currentViewGetter != null)
+            {
+                var currentView = _currentViewGetter();
+                _backStack.Push(() => _changeView(currentView));
+            }
             _changeView(view);
 
-            _backQueue.Enqueue(() => _changeView(view));
             await Task.CompletedTask;
         }
 
@@ -41,6 +45,11 @@ namespace Ropu.ClientUI
             _changeView = action;
         }
 
+        Func<Control>? _currentViewGetter;
+        public void SetCurrentViewGetter(Func<Control> getCurrentView)
+        {
+            _currentViewGetter = getCurrentView;
+        }
 
         public async Task ShowModal<T>()
         {
@@ -49,7 +58,7 @@ namespace Ropu.ClientUI
 
         public async Task Back()
         {
-            if(_backQueue.TryDequeue(out Action? action))
+            if(_backStack.TryPop(out Action? action))
             {
                 action();
             }

@@ -24,5 +24,7 @@ namespace Ropu.ClientUI.Services
         public Icon Ropu => new Icon(Path.Combine(_imageFolder, "Ropu.ico"));
         public Bitmap Knot => new Bitmap(Path.Combine(_imageFolder, "knot32.png"));
         public Bitmap Rope => new Bitmap(Path.Combine(_imageFolder, "rope32.png"));
+
+        public Bitmap Back => new Bitmap(Path.Combine(_imageFolder, "back-96dpi.png"));
     }
 }
