@@ -23,6 +23,7 @@
   <ItemGroup>
     <ProjectReference Include="../Ropu.Shared/Ropu.Shared.csproj" />
     <ProjectReference Include="../Client/Client.csproj" />
+    <ProjectReference Include="../Gui.Shared/Ropu.Gui.Shared.csproj" />
   </ItemGroup>
 
 </Project>

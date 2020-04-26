@@ -6,6 +6,8 @@ namespace Ropu.Gui.Shared.Services
     {
         Task ShowModal<T>();
 
+        Task Show<T>();
+
         Task Back();
 
         Task PopModal();

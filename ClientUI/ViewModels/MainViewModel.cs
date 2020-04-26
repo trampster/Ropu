@@ -25,8 +25,7 @@ namespace Ropu.ClientUI.ViewModels
         {
             if(_clientSettings.UserId == null)
             {
-                _navigator.Show<LoginView>();
-                await Task.CompletedTask;
+                await _navigator.ShowModal<LoginViewModel>();
             }
         }
     }

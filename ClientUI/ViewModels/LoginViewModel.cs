@@ -4,6 +4,7 @@ using Ropu.Shared.Web;
 using System.Threading.Tasks;
 using Ropu.ClientUI.Views;
 using System;
+using Ropu.Gui.Shared.ViewModels;
 
 namespace Ropu.ClientUI.ViewModels
 {
@@ -58,7 +59,7 @@ namespace Ropu.ClientUI.ViewModels
             {
                 Console.WriteLine("Login Success");
                 
-                _navigator.Show<PttView>();
+                await _navigator.Show<PttViewModel>();
                 return;
             }
             Console.WriteLine("Login Failure");
@@ -67,7 +68,7 @@ namespace Ropu.ClientUI.ViewModels
 
         public ICommand Signup => new AsyncCommand(async () => 
         {
-            _navigator.Show<SignupPage>();
+            await _navigator.ShowModal<SignupViewModel>();
             await Task.CompletedTask;
         });
     }

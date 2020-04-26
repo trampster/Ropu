@@ -10,6 +10,7 @@ using Ropu.Client.PulseAudio;
 using Ropu.Shared.Web;
 using Ropu.ClientUI.Views;
 using Ropu.ClientUI.ViewModels;
+using Ropu.Gui.Shared.ViewModels;
 
 namespace Ropu.ClientUI
 {
@@ -65,12 +66,12 @@ namespace Ropu.ClientUI
 
             var navigator = new Navigator();
             
-            navigator.Register(() => new LoginView(new LoginViewModel(settings, navigator, webClient, credentialsProvider), imageService));
+            navigator.Register<LoginViewModel, LoginView>(() => new LoginView(new LoginViewModel(settings, navigator, webClient, credentialsProvider), imageService));
             
-            navigator.Register(() => new SignupPage(new SignupViewModel(navigator, usersClient)));
+            navigator.Register<SignupViewModel, SignupPage>(() => new SignupPage(new SignupViewModel(navigator, usersClient)));
 
             var pttView = new PttView(new PttViewModel(ropuClient, settings, groupsClient, usersClient, imageClient), pttPage);
-            navigator.Register(() => pttView);
+            navigator.Register<PttViewModel, PttView>(() => pttView);
 
             var mainForm = new MainView(navigator, new MainViewModel(settings, navigator));
             mainForm.Icon = imageService.Ropu;
