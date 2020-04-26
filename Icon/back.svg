@@ -9,13 +9,16 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="256"
-   height="256"
-   viewBox="0 0 67.733331 67.733331"
+   width="5mm"
+   height="5mm"
+   viewBox="0 0 4.9999999 4.9999995"
    version="1.1"
    id="svg8"
    inkscape:version="0.92.3 (2405546, 2018-03-11)"
-   sodipodi:docname="back.svg">
+   sodipodi:docname="back.svg"
+   inkscape:export-filename="/home/daniel/Work/ropu/Icon/back-xxxhdpi.png"
+   inkscape:export-xdpi="640"
+   inkscape:export-ydpi="640">
   <defs
      id="defs2" />
   <sodipodi:namedview
@@ -25,18 +28,18 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.979899"
-     inkscape:cx="61.734786"
-     inkscape:cy="76.520331"
+     inkscape:zoom="15.839192"
+     inkscape:cx="10.399683"
+     inkscape:cy="9.1466152"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
-     units="px"
-     inkscape:window-width="1869"
+     units="mm"
+     inkscape:window-width="935"
      inkscape:window-height="1025"
      inkscape:window-x="51"
      inkscape:window-y="27"
-     inkscape:window-maximized="1" />
+     inkscape:window-maximized="0" />
   <metadata
      id="metadata5">
     <rdf:RDF>
@@ -53,10 +56,10 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(0,-229.26669)">
+     transform="translate(0,-292.00003)">
     <path
-       style="fill:#a0a0a0;fill-rule:evenodd;stroke:none;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;fill-opacity:1"
-       d="M 46.566667,297.00002 12.7,263.13336 l 33.866667,-33.86667 8.466667,8.46667 -25.400001,25.4 25.400001,25.4 z"
+       style="fill:#a0a0a0;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:0.01953125px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 3.366589,297.00411 -2.49999996,-2.5 2.49999996,-2.5 0.625,0.625 -1.875,1.875 1.875,1.875 z"
        id="path817"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="ccccccc" />
