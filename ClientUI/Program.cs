@@ -70,8 +70,8 @@ namespace Ropu.ClientUI
             
             navigator.Register<SignupViewModel, SignupPage>(() => new SignupPage(new SignupViewModel(navigator, usersClient), imageService));
 
-            var pttView = new PttView(new PttViewModel(ropuClient, settings, groupsClient, usersClient, imageClient), pttPage);
-            navigator.Register<PttViewModel, PttView>(() => pttView);
+            var pttView = new PttView(new ViewModels.PttViewModel(ropuClient, settings, groupsClient, usersClient, imageClient), pttPage);
+            navigator.Register<Gui.Shared.ViewModels.PttViewModel, PttView>(() => pttView);
 
             var mainForm = new MainView(navigator, new MainViewModel(settings, navigator));
             mainForm.Icon = imageService.Ropu;

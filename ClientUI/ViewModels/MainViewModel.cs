@@ -7,6 +7,7 @@ using Ropu.Shared.Groups;
 using Ropu.Shared.Web;
 using System.Threading.Tasks;
 using Ropu.ClientUI.Views;
+using Ropu.Gui.Shared.ViewModels;
 
 namespace Ropu.ClientUI.ViewModels
 {

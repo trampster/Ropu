@@ -2,22 +2,21 @@
 using Ropu.Client;
 using Ropu.Shared.Web;
 using System.Threading.Tasks;
-using Ropu.ClientUI.Views;
 using System;
-using Ropu.Gui.Shared.ViewModels;
+using Ropu.Gui.Shared.Services;
 
-namespace Ropu.ClientUI.ViewModels
+namespace Ropu.Gui.Shared.ViewModels
 {
     public class LoginViewModel : BaseViewModel
     {
         readonly IClientSettings _clientSettings;
-        readonly Navigator _navigator;
+        readonly INavigator _navigator;
         readonly RopuWebClient _webClient;
         readonly CredentialsProvider _credentialsProvider;
         
         public LoginViewModel(
             IClientSettings clientSettings, 
-            Navigator navigator, 
+            INavigator navigator, 
             RopuWebClient webClient, 
             CredentialsProvider credentialProvider)
         {
