@@ -66,7 +66,7 @@ namespace Ropu.ClientUI
 
             var navigator = new Navigator();
             
-            navigator.Register<LoginViewModel, LoginView>(() => new LoginView(new LoginViewModel(settings, navigator, webClient, credentialsProvider), imageService));
+            navigator.Register<LoginViewModel, LoginView>(() => new LoginView(new LoginViewModel(settings, navigator, webClient, credentialsProvider, new CredentialsStore()), imageService));
             
             navigator.Register<SignupViewModel, SignupPage>(() => new SignupPage(new SignupViewModel(navigator, usersClient), imageService));
 
