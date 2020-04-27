@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace RopuForms.Services
+namespace Ropu.Gui.Shared.Services
 {
     public interface ICredentialsStore
     {

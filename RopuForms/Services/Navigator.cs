@@ -20,6 +20,11 @@ namespace RopuForms.Services
             _rootPage = page;
         }
 
+        public async Task Show<T>()
+        {
+            await Task.CompletedTask; // todo, lookup to menu page
+        }
+
         public async Task ShowModal<T>()
         {
             if (!_viewLookup.TryGetValue(typeof(T), out var viewFactory))

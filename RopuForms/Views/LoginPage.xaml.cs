@@ -1,4 +1,4 @@
-﻿using RopuForms.ViewModels;
+﻿using Ropu.Gui.Shared.ViewModels;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 

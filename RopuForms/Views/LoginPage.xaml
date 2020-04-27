@@ -8,7 +8,7 @@
     <ContentPage.Content>
         <StackLayout Orientation="Horizontal" Padding="50">
             <StackLayout HorizontalOptions="FillAndExpand" >
-                <Image Source="{Binding RopuIcon}" HeightRequest="200" WidthRequest="200" Margin="0" >
+                <Image Source="Ropu256.png" HeightRequest="200" WidthRequest="200" Margin="0" >
                     <Image.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding ToggleEditServerAddress}" />
                     </Image.GestureRecognizers>

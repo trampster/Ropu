@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Ropu.Gui.Shared.Services;
 using Xamarin.Essentials;
 
 namespace RopuForms.Services

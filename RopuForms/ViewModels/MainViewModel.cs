@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Ropu.Client;
+using Ropu.Gui.Shared.ViewModels;
 using RopuForms.Services;
-using RopuForms.Views;
 
 namespace RopuForms.ViewModels
 {

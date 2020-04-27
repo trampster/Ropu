@@ -56,7 +56,7 @@ namespace RopuForms
                 .RegisterSingleton<INavigationService>(i => new Navigator())
                 .RegisterSingleton<INavigator>(i => i.Get<INavigationService>())
                 .RegisterSingleton<ICredentialsStore>(i => new CredentialsStore())
-                .RegisterSingleton(i => new LoginViewModel(i.Get<IClientSettings>(), i.Get<INavigationService>(), i.Get<RopuWebClient>(), i.Get<CredentialsProvider>(), i.Get<ImageService>(), i.Get<ICredentialsStore>()))
+                .RegisterSingleton(i => new LoginViewModel(i.Get<IClientSettings>(), i.Get<INavigationService>(), i.Get<RopuWebClient>(), i.Get<CredentialsProvider>(), i.Get<ICredentialsStore>()))
                 .RegisterSingleton(i => new LoginPage(i.Get<LoginViewModel>()))
                 .RegisterSingleton(i => new SignupViewModel(i.Get<INavigator>(), i.Get<UsersClient>()))
                 .RegisterSingleton(i => new SignupPage(i.Get<SignupViewModel>()))
@@ -81,7 +81,7 @@ namespace RopuForms
                     i.Get<ProtocolSwitch>(), i.Get<ServingNodeClient>(), i.Get<IMediaClient>(), i.Get<LoadBalancerProtocol>(),
                     i.Get<IClientSettings>(), i.Get<IBeepPlayer>(), i.Get<RopuWebClient>(), i.Get<KeysClient>()))
                 .Register<IUsersClient>(i => new UsersClient(i.Get<RopuWebClient>()))
-                .RegisterSingleton(i => new PttViewModel(i.Get<RopuClient>(), i.Get<IClientSettings>(), i.Get<IGroupsClient>(), i.Get<IUsersClient>(), i.Get<ImageClient>(), i.Get<RopuWebClient>()))
+                .RegisterSingleton(i => new ViewModels.PttViewModel(i.Get<RopuClient>(), i.Get<IClientSettings>(), i.Get<IGroupsClient>(), i.Get<IUsersClient>(), i.Get<ImageClient>(), i.Get<RopuWebClient>()))
                 .RegisterSingleton(i => new ImageService())
                 .Register(i => new PttPage());
         }
