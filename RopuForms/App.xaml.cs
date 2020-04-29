@@ -81,7 +81,18 @@ namespace RopuForms
                     i.Get<ProtocolSwitch>(), i.Get<ServingNodeClient>(), i.Get<IMediaClient>(), i.Get<LoadBalancerProtocol>(),
                     i.Get<IClientSettings>(), i.Get<IBeepPlayer>(), i.Get<RopuWebClient>(), i.Get<KeysClient>()))
                 .Register<IUsersClient>(i => new UsersClient(i.Get<RopuWebClient>()))
-                .RegisterSingleton(i => new ViewModels.PttViewModel(i.Get<RopuClient>(), i.Get<IClientSettings>(), i.Get<IGroupsClient>(), i.Get<IUsersClient>(), i.Get<ImageClient>(), i.Get<RopuWebClient>()))
+                .Register<IPermissionService>(i => new PermissionService())
+                .Register<IColorService<Color>>( i => new ColorService())
+                .RegisterSingleton(i => new PttViewModel<Color>(
+                    i.Get<RopuClient>(), 
+                    i.Get<IClientSettings>(), 
+                    i.Get<IGroupsClient>(), 
+                    i.Get<IUsersClient>(), 
+                    i.Get<ImageClient>(), 
+                    i.Get<IColorService<Color>>(), 
+                    toDo => Device.BeginInvokeOnMainThread(async () => await toDo()), 
+                    i.Get<IPermissionService>(),
+                    i.Get<RopuWebClient>()))
                 .RegisterSingleton(i => new ImageService())
                 .Register(i => new PttPage());
         }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Ropu.Gui.Shared.ViewModels;
 using Xamarin.Forms;
 
 namespace RopuForms.Services
@@ -43,6 +44,11 @@ namespace RopuForms.Services
         public async Task Back()
         {
             await _rootPage.Navigation.PopModalAsync();
+        }
+
+        public async Task ShowPttView()
+        {
+            await Show<PttViewModel<Color>>();
         }
     }
 }

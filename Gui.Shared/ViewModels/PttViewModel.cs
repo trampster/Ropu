@@ -17,6 +17,8 @@ namespace Ropu.Gui.Shared.ViewModels
         readonly IUsersClient _usersClient;
         readonly ImageClient _imageClient;
         readonly IColorService<ColorT> _colorService;
+        readonly IPermissionService _permissionService;
+        readonly RopuWebClient _webClient;
 
         public PttViewModel(
             RopuClient ropuClient, 
@@ -25,13 +27,15 @@ namespace Ropu.Gui.Shared.ViewModels
             IUsersClient usersClient, 
             ImageClient imageClient,
             IColorService<ColorT> colorService,
-            Action<Func<Task>> invoke)
+            Action<Func<Task>> invoke,
+            IPermissionService permissionService,
+            RopuWebClient webClient)
         {
             _ropuClient = ropuClient;
+            _webClient = webClient;
 
             _ropuClient.StateChanged += (sender, args) => 
             {
-                //Application.Instance.Invoke(ChangeState);
                 invoke(ChangeState);
             };
             _groupsClient = groupsClient;
@@ -40,19 +44,22 @@ namespace Ropu.Gui.Shared.ViewModels
 
             _clientSettings = clientSettings;
             _colorService = colorService;
+            _permissionService = permissionService;
 
             Blue = _colorService.FromRgb(0x3193e3);
             Green = _colorService.FromRgb(0x31e393);
             Gray = _colorService.FromRgb(0x999999);
             Red = _colorService.FromRgb(0xFF6961);
 
-            _pttColor = Blue;
+            _pttColor = Gray;
+            _receivingColor = Red;
 
             _state = _ropuClient.State.ToString();
         }
 
         public override async Task Initialize()
         {
+            await _webClient.WaitForLogin();
             _clientSettings.UserId = (await _usersClient.GetCurrentUser())?.Id;
 
             if(_clientSettings.UserId == null) throw new InvalidOperationException("UserId is not set");
@@ -73,6 +80,11 @@ namespace Ropu.Gui.Shared.ViewModels
             {
                 IdleGroup = "None";
                 IdleGroupImage = null;
+            }
+
+            if(!await _permissionService.RequestAudioRecordPermission())
+            {
+                //TODO: might need to go into a lissening only mode
             }
 
             await _ropuClient.Run();
@@ -198,6 +210,13 @@ namespace Ropu.Gui.Shared.ViewModels
         public readonly ColorT Green;
         public readonly ColorT Gray;
         public readonly ColorT Red;
+
+        ColorT _receivingColor;
+        public ColorT ReceivingColor
+        {
+            get => _receivingColor;
+            set => SetProperty(ref _receivingColor, value);
+        }
 
         ColorT _pttColor;
         public ColorT PttColor

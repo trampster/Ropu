@@ -1,4 +1,5 @@
-﻿using RopuForms.ViewModels;
+﻿using Ropu.Gui.Shared.ViewModels;
+using RopuForms.ViewModels;
 using RopuForms.Views.TouchTracking;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
@@ -8,12 +9,12 @@ namespace RopuForms.Views
     [XamlCompilation(XamlCompilationOptions.Compile)]
     public partial class PttPage : ContentPage
     {
-        readonly PttViewModel _pttViewModel;
+        readonly PttViewModel<Color> _pttViewModel;
         public PttPage()
         {
             InitializeComponent();
 
-            BindingContext = _pttViewModel = Inject.Injection.Resolve<PttViewModel>();
+            BindingContext = _pttViewModel = Inject.Injection.Resolve<PttViewModel<Color>>();
         }
 
         protected override async void OnAppearing()
