@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Eto.Drawing;
 using Eto.Forms;
+using Ropu.ClientUI.ViewModels;
 using Ropu.Gui.Shared.Services;
+using Ropu.Gui.Shared.ViewModels;
 
 namespace Ropu.ClientUI
 {
@@ -68,6 +71,11 @@ namespace Ropu.ClientUI
         public async Task PopModal()
         {
             await Back();
+        }
+
+        public async Task ShowPttView()
+        {
+            await Show<PttViewModel<Color>>();
         }
     }
 }

@@ -11,6 +11,10 @@ using Ropu.Shared.Web;
 using Ropu.ClientUI.Views;
 using Ropu.ClientUI.ViewModels;
 using Ropu.Gui.Shared.ViewModels;
+using Eto.Drawing;
+using System;
+using System.Threading.Tasks;
+using Eto.Forms;
 
 namespace Ropu.ClientUI
 {
@@ -70,8 +74,12 @@ namespace Ropu.ClientUI
             
             navigator.Register<SignupViewModel, SignupPage>(() => new SignupPage(new SignupViewModel(navigator, usersClient), imageService));
 
-            var pttView = new PttView(new ViewModels.PttViewModel(ropuClient, settings, groupsClient, usersClient, imageClient), pttPage);
-            navigator.Register<Gui.Shared.ViewModels.PttViewModel, PttView>(() => pttView);
+            var colorService = new ColorService();
+
+            Action<Func<Task>> invoke = toDo => Application.Instance.Invoke(toDo);
+
+            var pttView = new PttView(new PttViewModel<Color>(ropuClient, settings, groupsClient, usersClient, imageClient, colorService, invoke), pttPage);
+            navigator.Register<PttViewModel<Color>, PttView>(() => pttView);
 
             var mainForm = new MainView(navigator, new MainViewModel(settings, navigator));
             mainForm.Icon = imageService.Ropu;

@@ -11,5 +11,7 @@ namespace Ropu.Gui.Shared.Services
         Task Back();
 
         Task PopModal();
+
+        Task ShowPttView();
     }
 }

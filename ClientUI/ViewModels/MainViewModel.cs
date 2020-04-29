@@ -1,12 +1,5 @@
-﻿using System;
-using Eto.Forms;
-using Eto.Drawing;
-using System.Windows.Input;
-using Ropu.Client;
-using Ropu.Shared.Groups;
-using Ropu.Shared.Web;
+﻿using Ropu.Client;
 using System.Threading.Tasks;
-using Ropu.ClientUI.Views;
 using Ropu.Gui.Shared.ViewModels;
 
 namespace Ropu.ClientUI.ViewModels
