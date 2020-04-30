@@ -78,7 +78,9 @@ namespace Ropu.ClientUI
 
             Action<Func<Task>> invoke = toDo => Application.Instance.Invoke(toDo);
 
-            var pttView = new PttView(new PttViewModel<Color>(ropuClient, settings, groupsClient, usersClient, imageClient, colorService, invoke), pttPage);
+            var permissionServices = new PermissionServices();
+
+            var pttView = new PttView(new PttViewModel<Color>(ropuClient, settings, groupsClient, usersClient, imageClient, colorService, invoke, permissionServices, webClient), pttPage);
             navigator.Register<PttViewModel<Color>, PttView>(() => pttView);
 
             var mainForm = new MainView(navigator, new MainViewModel(settings, navigator));
