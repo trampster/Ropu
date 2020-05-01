@@ -18,13 +18,15 @@ namespace RopuForms.Views
     [DesignTimeVisible(false)]
     public partial class ItemsPage : ContentPage
     {
-        ItemsViewModel viewModel;
+        readonly ItemsViewModel _viewModel;
 
-        public ItemsPage()
+        public ItemsPage(ItemsViewModel itemsViewModel)
         {
             InitializeComponent();
 
-            BindingContext = viewModel = new ItemsViewModel();
+            _viewModel = itemsViewModel;
+
+            BindingContext = _viewModel;
         }
 
         async void OnItemSelected(object sender, SelectedItemChangedEventArgs args)
@@ -48,8 +50,8 @@ namespace RopuForms.Views
         {
             base.OnAppearing();
 
-            if (viewModel.Items.Count == 0)
-                viewModel.LoadItemsCommand.Execute(null);
+            if (_viewModel.Items.Count == 0)
+                _viewModel.LoadItemsCommand.Execute(null);
         }
     }
 }

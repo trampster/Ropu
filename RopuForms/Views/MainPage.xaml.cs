@@ -18,23 +18,25 @@ namespace RopuForms.Views
     {
         Dictionary<int, NavigationPage> MenuPages = new Dictionary<int, NavigationPage>();
         readonly MainViewModel _mainViewModel;
+        readonly Func<ItemsPage> _itemsPageFactory;
 
         public MainPage()
         {
             InitializeComponent();
 
             MasterBehavior = MasterBehavior.Popover;
-            MenuPages.Add((int)MenuItemType.Browse, (NavigationPage)Detail);
+            MenuPages.Add((int)MenuItemType.Ptt, (NavigationPage)Detail);
         }
 
-        public MainPage(MainViewModel mainViewModel)
+        public MainPage(MainViewModel mainViewModel, Func<ItemsPage> itemsPageFactory)
         {
             InitializeComponent();
 
             _mainViewModel = mainViewModel;
+            _itemsPageFactory = itemsPageFactory;
 
             MasterBehavior = MasterBehavior.Popover;
-            MenuPages.Add((int)MenuItemType.Browse, (NavigationPage)Detail);
+            MenuPages.Add((int)MenuItemType.Ptt, (NavigationPage)Detail);
         }
 
         public async Task NavigateFromMenu(int id)
@@ -44,7 +46,7 @@ namespace RopuForms.Views
                 switch (id)
                 {
                     case (int)MenuItemType.Browse:
-                        MenuPages.Add(id, new NavigationPage(new ItemsPage()));
+                        MenuPages.Add(id, new NavigationPage(_itemsPageFactory()));
                         break;
                     case (int)MenuItemType.About:
                         MenuPages.Add(id, new NavigationPage(new AboutPage()));

@@ -110,7 +110,7 @@ namespace RopuForms.Views
                 graphics.DrawImage(Image, rect);
             }
 
-            graphics.DrawText(Text, X, ImageHeight + _padding + Y + TextHeight, _textPaint);
+            graphics.DrawText(Text == null ? "" : Text, X, ImageHeight + _padding + Y + TextHeight, _textPaint);
         }
     }
 }

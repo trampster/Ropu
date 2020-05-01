@@ -20,8 +20,8 @@ namespace RopuForms.Views
 
             menuItems = new List<HomeMenuItem>
             {
-                new HomeMenuItem {Id = MenuItemType.Browse, Title="Browse" },
                 new HomeMenuItem {Id = MenuItemType.Ptt, Title="PTT" },
+                new HomeMenuItem {Id = MenuItemType.Browse, Title="Browse" },
                 new HomeMenuItem {Id = MenuItemType.About, Title="About" }
             };
 

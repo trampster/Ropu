@@ -6,8 +6,8 @@ namespace RopuForms.Models
 {
     public enum MenuItemType
     {
-        Browse,
         Ptt,
+        Browse,
         About
     }
     public class HomeMenuItem
