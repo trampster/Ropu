@@ -24,10 +24,17 @@ namespace Ropu.Shared.Groups
             set;
         }
 
+        byte[]? _image;
         public byte[]? Image
         {
-            get;
-            set;
+            get
+            {
+                return _image;
+            }
+            set
+            {
+                _image = value;
+            }
         }
 
         public string ImageHash
