@@ -35,6 +35,12 @@
 		<PackageReference Include="Xamarin.Forms" Version="4.5.0.617" />
 		<PackageReference Include="Xamarin.Essentials" Version="1.5.2" />
 	</ItemGroup>
+	
+	<ItemGroup>
+	  <Compile Update="Views\BrowseGroupsPage.xaml.cs">
+	    <DependentUpon>BrowseGroupsPage.xaml</DependentUpon>
+	  </Compile>
+	</ItemGroup>
 
 	<ItemGroup>
 		<EmbeddedResource Update="Views\LoginPage.xaml">

@@ -2,37 +2,34 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Threading.Tasks;
-
-using Xamarin.Forms;
-
-using RopuForms.Models;
-using RopuForms.Views;
 using Ropu.Shared.Groups;
+using System.Windows.Input;
+using Ropu.Gui.Shared.Services;
 
-namespace RopuForms.ViewModels
+namespace Ropu.Gui.Shared.ViewModels
 {
-    public class ItemsViewModel : BaseViewModel
+    public class BrowseGroupsViewModel : BaseViewModel
     {
         readonly IGroupsClient _groupsClient;
 
         public ObservableCollection<Group> Items { get; set; }
 
-        public Command LoadItemsCommand { get; set; }
+        public ICommand LoadItemsCommand { get; set; }
 
-        public ItemsViewModel(IGroupsClient groupsClient)
+        public BrowseGroupsViewModel(IGroupsClient groupsClient)
         {
             _groupsClient = groupsClient;
             Title = "Browse";
             Items = new ObservableCollection<Group>();
-            LoadItemsCommand = new Command(async () => await ExecuteLoadItemsCommand());
+            LoadItemsCommand = new AsyncCommand(async () => await ExecuteLoadItemsCommand());
 
-            MessagingCenter.Subscribe<NewItemPage, Group>(this, "AddItem", async (obj, item) =>
-            {
-                var newItem = item as Group;
-                Items.Add(newItem);
-                //await DataStore.AddItemAsync(newItem);
-                await Task.CompletedTask;
-            });
+            //MessagingCenter.Subscribe<NewItemPage, Group>(this, "AddItem", async (obj, item) =>
+            //{
+            //    var newItem = item as Group;
+            //    Items.Add(newItem);
+            //    //await DataStore.AddItemAsync(newItem);
+            //    await Task.CompletedTask;
+            //});
         }
 
         async Task ExecuteLoadItemsCommand()

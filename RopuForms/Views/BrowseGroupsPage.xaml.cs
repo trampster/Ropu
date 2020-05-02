@@ -1,26 +1,20 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Xamarin.Forms;
-using Xamarin.Forms.Xaml;
-
+using Ropu.Gui.Shared.ViewModels;
 using RopuForms.Models;
-using RopuForms.Views;
 using RopuForms.ViewModels;
+using Xamarin.Forms;
 
 namespace RopuForms.Views
 {
     // Learn more about making custom code visible in the Xamarin.Forms previewer
     // by visiting https://aka.ms/xamarinforms-previewer
     [DesignTimeVisible(false)]
-    public partial class ItemsPage : ContentPage
+    public partial class BrowseGroupsPage : ContentPage
     {
-        readonly ItemsViewModel _viewModel;
+        readonly BrowseGroupsViewModel _viewModel;
 
-        public ItemsPage(ItemsViewModel itemsViewModel)
+        public BrowseGroupsPage(BrowseGroupsViewModel itemsViewModel)
         {
             InitializeComponent();
 

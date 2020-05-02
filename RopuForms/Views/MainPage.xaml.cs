@@ -18,7 +18,7 @@ namespace RopuForms.Views
     {
         Dictionary<int, NavigationPage> MenuPages = new Dictionary<int, NavigationPage>();
         readonly MainViewModel _mainViewModel;
-        readonly Func<ItemsPage> _itemsPageFactory;
+        readonly Func<BrowseGroupsPage> _itemsPageFactory;
 
         public MainPage()
         {
@@ -28,7 +28,7 @@ namespace RopuForms.Views
             MenuPages.Add((int)MenuItemType.Ptt, (NavigationPage)Detail);
         }
 
-        public MainPage(MainViewModel mainViewModel, Func<ItemsPage> itemsPageFactory)
+        public MainPage(MainViewModel mainViewModel, Func<BrowseGroupsPage> itemsPageFactory)
         {
             InitializeComponent();
 

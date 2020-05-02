@@ -5,9 +5,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:local="clr-namespace:RopuForms.Views"
              mc:Ignorable="d"
-             x:Class="RopuForms.Views.ItemsPage"
-             Title="{Binding Title}"
-             x:Name="BrowseItemsPage">
+             x:Class="RopuForms.Views.BrowseGroupsPage"
+             Title="{Binding Title}">
 
     <ContentPage.Resources>
         <ResourceDictionary>
@@ -29,23 +28,12 @@
                 IsRefreshing="{Binding IsBusy, Mode=OneWay}"
                 CachingStrategy="RecycleElement"
                 ItemSelected="OnItemSelected">
-            <d:ListView.ItemsSource>
-                <x:Array Type="{x:Type x:String}">
-                    <x:String>First Item</x:String>
-                    <x:String>Second Item</x:String>
-                    <x:String>Third Item</x:String>
-                    <x:String>Fourth Item</x:String>
-                    <x:String>Fifth Item</x:String>
-                    <x:String>Sixth Item</x:String>
-                </x:Array>
-            </d:ListView.ItemsSource>
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <ViewCell>
                         <StackLayout Orientation="Horizontal" Padding="10">
                             <Image Source="{Binding Image, Converter={StaticResource byteArrayToImage}}" HeightRequest="64" WidthRequest="64" />
                             <Label Text="{Binding Name}" 
-                                d:Text="{Binding .}"
                                 LineBreakMode="NoWrap" 
                                 Style="{DynamicResource ListItemTextStyle}" 
                                 FontSize="24"
