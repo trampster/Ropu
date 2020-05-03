@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Eto.Drawing;
 using Eto.Forms;
@@ -37,6 +38,8 @@ namespace Ropu.ClientUI.Views
             return layout;
         }
 
+        readonly List<Panel> _menuItems = new List<Panel>();
+
         Panel CreateMenuItem(string text)
         {
             var label = new Label(){Text = text};
@@ -47,9 +50,13 @@ namespace Ropu.ClientUI.Views
 
             Action changeColor = () =>
             {
+                if(panel.BackgroundColor == _colorService.Blue)
+                {
+                    return;
+                }
                 if(labelSelected || panelSelected)
                 {
-                    panel.BackgroundColor = _colorService.Blue;
+                    panel.BackgroundColor = Color.FromRgb(0x233236);
                     return;
                 }
                 panel.BackgroundColor = this.BackgroundColor;
@@ -75,9 +82,23 @@ namespace Ropu.ClientUI.Views
                 labelSelected = false;
                 changeColor();
             };
+            Action clicked = () => 
+            {
+                foreach(var menuItem in _menuItems)
+                {
+                    menuItem.BackgroundColor = _menuLayout.BackgroundColor;
+                }
+                panel.BackgroundColor = _colorService.Blue;
+            };
+            panel.MouseUp += (sender, args) => clicked();
+            label.MouseUp += (sender, args) => clicked();
             int topPadding = _menuLayout.Children.Any() ? 5 : 10;
             panel.Padding = new Padding(10,topPadding,10,5);
-
+            if(_menuItems.Count == 0)
+            {
+                panel.BackgroundColor = _colorService.Blue;
+            }
+            _menuItems.Add(panel);
             return panel;
         }
 

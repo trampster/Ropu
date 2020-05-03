@@ -22,7 +22,7 @@ namespace Ropu.ClientUI.Views
                 return Content;
             });
             Title = "Ropu Client";
-            ClientSize = new Size(300, 500);
+            ClientSize = new Size(400, 500);
 
 
             Shown += async (sender, args) => await mainViewModel.Initialize();
