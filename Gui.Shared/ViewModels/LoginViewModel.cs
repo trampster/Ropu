@@ -92,7 +92,6 @@ namespace Ropu.Gui.Shared.ViewModels
                 if (await _webClient.Login())
                 {
                     await _navigator.Back();
-                    await _navigator.ShowPttView();
                 
                     await _credentialsStore.Save(Email, Password);
 

@@ -13,16 +13,17 @@ namespace Ropu.ClientUI.Views
         {
             _navigator = navigator;
             _mainViewModel = mainViewModel;
-            _navigator.SetViewChangeHandler(view => 
+            _navigator.SetModalViewChangeHandler(view => 
             {
                 Content = view;
             });
-            _navigator.SetCurrentViewGetter(() =>
+            _navigator.SetModalCurrentViewGetter(() =>
             {
                 return Content;
             });
             Title = "Ropu Client";
             ClientSize = new Size(300, 500);
+
 
             Shown += async (sender, args) => await mainViewModel.Initialize();
         }

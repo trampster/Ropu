@@ -14,7 +14,8 @@ namespace Ropu.ClientUI
         readonly Dictionary<Type, Func<Control>> _viewLookup;
         readonly Stack<Action> _backStack = new Stack<Action>();
 
-        Action<Control> _changeView = control => {};
+        Action<Control> _changeSubView = control => {};
+        Action<Control> _changeModalView = control => {};
 
         public Navigator()
         {
@@ -28,12 +29,7 @@ namespace Ropu.ClientUI
                 throw new Exception($"No view registered for type {typeof(T)}");
             }
             var view = _viewLookup[typeof(T)]();
-            if(_currentViewGetter != null)
-            {
-                var currentView = _currentViewGetter();
-                _backStack.Push(() => _changeView(currentView));
-            }
-            _changeView(view);
+            _changeSubView(view);
 
             await Task.CompletedTask;
         }
@@ -43,20 +39,32 @@ namespace Ropu.ClientUI
             _viewLookup.Add(typeof(ViewModel), baseViewModelFactory);
         }
 
-        public void SetViewChangeHandler(Action<Control> action)
+        public void SetModalViewChangeHandler(Action<Control> action)
         {
-            _changeView = action;
+            _changeModalView = action;
         }
 
-        Func<Control>? _currentViewGetter;
-        public void SetCurrentViewGetter(Func<Control> getCurrentView)
+        Func<Control>? _currentModalViewGetter;
+        public void SetModalCurrentViewGetter(Func<Control> getCurrentView)
         {
-            _currentViewGetter = getCurrentView;
+            _currentModalViewGetter = getCurrentView;
         }
 
         public async Task ShowModal<T>()
         {
-            await Show<T>();
+            if(!_viewLookup.TryGetValue(typeof(T), out var viewFactory))
+            {
+                throw new Exception($"No view registered for type {typeof(T)}");
+            }
+            var view = _viewLookup[typeof(T)]();
+            if(_currentModalViewGetter != null)
+            {
+                var currentView = _currentModalViewGetter();
+                _backStack.Push(() => _changeModalView(currentView));
+            }
+            _changeModalView(view);
+
+            await Task.CompletedTask;
         }
 
         public async Task Back()
@@ -71,6 +79,11 @@ namespace Ropu.ClientUI
         public async Task PopModal()
         {
             await Back();
+        }
+
+        public void SetSubViewChangeHandler(Action<Control> action)
+        {
+            _changeSubView = action;
         }
 
         public async Task ShowPttView()

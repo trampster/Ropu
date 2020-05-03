@@ -83,8 +83,15 @@ namespace Ropu.ClientUI
             var pttView = new PttView(new PttViewModel<Color>(ropuClient, settings, groupsClient, usersClient, imageClient, colorService, invoke, permissionServices, webClient), pttPage);
             navigator.Register<PttViewModel<Color>, PttView>(() => pttView);
 
+            var homeView = new HomeView(new HomeViewModel(navigator), navigator, colorService);
+
+            navigator.Register<HomeViewModel, HomeView>(() => homeView);
+
             var mainForm = new MainView(navigator, new MainViewModel(settings, navigator));
             mainForm.Icon = imageService.Ropu;
+
+            var ignore = navigator.ShowModal<HomeViewModel>();
+            ignore = navigator.ShowPttView();
             application.Run(mainForm);
         }
     }
