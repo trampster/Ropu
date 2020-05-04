@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows.Input;
 using Eto.Drawing;
 using Eto.Forms;
 using Ropu.ClientUI.Services;
@@ -40,7 +41,7 @@ namespace Ropu.ClientUI.Views
 
         readonly List<Panel> _menuItems = new List<Panel>();
 
-        Panel CreateMenuItem(string text)
+        Panel CreateMenuItem(string text, ICommand command)
         {
             var label = new Label(){Text = text};
             var panel = new Panel(){Content = label};
@@ -89,6 +90,10 @@ namespace Ropu.ClientUI.Views
                     menuItem.BackgroundColor = _menuLayout.BackgroundColor;
                 }
                 panel.BackgroundColor = _colorService.Blue;
+                if(command.CanExecute(null))
+                {
+                    command.Execute(null);
+                }
             };
             panel.MouseUp += (sender, args) => clicked();
             label.MouseUp += (sender, args) => clicked();
@@ -107,9 +112,9 @@ namespace Ropu.ClientUI.Views
         Control CreateMenu()
         {
             _menuLayout.BeginVertical();
-            _menuLayout.Add(CreateMenuItem("Push To Talk"));
-            _menuLayout.Add(CreateMenuItem("Browse Groups"));
-            _menuLayout.Add(CreateMenuItem("About"));
+            _menuLayout.Add(CreateMenuItem("Push To Talk", _homeViewModel.ShowPttView));
+            _menuLayout.Add(CreateMenuItem("Browse Groups", _homeViewModel.ShowBrowseGroupsView));
+            _menuLayout.Add(CreateMenuItem("About", _homeViewModel.ShowAboutView));
             _menuLayout.AddSpace();
             _menuLayout.EndVertical();
             _menuLayout.BackgroundColor = Color.FromRgb(0x1C282B);
