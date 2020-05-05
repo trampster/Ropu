@@ -18,8 +18,6 @@ namespace Ropu.ClientUI.Views
 
             var items = browseGroupsViewModel.Items;
             items.CollectionChanged += (sender, args) => OnGroupsChanged(args);
-
-            Content = _groupsLayout;
         }
 
         protected override void OnShown(System.EventArgs e)
@@ -32,6 +30,8 @@ namespace Ropu.ClientUI.Views
 
         void OnGroupsChanged(NotifyCollectionChangedEventArgs args)
         {
+            this.SuspendLayout();
+            Content = null;
             if(args.Action == NotifyCollectionChangedAction.Reset)
             {
                 _groupsLayout.Items.Clear();
@@ -44,7 +44,8 @@ namespace Ropu.ClientUI.Views
                     {
                         continue;
                     }
-                    _groupsLayout.Items.Insert(args.NewStartingIndex, CreateGroupView(group));
+                    _groupsLayout.Items.Insert(args.NewStartingIndex, 
+                        new StackLayoutItem(CreateGroupView(group), HorizontalAlignment.Stretch));
                 }
             }
             if(args.Action == NotifyCollectionChangedAction.Remove)
@@ -59,6 +60,12 @@ namespace Ropu.ClientUI.Views
             {
                 throw new NotImplementedException();
             }
+
+            if(Content == null && _groupsLayout.Items.Count > 0)
+            {
+                Content = _groupsLayout;
+            }
+            this.ResumeLayout();
         }
 
         Control CreateGroupView(Group group)
@@ -68,12 +75,25 @@ namespace Ropu.ClientUI.Views
             {
                 image.Image = new Bitmap(group.Image);
             }
+            var label = new Label(){Text = group.Name};
+            label.VerticalAlignment = VerticalAlignment.Center;
+
             var layout = new DynamicLayout();
             layout.BeginHorizontal();
             layout.Add(image);
-            layout.Add(new Label(){Text = group.Name});
+            layout.Add(new Panel(){Width=5});
+            layout.Add(label);
             layout.EndHorizontal();
-            return layout;
+            layout.Padding = 10;
+
+            var stackLayout = new StackLayout();
+            stackLayout.Orientation = Orientation.Vertical;
+            stackLayout.Items.Add(layout);
+            stackLayout.Items.Add(
+                new StackLayoutItem(
+                    new Panel(){BackgroundColor=Color.FromRgb(0xC0C0C0), Height=1},
+                    HorizontalAlignment.Stretch));
+            return stackLayout;
         }
 
     }
