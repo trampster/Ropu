@@ -81,6 +81,8 @@ namespace Ropu.ClientUI.Views
                 new StackLayoutItem(
                     new Panel(){BackgroundColor=Color.FromRgb(0xC0C0C0), Height=1},
                     HorizontalAlignment.Stretch));
+            stackLayout.MouseEnter += (sender, args) => stackLayout.BackgroundColor = Color.FromRgb(0xE0E0E0);
+            stackLayout.MouseLeave += (sender, args) => stackLayout.BackgroundColor = this.BackgroundColor;
             return stackLayout;
         }
     }
