@@ -10,14 +10,15 @@ namespace Ropu.ClientUI.Views
     public class BrowseGroupsView : Panel
     {
         readonly BrowseGroupsViewModel _browseGroupsViewModel;
-        readonly StackLayout _groupsLayout = new StackLayout();
+        readonly ListView<Group> _listView;
 
         public BrowseGroupsView(BrowseGroupsViewModel browseGroupsViewModel)
         {
             _browseGroupsViewModel = browseGroupsViewModel;
-
-            var items = browseGroupsViewModel.Items;
-            items.CollectionChanged += (sender, args) => OnGroupsChanged(args);
+            _listView = new ListView<Group>();
+            _listView.Collection = browseGroupsViewModel.Items;
+            _listView.CreateItem = CreateGroupView;
+            Content = _listView;
         }
 
         protected override void OnShown(System.EventArgs e)
@@ -26,46 +27,6 @@ namespace Ropu.ClientUI.Views
             {
                 _browseGroupsViewModel.LoadItemsCommand.Execute(null);
             }
-        }
-
-        void OnGroupsChanged(NotifyCollectionChangedEventArgs args)
-        {
-            this.SuspendLayout();
-            Content = null;
-            if(args.Action == NotifyCollectionChangedAction.Reset)
-            {
-                _groupsLayout.Items.Clear();
-            }
-            if(args.Action == NotifyCollectionChangedAction.Add)
-            {
-                foreach(Group? group in args.NewItems)
-                {
-                    if(group == null)
-                    {
-                        continue;
-                    }
-                    _groupsLayout.Items.Insert(args.NewStartingIndex, 
-                        new StackLayoutItem(CreateGroupView(group), HorizontalAlignment.Stretch));
-                }
-            }
-            if(args.Action == NotifyCollectionChangedAction.Remove)
-            {
-                throw new NotImplementedException();
-            }
-            if(args.Action == NotifyCollectionChangedAction.Replace)
-            {
-                throw new NotImplementedException();
-            }
-            if(args.Action == NotifyCollectionChangedAction.Move)
-            {
-                throw new NotImplementedException();
-            }
-
-            if(Content == null && _groupsLayout.Items.Count > 0)
-            {
-                Content = _groupsLayout;
-            }
-            this.ResumeLayout();
         }
 
         Control CreateGroupView(Group group)
@@ -86,14 +47,7 @@ namespace Ropu.ClientUI.Views
             layout.EndHorizontal();
             layout.Padding = 10;
 
-            var stackLayout = new StackLayout();
-            stackLayout.Orientation = Orientation.Vertical;
-            stackLayout.Items.Add(layout);
-            stackLayout.Items.Add(
-                new StackLayoutItem(
-                    new Panel(){BackgroundColor=Color.FromRgb(0xC0C0C0), Height=1},
-                    HorizontalAlignment.Stretch));
-            return stackLayout;
+            return layout;
         }
 
     }
