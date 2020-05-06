@@ -18,6 +18,7 @@ namespace Ropu.ClientUI.Views
             _listView = new ListView<Group>();
             _listView.Collection = browseGroupsViewModel.Items;
             _listView.CreateItem = CreateGroupView;
+            _listView.ItemSelectedCommand = browseGroupsViewModel.ItemSelectedCommand;
             Content = _listView;
         }
 

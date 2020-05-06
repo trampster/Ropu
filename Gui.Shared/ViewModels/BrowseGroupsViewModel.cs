@@ -11,14 +11,16 @@ namespace Ropu.Gui.Shared.ViewModels
     public class BrowseGroupsViewModel : BaseViewModel
     {
         readonly IGroupsClient _groupsClient;
+        readonly INavigator _navigator;
 
         public ObservableCollection<Group> Items { get; set; }
 
         public ICommand LoadItemsCommand { get; set; }
 
-        public BrowseGroupsViewModel(IGroupsClient groupsClient)
+        public BrowseGroupsViewModel(IGroupsClient groupsClient, INavigator navigator)
         {
             _groupsClient = groupsClient;
+            _navigator = navigator;
             Title = "Browse";
             Items = new ObservableCollection<Group>();
             LoadItemsCommand = new AsyncCommand(async () => await ExecuteLoadItemsCommand());
@@ -31,6 +33,8 @@ namespace Ropu.Gui.Shared.ViewModels
             //    await Task.CompletedTask;
             //});
         }
+
+        public ICommand ItemSelectedCommand => new AsyncCommand<Group>(async group => await _navigator.ShowModal<BrowseGroupViewModel>());
 
         async Task ExecuteLoadItemsCommand()
         {

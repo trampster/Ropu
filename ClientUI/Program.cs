@@ -87,8 +87,11 @@ namespace Ropu.ClientUI
 
             navigator.Register<HomeViewModel, HomeView>(() => homeView);
 
-            var browseGroupsView = new BrowseGroupsView(new BrowseGroupsViewModel(groupsClient));
+            var browseGroupsView = new BrowseGroupsView(new BrowseGroupsViewModel(groupsClient, navigator));
             navigator.Register<BrowseGroupsViewModel, BrowseGroupsView>(() => browseGroupsView);
+
+            var browseGroupView = new BrowseGroupView(new BrowseGroupViewModel());
+            navigator.Register<BrowseGroupViewModel, BrowseGroupView>(() => browseGroupView);
 
             var mainForm = new MainView(navigator, new MainViewModel(settings, navigator));
             mainForm.Icon = imageService.Ropu;

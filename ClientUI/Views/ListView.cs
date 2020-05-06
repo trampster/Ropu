@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Windows.Input;
 using Eto.Drawing;
 using Eto.Forms;
 
@@ -66,6 +67,12 @@ namespace Ropu.ClientUI.Views
 
         public Func<T, Control>? CreateItem;
 
+        public ICommand? ItemSelectedCommand
+        {
+            set;
+            private get;
+        }
+
         Control CreateGroupView(T group)
         {
             if(CreateItem == null)
@@ -83,6 +90,15 @@ namespace Ropu.ClientUI.Views
                     HorizontalAlignment.Stretch));
             stackLayout.MouseEnter += (sender, args) => stackLayout.BackgroundColor = Color.FromRgb(0xE0E0E0);
             stackLayout.MouseLeave += (sender, args) => stackLayout.BackgroundColor = this.BackgroundColor;
+            stackLayout.MouseUp += (sender, args) => 
+            {
+                args.Handled = true;
+                if(ItemSelectedCommand != null)
+                {
+                    ItemSelectedCommand.CanExecute(group);
+                    ItemSelectedCommand.Execute(group);
+                }
+            };
             return stackLayout;
         }
     }
