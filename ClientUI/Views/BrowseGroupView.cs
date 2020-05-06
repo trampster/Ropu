@@ -2,18 +2,22 @@
 using System.Collections.Specialized;
 using Eto.Drawing;
 using Eto.Forms;
+using Ropu.ClientUI.Services;
+using Ropu.Gui.Shared.Services;
 using Ropu.Gui.Shared.ViewModels;
-using Ropu.Shared.Groups;
 
 namespace Ropu.ClientUI.Views
 {
-    public class BrowseGroupView : Panel
+    public class BrowseGroupView : ModalPage
     {
         readonly BrowseGroupViewModel _browseGroupViewModel;
 
-        public BrowseGroupView(BrowseGroupViewModel browseGroupViewModel)
+        public BrowseGroupView(BrowseGroupViewModel browseGroupViewModel, ImageService imageService, INavigator navigator)
+            : base(imageService, navigator, "Back")
         {
             _browseGroupViewModel = browseGroupViewModel;
+
+            ModalContent = new Label(){Text = "Browse Group View"};
         }
     }
 }
