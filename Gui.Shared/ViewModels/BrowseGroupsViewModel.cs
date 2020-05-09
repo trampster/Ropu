@@ -34,7 +34,7 @@ namespace Ropu.Gui.Shared.ViewModels
             //});
         }
 
-        public ICommand ItemSelectedCommand => new AsyncCommand<Group>(async group => await _navigator.ShowModal<BrowseGroupViewModel>());
+        public ICommand ItemSelectedCommand => new AsyncCommand<Group>(async group => await _navigator.ShowModal<BrowseGroupViewModel, Group>(group));
 
         async Task ExecuteLoadItemsCommand()
         {

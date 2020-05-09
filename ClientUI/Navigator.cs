@@ -11,7 +11,7 @@ namespace Ropu.ClientUI
 {
     public class Navigator : INavigator
     {
-        readonly Dictionary<Type, Func<Control>> _viewLookup;
+        readonly Dictionary<Type, Func<object?, Control>> _viewLookup;
         readonly Stack<Action> _backStack = new Stack<Action>();
 
         Action<Control> _changeSubView = control => {};
@@ -19,7 +19,7 @@ namespace Ropu.ClientUI
 
         public Navigator()
         {
-            _viewLookup = new Dictionary<Type, Func<Control>>();
+            _viewLookup = new Dictionary<Type, Func<object?, Control>>();
         }
 
         public async Task Show<T>()
@@ -28,7 +28,8 @@ namespace Ropu.ClientUI
             {
                 throw new Exception($"No view registered for type {typeof(T)}");
             }
-            var view = _viewLookup[typeof(T)]();
+            var factory = _viewLookup[typeof(T)];
+            Control view = factory(null);
             _changeSubView(view);
 
             await Task.CompletedTask;
@@ -36,7 +37,16 @@ namespace Ropu.ClientUI
 
         public void Register<ViewModel, View>(Func<View> baseViewModelFactory) where View : Control
         {
-            _viewLookup.Add(typeof(ViewModel), baseViewModelFactory);
+            _viewLookup.Add(typeof(ViewModel), arg => baseViewModelFactory());
+        }
+
+        public void Register<ViewModel, View, TArg>(Func<TArg, View> baseViewModelFactory) where View : Control
+        {
+            _viewLookup.Add(typeof(ViewModel), arg => 
+            {
+                if(arg == null) throw new NullReferenceException();
+                return baseViewModelFactory((TArg)arg);
+            });
         }
 
         public void SetModalViewChangeHandler(Action<Control> action)
@@ -50,13 +60,13 @@ namespace Ropu.ClientUI
             _currentModalViewGetter = getCurrentView;
         }
 
-        public async Task ShowModal<T>()
+        public async Task ShowModal<ViewModelT, ParamT>(ParamT? param) where ParamT : class
         {
-            if(!_viewLookup.TryGetValue(typeof(T), out var viewFactory))
+            if(!_viewLookup.TryGetValue(typeof(ViewModelT), out var viewFactory))
             {
-                throw new Exception($"No view registered for type {typeof(T)}");
+                throw new Exception($"No view registered for type {typeof(ViewModelT)}");
             }
-            var view = _viewLookup[typeof(T)]();
+            var view = _viewLookup[typeof(ViewModelT)](param);
             if(_currentModalViewGetter != null)
             {
                 var currentView = _currentModalViewGetter();
@@ -65,6 +75,11 @@ namespace Ropu.ClientUI
             _changeModalView(view);
 
             await Task.CompletedTask;
+        }
+
+        public async Task ShowModal<T>()
+        {
+            await ShowModal<T,object>(null);
         }
 
         public async Task Back()

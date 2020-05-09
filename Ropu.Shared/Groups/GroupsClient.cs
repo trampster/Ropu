@@ -71,5 +71,28 @@ namespace Ropu.Shared.Groups
 
             return await response.GetJson();
         }
+
+        ushort[]? _myGroups;
+        DateTime _myGroupsTime = DateTime.UnixEpoch;
+        
+
+        public async Task<ushort[]> GetMyGroups(uint myUserId)
+        {
+            if(_myGroups != null && _myGroupsTime.AddSeconds(30) > DateTime.UtcNow)
+            {
+                return _myGroups;
+            }
+
+            var response = await _client.Get<ushort[]>($"api/Users/{myUserId}/GroupIds");
+            if(response.StatusCode != HttpStatusCode.OK)
+            {
+                Console.Error.WriteLine("Failed to get Users Groups from Web");
+                return new ushort[0];
+            }
+
+            _myGroups = await response.GetJson();
+            _myGroupsTime = DateTime.UtcNow;
+            return _myGroups;
+        }
     }
 }

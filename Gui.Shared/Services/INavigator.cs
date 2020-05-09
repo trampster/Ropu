@@ -6,6 +6,8 @@ namespace Ropu.Gui.Shared.Services
     {
         Task ShowModal<T>();
 
+        Task ShowModal<ViewModelT, ParamT>(ParamT? param) where ParamT : class;
+
         Task Show<T>();
 
         Task Back();

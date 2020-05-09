@@ -17,7 +17,36 @@ namespace Ropu.ClientUI.Views
         {
             _browseGroupViewModel = browseGroupViewModel;
 
-            ModalContent = new Label(){Text = "Browse Group View"};
+            DataContext = _browseGroupViewModel;
+            var label = new Label(){Text = "Browse Group View"};
+
+            var image = new ImageView(){Image = new Bitmap(_browseGroupViewModel.GroupImage)};
+            if(image.Size.Width > 64)
+            {
+                image.Size = new Size(64,64);
+            }
+
+            var joinButton = new Button(){Text = "Join"};
+            joinButton.BindDataContext(c => c.Visible, (BrowseGroupViewModel m) => m.CanJoin);
+
+            var leaveButton = new Button(){Text = "Leave"};
+            leaveButton.BindDataContext(c => c.Visible, (BrowseGroupViewModel m) => m.CanLeave);
+
+            var layout = new DynamicLayout();
+            layout.BeginVertical();
+            layout.Add(image);
+            layout.Add(new Label(){Text = _browseGroupViewModel.Name, TextAlignment = TextAlignment.Center, Font = new Font(FontFamilies.Sans, 24)});
+            layout.Add(joinButton);
+            layout.Add(leaveButton);
+            layout.AddSpace();
+
+            ModalContent = layout;
+        }
+
+        protected override async void OnShown(EventArgs e)
+        {
+            base.OnShown(e);
+            await _browseGroupViewModel.Initialize();
         }
     }
 }
