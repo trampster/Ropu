@@ -49,6 +49,18 @@ namespace Ropu.Shared.Web
             }
         }
 
+        public string FailureReason
+        {
+            get
+            {
+                if(Exception != null)
+                {
+                    return Exception.ToString();
+                }
+                return _response == null ? "" : _response.ReasonPhrase;
+            }
+        }
+
         public HttpRequestException? Exception => _exception;
     }
 

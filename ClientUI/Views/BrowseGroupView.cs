@@ -12,7 +12,7 @@ namespace Ropu.ClientUI.Views
     {
         readonly BrowseGroupViewModel _browseGroupViewModel;
 
-        public BrowseGroupView(BrowseGroupViewModel browseGroupViewModel, ImageService imageService, INavigator navigator)
+        public BrowseGroupView(BrowseGroupViewModel browseGroupViewModel, ImageService imageService, INavigator navigator, ColorService colorService)
             : base(imageService, navigator, "Back")
         {
             _browseGroupViewModel = browseGroupViewModel;
@@ -28,16 +28,18 @@ namespace Ropu.ClientUI.Views
 
             var joinButton = new Button(){Text = "Join"};
             joinButton.BindDataContext(c => c.Visible, (BrowseGroupViewModel m) => m.CanJoin);
+            joinButton.Command = _browseGroupViewModel.Join;
 
             var leaveButton = new Button(){Text = "Leave"};
             leaveButton.BindDataContext(c => c.Visible, (BrowseGroupViewModel m) => m.CanLeave);
+            leaveButton.Command = _browseGroupViewModel.Leave;
 
             var layout = new DynamicLayout();
             layout.BeginVertical();
             layout.Add(image);
             layout.Add(new Label(){Text = _browseGroupViewModel.Name, TextAlignment = TextAlignment.Center, Font = new Font(FontFamilies.Sans, 24)});
-            layout.Add(joinButton);
-            layout.Add(leaveButton);
+            layout.AddCentered(joinButton);
+            layout.AddCentered(leaveButton);
             layout.AddSpace();
 
             ModalContent = layout;

@@ -89,6 +89,19 @@ namespace Ropu.Shared.Web
             }
         }
 
+        public async ValueTask<Response> Delete(string uri)
+        {
+            try
+            {
+                var response =  await Do(() => _httpClient.DeleteAsync(uri));
+                return new Response(response);
+            }
+            catch(HttpRequestException exception)
+            {
+                return new Response(exception);
+            }
+        }
+
         public async ValueTask<Response<R>> Post<T, R>(string uri, T payload)
         {
             var json = JsonConvert.SerializeObject(payload);

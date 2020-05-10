@@ -94,5 +94,27 @@ namespace Ropu.Shared.Groups
             _myGroupsTime = DateTime.UtcNow;
             return _myGroups;
         }
+
+        public async Task<bool> Join(ushort groupId, uint userId)
+        {
+            var response = await _client.Post<string>($"api/Groups/{groupId}/Join/{userId}", ""); 
+            if(!response.IsSuccessful)
+            {
+                Console.Error.WriteLine($"Failed to join group {groupId} with reason {response.FailureReason}");
+                return false;
+            }
+            return true;      
+        }
+
+        public async Task<bool> Leave(ushort groupId, uint userId)
+        {
+            var response = await _client.Delete($"api/Groups/{groupId}/Leave/{userId}"); 
+            if(!response.IsSuccessful)
+            {
+                Console.Error.WriteLine($"Failed to leave group {groupId} with reason {response.FailureReason}");
+                return false;
+            }
+            return true;      
+        }
     }
 }

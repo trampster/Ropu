@@ -1,7 +1,9 @@
 using Ropu.Client;
+using Ropu.Gui.Shared.Services;
 using Ropu.Shared.Groups;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows.Input;
 
 namespace Ropu.Gui.Shared.ViewModels
 {
@@ -51,5 +53,27 @@ namespace Ropu.Gui.Shared.ViewModels
             get => _canLeave;
             set => SetProperty(ref _canLeave, value);
         }
+
+        public ICommand Join => new AsyncCommand(async () =>
+        {
+            if(_clientSettings.UserId == null) return;
+            var result = await _groupsClient.Join(_group.Id, _clientSettings.UserId.Value);
+            if(result)
+            {
+                CanLeave = true;
+                CanJoin = false;
+            }
+        });
+
+        public ICommand Leave => new AsyncCommand(async () =>
+        {
+            if(_clientSettings.UserId == null) return;
+            var result = await _groupsClient.Leave(_group.Id, _clientSettings.UserId.Value);
+            if(result)
+            {
+                CanLeave = false;
+                CanJoin = true;
+            }
+        });
     }
 }
