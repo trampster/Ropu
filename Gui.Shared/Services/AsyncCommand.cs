@@ -33,7 +33,7 @@ namespace Ropu.Gui.Shared.Services
             _func = func;
         }
 
-        public event EventHandler CanExecuteChanged;
+        public event EventHandler? CanExecuteChanged;
 
         public bool CanExecute(object parameter)
         {
