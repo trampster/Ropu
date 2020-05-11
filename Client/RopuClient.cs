@@ -139,7 +139,12 @@ namespace Ropu.Client
             _noGroup.AddTransition(EventId.PttUp, () => _noGroup);
             _noGroup.AddTransition(EventId.PttDown, () => _noGroup);
             _noGroup.AddTransition(EventId.GroupSelected, () => _registered);
-            _unregistered.AddTransition(EventId.HeartbeatFailed, () => _unregistered);
+            _noGroup.AddTransition(EventId.RegistrationResponseReceived, () => _noGroup);
+            _noGroup.AddTransition(EventId.CallRequest, () => _noGroup);
+            _noGroup.AddTransition(EventId.CallStartFailed, () => _noGroup);
+
+
+            _stateManager.AddState(_noGroup);
 
             //deregistering
             _deregistering = new RopuState(StateId.Deregistering)
@@ -287,6 +292,7 @@ namespace Ropu.Client
             _stateManager.AddTransitionToAll(EventId.FloorTaken, () => _inCallReceiveing, IsRegistered);
             _stateManager.AddTransitionToAll(EventId.FloorGranted, () => _inCallTransmitting, stateId => stateId != StateId.InCallReleasingFloor);
             _stateManager.AddTransitionToAll(EventId.DeregistrationResponseReceived, () => _unregistered, stateId => true);
+            _stateManager.AddTransitionToAll(EventId.GroupDeselected, () => _noGroup, stateId => true);
 
             _stateManager.CheckEventsAreHandledByAll((EventId[])Enum.GetValues(typeof(EventId)));
         }
@@ -517,7 +523,18 @@ namespace Ropu.Client
         public ushort? IdleGroup
         {
             get => _idleGroup;
-            set => _idleGroup = value;
+            set
+            {
+                _idleGroup = value;
+                if(value != null)
+                {
+                    _stateManager.HandleEvent(EventId.GroupSelected);
+                }
+                if(value == null)
+                {
+                    _stateManager.HandleEvent(EventId.GroupDeselected);
+                }
+            }
         }
 
         bool IsPttDown

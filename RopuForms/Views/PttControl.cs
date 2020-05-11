@@ -119,7 +119,7 @@ namespace RopuForms.Views
             }
         }
 
-        public static readonly BindableProperty IdleGroupImageProperty = Bindings.Create<PttControl, byte[]?>("TalkerImage", (control, oldValue, newValue) => control.IdleGroupImage = newValue);
+        public static readonly BindableProperty IdleGroupImageProperty = Bindings.Create<PttControl, byte[]?>("IdleGroupImage", (control, oldValue, newValue) => control.IdleGroupImage = newValue);
 
         public byte[]? IdleGroupImage
         {

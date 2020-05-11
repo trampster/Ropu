@@ -31,7 +31,8 @@ namespace Ropu.Client
         FloorIdle,
         FloorTaken, //someone else got the floor
         FloorGranted, //we got the floor
-        GroupSelected
+        GroupSelected,
+        GroupDeselected
     }
 
     public class RopuState : State<StateId, EventId>

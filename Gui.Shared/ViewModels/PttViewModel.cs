@@ -57,6 +57,8 @@ namespace Ropu.Gui.Shared.ViewModels
             _state = _ropuClient.State.ToString();
         }
 
+        bool _initialized = false;
+
         public override async Task Initialize()
         {
             await _webClient.WaitForLogin();
@@ -87,7 +89,13 @@ namespace Ropu.Gui.Shared.ViewModels
                 //TODO: might need to go into a lissening only mode
             }
 
-            await _ropuClient.Run();
+            await ChangeState();
+
+            if(!_initialized)
+            {
+                _initialized = true;
+                await _ropuClient.Run();
+            }
         }
 
         bool InCall(StateId state)
@@ -264,7 +272,10 @@ namespace Ropu.Gui.Shared.ViewModels
         public string IdleGroup
         {
             get => _idleGroup;
-            set => SetProperty(ref _idleGroup, value);
+            set
+            {
+                SetProperty(ref _idleGroup, value);
+            }
         }
 
         byte[]? _idleGroupImage;

@@ -103,6 +103,7 @@ namespace Ropu.Shared.Groups
                 Console.Error.WriteLine($"Failed to join group {groupId} with reason {response.FailureReason}");
                 return false;
             }
+            _myGroups = null; //resets cache so we will git it fresh next time
             return true;      
         }
 
@@ -114,6 +115,7 @@ namespace Ropu.Shared.Groups
                 Console.Error.WriteLine($"Failed to leave group {groupId} with reason {response.FailureReason}");
                 return false;
             }
+            _myGroups = null; //resets cache so we will git it fresh next time
             return true;      
         }
     }
