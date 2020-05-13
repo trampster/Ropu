@@ -61,7 +61,7 @@ namespace RopuForms
                 .RegisterSingleton(i => new SignupViewModel(i.Get<INavigator>(), i.Get<UsersClient>()))
                 .RegisterSingleton(i => new SignupPage(i.Get<SignupViewModel>()))
                 .RegisterSingleton(i => new MainViewModel(i.Get<IClientSettings>(), i.Get<INavigationService>()))
-                .RegisterSingleton(i => new BrowseGroupsViewModel(i.Get<IGroupsClient>()))
+                .RegisterSingleton(i => new BrowseGroupsViewModel(i.Get<IGroupsClient>(), i.Get<INavigationService>()))
                 .RegisterSingleton(i => new BrowseGroupsPage(i.Get<BrowseGroupsViewModel>()))
                 .RegisterSingleton(i => new MainPage(i.Get<MainViewModel>(), () => i.Get<BrowseGroupsPage>()))
                 .RegisterSingleton(i => new ImageClient(i.Get<RopuWebClient>()))
