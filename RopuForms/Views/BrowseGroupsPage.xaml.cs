@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using Ropu.Gui.Shared.ViewModels;
+using Ropu.Shared.Groups;
 using RopuForms.Models;
 using RopuForms.ViewModels;
 using Xamarin.Forms;
@@ -23,13 +24,16 @@ namespace RopuForms.Views
             BindingContext = _viewModel;
         }
 
-        async void OnItemSelected(object sender, SelectedItemChangedEventArgs args)
+        void OnItemSelected(object sender, SelectedItemChangedEventArgs args)
         {
-            var item = args.SelectedItem as Item;
-            if (item == null)
+            var group = args.SelectedItem as Group;
+            if (group == null)
                 return;
 
-            await Navigation.PushAsync(new ItemDetailPage(new ItemDetailViewModel(item)));
+            if(_viewModel.ItemSelectedCommand.CanExecute(group))
+            {
+                _viewModel.ItemSelectedCommand.Execute(group);
+            }
 
             // Manually deselect item.
             ItemsListView.SelectedItem = null;

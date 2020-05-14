@@ -36,6 +36,7 @@ namespace RopuForms
 
             navigationService.Register<LoginViewModel, LoginPage>(() => Injection.Resolve<LoginPage>());
             navigationService.Register<SignupViewModel, SignupPage>(() => Injection.Resolve<SignupPage>());
+            navigationService.Register<BrowseGroupViewModel, BrowseGroupPage, Group>(group => Injection.Resolve<Func<Group, BrowseGroupPage>>()(group));
 
             var mainPage = Injection.Resolve<MainPage>();
 
@@ -96,7 +97,8 @@ namespace RopuForms
                     i.Get<IPermissionService>(),
                     i.Get<RopuWebClient>()))
                 .RegisterSingleton(i => new ImageService())
-                .Register(i => new PttPage());
+                .Register(i => new PttPage())
+                .Register<Func<Group, BrowseGroupPage>>(i => group => new BrowseGroupPage(new BrowseGroupViewModel(group, i.Get<IGroupsClient>(), i.Get<IClientSettings>())));
         }
 
         protected override async void OnStart()

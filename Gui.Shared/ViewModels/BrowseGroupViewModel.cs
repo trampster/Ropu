@@ -10,10 +10,10 @@ namespace Ropu.Gui.Shared.ViewModels
     public class BrowseGroupViewModel : BaseViewModel
     {
         readonly Group _group;
-        readonly GroupsClient _groupsClient;
+        readonly IGroupsClient _groupsClient;
         readonly IClientSettings _clientSettings;
 
-        public BrowseGroupViewModel(Group group, GroupsClient groupsClient, IClientSettings clientSettings)
+        public BrowseGroupViewModel(Group group, IGroupsClient groupsClient, IClientSettings clientSettings)
         {
             _group = group;
             _groupsClient = groupsClient;
