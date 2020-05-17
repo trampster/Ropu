@@ -15,5 +15,11 @@ namespace RopuForms.Views
             _browseGroupViewModel = browseGroupViewModel;
             BindingContext = _browseGroupViewModel;
         }
+
+        protected override async void OnAppearing()
+        {
+            base.OnAppearing();
+            await _browseGroupViewModel.Initialize();
+        }
     }
 }

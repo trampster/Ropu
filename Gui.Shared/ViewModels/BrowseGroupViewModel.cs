@@ -12,12 +12,14 @@ namespace Ropu.Gui.Shared.ViewModels
         readonly Group _group;
         readonly IGroupsClient _groupsClient;
         readonly IClientSettings _clientSettings;
+        readonly INavigator _navigator;
 
-        public BrowseGroupViewModel(Group group, IGroupsClient groupsClient, IClientSettings clientSettings)
+        public BrowseGroupViewModel(Group group, IGroupsClient groupsClient, IClientSettings clientSettings, INavigator navigator)
         {
             _group = group;
             _groupsClient = groupsClient;
             _clientSettings = clientSettings;
+            _navigator = navigator;
         }
 
         public override async Task Initialize()
@@ -74,6 +76,11 @@ namespace Ropu.Gui.Shared.ViewModels
                 CanLeave = false;
                 CanJoin = true;
             }
+        });
+
+        public ICommand Back => new AsyncCommand(async () =>
+        {
+            await _navigator.PopModal();
         });
     }
 }

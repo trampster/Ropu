@@ -98,7 +98,7 @@ namespace RopuForms
                     i.Get<RopuWebClient>()))
                 .RegisterSingleton(i => new ImageService())
                 .Register(i => new PttPage())
-                .Register<Func<Group, BrowseGroupPage>>(i => group => new BrowseGroupPage(new BrowseGroupViewModel(group, i.Get<IGroupsClient>(), i.Get<IClientSettings>())));
+                .Register<Func<Group, BrowseGroupPage>>(i => group => new BrowseGroupPage(new BrowseGroupViewModel(group, i.Get<IGroupsClient>(), i.Get<IClientSettings>(), i.Get<INavigator>())));
         }
 
         protected override async void OnStart()
