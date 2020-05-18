@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Eto.Drawing;
 using Eto.Forms;
-using Ropu.ClientUI.ViewModels;
 using Ropu.Gui.Shared.Services;
 using Ropu.Gui.Shared.ViewModels;
 
