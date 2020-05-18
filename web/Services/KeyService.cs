@@ -47,34 +47,54 @@ namespace Ropu.Web.Services
 
         public List<EncryptionKey> GetKeys(bool isGroup, uint userOrGroupId)
         {
-            //TODO: check that group or user exists
-            IDatabase db = _redisService.GetDatabase();
-            var encryptionKeysKey = GetKey(isGroup, userOrGroupId);
-
-            var keysJson = db.StringGet(encryptionKeysKey);
-            List<EncryptionKey>? keys;
-            if(!keysJson.IsNull)
+            while(true)
             {
-                keys = JsonConvert.DeserializeObject<List<EncryptionKey>>(keysJson);
-            }
-            else
-            {
-                keys = new List<EncryptionKey>();
-            }
+                //TODO: check that group or user exists
+                IDatabase db = _redisService.GetDatabase();
+                var encryptionKeysKey = GetKey(isGroup, userOrGroupId);
 
-            UpdateKeyList(keys);
-            
-            db.StringSet(encryptionKeysKey, JsonConvert.SerializeObject(keys), expiry: new TimeSpan(2,0,0,0));
+                var keysJson = db.StringGet(encryptionKeysKey);
+                List<EncryptionKey>? keys;
+                if(!keysJson.IsNull)
+                {
+                    keys = JsonConvert.DeserializeObject<List<EncryptionKey>>(keysJson);
+                }
+                else
+                {
+                    keys = new List<EncryptionKey>();
+                }
 
-            return keys;
+                if(UpdateKeyList(keys, db))
+                {
+                    var transaction = db.CreateTransaction();
+                    if(keysJson.IsNull)
+                    {
+                        transaction.AddCondition(Condition.KeyNotExists(encryptionKeysKey));
+                    }
+                    else
+                    {
+                        transaction.AddCondition(Condition.StringEqual(encryptionKeysKey, keysJson));
+                    }
+                    transaction.StringSetAsync(encryptionKeysKey, JsonConvert.SerializeObject(keys), expiry: new TimeSpan(2,0,0,0));
+                    if(!transaction.Execute())
+                    {
+                        continue;
+                    }
+                }
+
+                return keys;
+            }
         }
 
-        void UpdateKeyList(List<EncryptionKey> keys)
+        bool UpdateKeyList(List<EncryptionKey> keys, IDatabase db)
         {
             var now = DateTime.UtcNow.Date;
             var cutoff = now.Subtract(new TimeSpan(1,0,0,0));
             keys.RemoveAll(key => key.Date < cutoff);
-
+            if(keys.Count == 3)
+            {
+                return false; //no update required;
+            }
 
             int startId = 0;
             DateTime startDate = now;
@@ -94,6 +114,8 @@ namespace Ropu.Web.Services
                     KeyMaterial = ToHex(GenerateKey())
                 });
             }
+
+            return true;
         }
 
         string ToHex(byte[] ba)
