@@ -1,8 +1,5 @@
 using NUnit.Framework;
-using System.Security.Cryptography;
-using Ropu.Shared;
 using Ropu.Shared.OpenSsl;
-using System;
 
 namespace Ropu.Shared.Tests
 {
@@ -23,7 +20,7 @@ namespace Ropu.Shared.Tests
             };
             _plainText = new byte[]{0xf5, 0x6e, 0x87, 0x05, 0x5b, 0xc3, 0x2d, 0x0e, 0xeb, 0x31, 0xb2, 0xea, 0xcc, 0x2b, 0xf2, 0xa5};
 
-            _aesGcm = new AesGcmOpenSsl(_key);
+            _aesGcm = new AesGcmOpenSslWrapper(_key);
         }
 
         [TearDown]
@@ -42,7 +39,7 @@ namespace Ropu.Shared.Tests
             byte[] tag = new byte[16];
             _aesGcm.Encrypt(nonce, plainText, cipherText, tag);
 
-            using(var aesGcmDotnetStandard = new AesGcm(_key))
+            using(var aesGcmDotnetStandard = new System.Security.Cryptography.AesGcm(_key))
             {
                 byte[] expectedCipherText = new byte[16];
                 byte[] expectedTag = new byte[16];
