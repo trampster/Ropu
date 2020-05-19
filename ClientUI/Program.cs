@@ -90,7 +90,7 @@ namespace Ropu.ClientUI
             var browseGroupsView = new BrowseGroupsView(new BrowseGroupsViewModel(groupsClient, navigator));
             navigator.Register<BrowseGroupsViewModel, BrowseGroupsView>(() => browseGroupsView);
 
-            Func<Group, BrowseGroupView> browseGroupViewBuilder = group => new BrowseGroupView(new BrowseGroupViewModel(group, groupsClient, settings), imageService, navigator, colorService);
+            Func<Group, BrowseGroupView> browseGroupViewBuilder = group => new BrowseGroupView(new BrowseGroupViewModel(group, groupsClient, settings, navigator), imageService, navigator, colorService);
             navigator.Register<BrowseGroupViewModel, BrowseGroupView, Group>(group => browseGroupViewBuilder(group));
 
             var mainForm = new MainView(navigator, new MainViewModel(settings, navigator));
