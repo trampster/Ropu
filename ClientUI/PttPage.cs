@@ -59,6 +59,10 @@ namespace Ropu.ClientUI
             Paint += PaintHandler;
             this.MouseDown += (sender, args) =>
             {
+                if(!_pttCircle.IsInCircle(args.Location))
+                {
+                    return;
+                }
                 if(args.Buttons == MouseButtons.Middle)
                 {
                     //toggle

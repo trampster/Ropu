@@ -108,5 +108,17 @@ namespace Ropu.ClientUI
             }
             graphics.RestoreTransform();
         }
+
+        public bool IsInCircle(PointF point)
+        {
+            //find the circle center
+            var circleCenter = new PointF(X, Y);
+
+            var xDiff = point.X - circleCenter.X;
+            var yDiff = point.Y - circleCenter.Y;
+            var distanceSquared = (xDiff * xDiff) + (yDiff * yDiff);
+            var radiusSquared = Radius * Radius;
+            return distanceSquared <= radiusSquared;
+        }
     }
 }
