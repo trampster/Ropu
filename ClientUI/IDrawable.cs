@@ -1,5 +1,6 @@
 using System;
 using Eto.Drawing;
+using Eto.Forms;
 
 namespace Ropu.ClientUI
 {
@@ -18,6 +19,10 @@ namespace Ropu.ClientUI
         }
 
         void Draw(Graphics graphics);
+
+        void MouseUp(MouseEventArgs args){}
+
+        void MouseDown(MouseEventArgs args){}
     }
 
     public class ImageLabel : IDrawable

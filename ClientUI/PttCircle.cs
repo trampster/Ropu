@@ -1,4 +1,6 @@
+using System;
 using Eto.Drawing;
+using Eto.Forms;
 
 namespace Ropu.ClientUI
 {
@@ -7,14 +9,18 @@ namespace Ropu.ClientUI
         readonly FontFamily _fontFamily;
         readonly SolidBrush _brush;
         readonly Pen _pen;
+        readonly Action _invalidate;
+        bool _buttonDown = false;
 
-        public PttCircle(FontFamily fontFamily)
+
+        public PttCircle(FontFamily fontFamily, Action invalidate)
         {
             _fontFamily = fontFamily;
             _brush = new SolidBrush(new Color());
             _pen = new Pen(_brush, 6);
             _font = new Font(_fontFamily,12);
             _text = "";
+            _invalidate = invalidate;
         }
 
         public int Width
@@ -109,7 +115,7 @@ namespace Ropu.ClientUI
             graphics.RestoreTransform();
         }
 
-        public bool IsInCircle(PointF point)
+        bool IsInCircle(PointF point)
         {
             //find the circle center
             var circleCenter = new PointF(X, Y);
@@ -119,6 +125,64 @@ namespace Ropu.ClientUI
             var distanceSquared = (xDiff * xDiff) + (yDiff * yDiff);
             var radiusSquared = Radius * Radius;
             return distanceSquared <= radiusSquared;
+        }
+
+        public void MouseDown(MouseEventArgs args)
+        {
+            if(!IsInCircle(args.Location))
+            {
+                return;
+            }
+            if(args.Buttons == MouseButtons.Middle)
+            {
+                //toggle
+                ToggleButton();
+                return;
+            }
+
+            ButtonDown();
+        }
+
+        public void MouseUp(MouseEventArgs args)
+        {
+            if(args.Buttons == MouseButtons.Middle)
+            {
+                return;
+            }
+            ButtonUpEvent?.Invoke(this, EventArgs.Empty);
+            _buttonDown = false;
+            PenWidth = 6;
+            _invalidate();
+        }
+
+        public event EventHandler<EventArgs>? ButtonUpEvent;
+        public event EventHandler<EventArgs>? ButtonDownEvent;
+
+        void ToggleButton()
+        {
+            if(_buttonDown) 
+            {
+                ButtonUp();
+                return;
+            }
+            ButtonDown();
+        }
+
+        void ButtonDown()
+        {
+            ButtonDownEvent?.Invoke(this, EventArgs.Empty);
+            _buttonDown = true;
+            PenWidth = 9;
+
+            _invalidate();
+        }
+
+        void ButtonUp()
+        {
+            ButtonUpEvent?.Invoke(this, EventArgs.Empty);
+            _buttonDown = false;
+            PenWidth = 6;
+            _invalidate();
         }
     }
 }

@@ -24,34 +24,7 @@ namespace Ropu.ClientUI
         readonly PttCircle _pttCircle;
         readonly ImageService _imageService;
 
-        bool _buttonDown = false;
-
-        void ButtonDown()
-        {
-            ButtonDownEvent?.Invoke(this, EventArgs.Empty);
-            _buttonDown = true;
-            _pttCircle.PenWidth = 9;
-
-            Invalidate();
-        }
-
-        void ButtonUp()
-        {
-            ButtonUpEvent?.Invoke(this, EventArgs.Empty);
-            _buttonDown = false;
-            _pttCircle.PenWidth = 6;
-            Invalidate();
-        }
-
-        void ToggleButton()
-        {
-            if(_buttonDown) 
-            {
-                ButtonUp();
-                return;
-            }
-            ButtonDown();
-        }
+        readonly List<IDrawable> _drawables = new List<IDrawable>();
         
         public PttPage(ImageService imageService)
         {
@@ -59,43 +32,35 @@ namespace Ropu.ClientUI
             Paint += PaintHandler;
             this.MouseDown += (sender, args) =>
             {
-                if(!_pttCircle.IsInCircle(args.Location))
+                foreach(var drawable in _drawables)
                 {
-                    return;
+                    drawable.MouseDown(args);
                 }
-                if(args.Buttons == MouseButtons.Middle)
-                {
-                    //toggle
-                    ToggleButton();
-                    return;
-                }
-
-                ButtonDown();
             };
             this.MouseUp += (sender, args) =>
             {
-                if(args.Buttons == MouseButtons.Middle)
+                foreach(var drawable in _drawables)
                 {
-                    return;
+                    drawable.MouseUp(args);
                 }
-                ButtonUpEvent?.Invoke(this, EventArgs.Empty);
-                _buttonDown = false;
-                _pttCircle.PenWidth = 6;
-                Invalidate();
             };
             _fontFamily = ChooseFont();
 
             _callGroupDrawable = new ImageLabel(_fontFamily);
             _callGroupDrawable.Text = "A Team";
             _callGroupDrawable.Image = _imageService.Knot;
+            _drawables.Add(_callGroupDrawable);
 
             _talkerDrawable = new ImageLabel(_fontFamily);
             _talkerDrawable.Text = "Franky";
             _talkerDrawable.Image = _imageService.Rope;
+            _drawables.Add(_talkerDrawable);
+
 
             _idleGroupDrawable = new IdleGroup(_fontFamily);
             _idleGroupDrawable.GroupName = "A Team";
             _idleGroupDrawable.Image = _imageService.Knot;
+            _drawables.Add(_idleGroupDrawable);
 
             _transmittingIndicator = new TransmittingIndicator();
             _transmittingAnimationAction = AnimateTransmitting;
@@ -103,7 +68,8 @@ namespace Ropu.ClientUI
             _receivingIndicator = new TransmittingIndicator();
             _receivingAnimationAction = AnimateReceiving;
 
-            _pttCircle = new PttCircle(_fontFamily);
+            _pttCircle = new PttCircle(_fontFamily, () => Invalidate());
+            _drawables.Add(_pttCircle);
 
             _animationTask = RunAnimations();
         }
@@ -471,14 +437,13 @@ namespace Ropu.ClientUI
             return _pttCircle.Radius;
         }
 
-        event EventHandler<EventArgs>? ButtonDownEvent;
 
         static readonly object ButtonDownCommandKey = new object();
 
         public ICommand ButtonDownCommand
         {
             get { return Properties.GetCommand(ButtonDownCommandKey); }
-			set { Properties.SetCommand(ButtonDownCommandKey, value, e => Enabled = e, r => this.ButtonDownEvent += r, r => ButtonDownEvent -= r, () => ButtonDownCommandParameter); }
+			set { Properties.SetCommand(ButtonDownCommandKey, value, e => Enabled = e, r => _pttCircle.ButtonDownEvent += r, r => _pttCircle.ButtonDownEvent -= r, () => ButtonDownCommandParameter); }
         }
 
         public object ButtonDownCommandParameter
@@ -487,14 +452,12 @@ namespace Ropu.ClientUI
 			set { Properties.Set(ButtonDownCommandKey, value, () => Properties.UpdateCommandCanExecute(ButtonDownCommandKey)); }
 		}
 
-        event EventHandler<EventArgs>? ButtonUpEvent;
-
         static readonly object ButtonUpCommandKey = new object();
 
         public ICommand ButtonUpCommand
         {
             get { return Properties.GetCommand(ButtonUpCommandKey); }
-			set { Properties.SetCommand(ButtonUpCommandKey, value, e => Enabled = e, r => this.ButtonUpEvent += r, r => ButtonUpEvent -= r, () => ButtonUpCommandParameter); }
+			set { Properties.SetCommand(ButtonUpCommandKey, value, e => Enabled = e, r => _pttCircle.ButtonUpEvent += r, r => _pttCircle.ButtonUpEvent -= r, () => ButtonUpCommandParameter); }
         }
 
         public object ButtonUpCommandParameter
