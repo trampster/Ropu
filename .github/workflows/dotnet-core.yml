@@ -23,3 +23,15 @@ jobs:
       run: dotnet build ropu.sln --configuration Release --no-restore
     - name: Test
       run: dotnet test ropu.sln --no-restore --verbosity normal
+
+  Android:
+
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Android
+      run: |
+        cd RepuForms.Android
+        nuget restore
+        msbuild RepuForms.Android.csproj /verbosity:normal /t:Rebuild /p:Configuration=Debug
