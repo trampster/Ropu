@@ -12,7 +12,9 @@ namespace Ropu.Gui.Shared.Services
             _func = func;
         }
 
-        public event EventHandler CanExecuteChanged;
+#pragma warning disable CS0067
+        public event EventHandler? CanExecuteChanged;
+#pragma warning restore CS0067
 
         public bool CanExecute(object parameter)
         {
@@ -33,7 +35,9 @@ namespace Ropu.Gui.Shared.Services
             _func = func;
         }
 
+#pragma warning disable CS0067
         public event EventHandler? CanExecuteChanged;
+#pragma warning restore CS0067
 
         public bool CanExecute(object parameter)
         {
