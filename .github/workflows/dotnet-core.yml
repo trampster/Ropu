@@ -18,8 +18,8 @@ jobs:
       with:
         dotnet-version: 3.1.101
     - name: Install dependencies
-      run: dotnet restore build ropu.sln
+      run: dotnet restore ropu.sln
     - name: Build
       run: dotnet build ropu.sln --configuration Release --no-restore
     - name: Test
-      run: dotnet test build ropu.sln --no-restore --verbosity normal
+      run: dotnet test ropu.sln --no-restore --verbosity normal
