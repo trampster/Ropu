@@ -34,4 +34,4 @@ jobs:
       run: |
         nuget restore RopuForms.sln
         cd RopuForms.Android
-        msbuild RopuForms.Android.csproj /verbosity:normal /t:Rebuild /p:Configuration=Debug
+        msbuild RopuForms.Android.csproj /verbosity:normal /t:Rebuild /t:SignAndroidPackage /p:Configuration=Debugz
