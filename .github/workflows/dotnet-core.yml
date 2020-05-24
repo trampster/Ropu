@@ -34,4 +34,9 @@ jobs:
       run: |
         nuget restore RopuForms.sln
         cd RopuForms.Android
-        msbuild RopuForms.Android.csproj /verbosity:normal /t:Rebuild /t:SignAndroidPackage /p:Configuration=Debugz
+        msbuild RopuForms.Android.csproj /verbosity:normal /t:Rebuild /t:SignAndroidPackage /p:Configuration=Release
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: my-artifact
+        path: RopuForms.Android/bin/Release/org.ropu.forms-Signed.apk
