@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using Eto.Drawing;
 using Eto.Forms;
+using Ropu.ClientUI.Drawables;
 using Ropu.ClientUI.Services;
 using Ropu.Shared;
 
@@ -57,7 +58,7 @@ namespace Ropu.ClientUI
             _drawables.Add(_talkerDrawable);
 
 
-            _idleGroupDrawable = new IdleGroup(_fontFamily);
+            _idleGroupDrawable = new IdleGroup(_fontFamily, () => Invalidate());
             _idleGroupDrawable.GroupName = "A Team";
             _idleGroupDrawable.Image = _imageService.Knot;
             _drawables.Add(_idleGroupDrawable);
@@ -366,8 +367,8 @@ namespace Ropu.ClientUI
             _talkerDrawable.Y = padding;
             _talkerDrawable.Draw(graphics);
 
-            _idleGroupDrawable.X = Width - _idleGroupDrawable.Width - padding;
-            _idleGroupDrawable.Y = Height - _idleGroupDrawable.Height - padding;
+            _idleGroupDrawable.X = Width - _idleGroupDrawable.Width;
+            _idleGroupDrawable.Y = Height - _idleGroupDrawable.Height;
             _idleGroupDrawable.Draw(graphics);
 
             int radius = DrawPttCircle(graphics, _callGroupDrawable.Height + padding, padding);

@@ -1,4 +1,5 @@
 using Eto.Drawing;
+using Eto.Forms;
 
 namespace Ropu.ClientUI
 {
@@ -95,6 +96,14 @@ namespace Ropu.ClientUI
             color.Ab = (int)(0xFF * (1- animationFraction));
             _brush.Color = color;
             graphics.DrawEllipse(_pen, -radius, -radius, diameter, diameter);
+        }
+
+        public void MouseUp(MouseEventArgs args)
+        {
+        }
+
+        public void MouseDown(MouseEventArgs args)
+        {
         }
     }
 }
