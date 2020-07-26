@@ -6,6 +6,9 @@ using RopuForms.Inject;
 using Ropu.Client;
 using RopuForms.Droid.AAudio;
 using System.Threading.Tasks;
+using Xamarin.Forms.Xaml;
+
+[assembly: XamlCompilation(XamlCompilationOptions.Compile)]
 
 namespace RopuForms.Droid
 {
@@ -20,6 +23,7 @@ namespace RopuForms.Droid
             base.OnCreate(savedInstanceState);
 
             Xamarin.Essentials.Platform.Init(this, savedInstanceState);
+
             global::Xamarin.Forms.Forms.Init(this, savedInstanceState);
 
             Injection.RegisterTypes(RegisterTypes);
