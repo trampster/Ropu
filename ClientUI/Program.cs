@@ -33,7 +33,7 @@ namespace Ropu.ClientUI
             }
 
             var credentialsProvider = new CredentialsProvider();
-            var webClient = new RopuWebClient("https://192.168.1.7:5001/", credentialsProvider);
+            var webClient = new RopuWebClient("https://192.168.1.6:5001/", credentialsProvider);
 
             var keysClient = new KeysClient(webClient, false, encryptionKey => new CachedEncryptionKey(encryptionKey, key => new AesGcmWrapper(key)));
             var packetEncryption = new PacketEncryption(keysClient);
@@ -80,8 +80,10 @@ namespace Ropu.ClientUI
 
             var permissionServices = new PermissionServices();
 
-            var pttView = new PttView(new PttViewModel<Color>(ropuClient, settings, groupsClient, usersClient, imageClient, colorService, invoke, permissionServices, webClient), pttPage);
+            var pttView = new PttView(new PttViewModel<Color>(ropuClient, settings, groupsClient, usersClient, imageClient, colorService, invoke, permissionServices, webClient, navigator), pttPage);
             navigator.Register<PttViewModel<Color>, PttView>(() => pttView);
+            navigator.RegisterView("HomeRightPanel", "PttView", () => pttView);
+
 
             var homeView = new HomeView(new HomeViewModel(navigator), navigator, colorService);
 
@@ -92,6 +94,9 @@ namespace Ropu.ClientUI
 
             Func<Group, BrowseGroupView> browseGroupViewBuilder = group => new BrowseGroupView(new BrowseGroupViewModel(group, groupsClient, settings, navigator), imageService, navigator, colorService);
             navigator.Register<BrowseGroupViewModel, BrowseGroupView, Group>(group => browseGroupViewBuilder(group));
+
+            var selectIdleGroupView = new SelectIdleGroupView(new SelectGroupViewModel(groupsClient, navigator, ropuClient));
+            navigator.RegisterView("HomeRightPanel", "SelectIdleGroupView", () => selectIdleGroupView);
 
             var mainForm = new MainView(navigator, new MainViewModel(settings, navigator));
             mainForm.Icon = imageService.Ropu;

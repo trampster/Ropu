@@ -74,6 +74,12 @@ namespace Ropu.ClientUI
 
             _animationTask = RunAnimations();
         }
+
+        public ICommand? IdleGroupClickedCommand
+        {
+            get => _idleGroupDrawable.ClickedCommand;
+            set => _idleGroupDrawable.ClickedCommand = value;
+        }
         
         FontFamily ChooseFont()
         {

@@ -25,6 +25,7 @@ namespace Ropu.ClientUI.Views
             _pttCircle.TransmittingBinding.BindDataContext<PttViewModel<Color>>(m => m.Transmitting);
             _pttCircle.TransmittingAnimationColor = pttViewModel.Green;
             _pttCircle.ReceivingAnimationColor = pttViewModel.Red;
+            _pttCircle.IdleGroupClickedCommand = pttViewModel.SelectIdleGroup;
 
             Content = _pttCircle;
             DataContext = pttViewModel;

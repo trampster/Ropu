@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 
 namespace Ropu.Gui.Shared.Services
 {
@@ -15,5 +16,9 @@ namespace Ropu.Gui.Shared.Services
         Task PopModal();
 
         Task ShowPttView();
+
+        //new navigate system
+        Task Navigate(string viewName, bool addToBackStack = true);
+        Task NavigateBack();
     }
 }

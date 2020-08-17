@@ -102,7 +102,53 @@ namespace Ropu.ClientUI
 
         public async Task ShowPttView()
         {
+            _stack.Push("PttView");
             await Show<PttViewModel<Color>>();
+        }
+
+        readonly Dictionary<string, string> _homeLookupFromViewName = new Dictionary<string, string>();
+        readonly Dictionary<string, Func<Control>> _controlLookupFromViewName = new Dictionary<string, Func<Control>>();
+        readonly Dictionary<string, Func<Control, Task>> _showViewLookupFromHomeName = new Dictionary<string, Func<Control, Task>>();
+
+        public void RegisterView(string navigatorHome, string viewName, Func<Control> control)
+        {
+            _homeLookupFromViewName.Add(viewName, navigatorHome);
+            _controlLookupFromViewName.Add(viewName, control);
+        }
+
+        public void RegisterNavigatorHome(string navigatorHome, Func<Control, Task> showView)
+        {
+            _showViewLookupFromHomeName.Add(navigatorHome, showView);
+        }
+
+        public async Task Navigate(string viewName, bool addToBackStack = true)
+        {
+            if(!_controlLookupFromViewName.TryGetValue(viewName, out var controlGetter))
+            {
+                throw new Exception($"No view registered with name {viewName}");
+            }
+            if(!_homeLookupFromViewName.TryGetValue(viewName, out var homeName))
+            {
+                throw new Exception($"No home registered for view name {viewName}");
+            }
+            if(!_showViewLookupFromHomeName.TryGetValue(homeName, out var showView))
+            {
+                throw new Exception($"No home registerd with name {homeName}");
+            }
+            if(addToBackStack)
+            {
+                _stack.Push(viewName);
+            }
+            await showView(controlGetter());            
+        }
+
+        Stack<string> _stack = new Stack<string>();
+
+        public async Task NavigateBack()
+        {
+            _stack.Pop();
+            var backTo = _stack.Peek();
+            await Navigate(backTo, false);
         }
     }
 }

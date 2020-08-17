@@ -19,6 +19,7 @@ namespace Ropu.Gui.Shared.ViewModels
         readonly IColorService<ColorT> _colorService;
         readonly IPermissionService _permissionService;
         readonly RopuWebClient _webClient;
+        readonly INavigator _navigator;
 
         public PttViewModel(
             RopuClient ropuClient, 
@@ -29,14 +30,21 @@ namespace Ropu.Gui.Shared.ViewModels
             IColorService<ColorT> colorService,
             Action<Func<Task>> invoke,
             IPermissionService permissionService,
-            RopuWebClient webClient)
+            RopuWebClient webClient,
+            INavigator navigator)
         {
+            _navigator = navigator;
             _ropuClient = ropuClient;
             _webClient = webClient;
 
             _ropuClient.StateChanged += (sender, args) => 
             {
                 invoke(ChangeState);
+            };
+            _ropuClient.IdleGroupChanged += async (sender, args) =>
+            {
+                await UpdateIdleGroup();
+                await ChangeState();
             };
             _groupsClient = groupsClient;
             _usersClient = usersClient;
@@ -57,18 +65,9 @@ namespace Ropu.Gui.Shared.ViewModels
             _state = _ropuClient.State.ToString();
         }
 
-        bool _initialized = false;
 
-        public override async Task Initialize()
+        async Task UpdateIdleGroup()
         {
-            await _webClient.WaitForLogin();
-            _clientSettings.UserId = (await _usersClient.GetCurrentUser())?.Id;
-
-            if(_clientSettings.UserId == null) throw new InvalidOperationException("UserId is not set");
-
-            var groups = (await _groupsClient.GetUsersGroups(_clientSettings.UserId.Value));
-            _ropuClient.IdleGroup = groups.Length == 0 ? null : (ushort?)groups[0];
-
             if(_ropuClient.IdleGroup != null)
             {
                 var idleGroup = await _groupsClient.Get(_ropuClient.IdleGroup.Value);
@@ -77,22 +76,36 @@ namespace Ropu.Gui.Shared.ViewModels
                     IdleGroup = idleGroup.Name;
                     IdleGroupImage = idleGroup.Image;
                 }
+                return;
             }
-            else
-            {
-                IdleGroup = "None";
-                IdleGroupImage = null;
-            }
+            IdleGroup = "None";
+            IdleGroupImage = null;
+        }
 
-            if(!await _permissionService.RequestAudioRecordPermission())
-            {
-                //TODO: might need to go into a lissening only mode
-            }
+        bool _initialized = false;
 
-            await ChangeState();
-
+        public override async Task Initialize()
+        {
             if(!_initialized)
             {
+                await _webClient.WaitForLogin();
+                _clientSettings.UserId = (await _usersClient.GetCurrentUser())?.Id;
+
+                if(_clientSettings.UserId == null) throw new InvalidOperationException("UserId is not set");
+
+                var groups = (await _groupsClient.GetUsersGroups(_clientSettings.UserId.Value));
+                _ropuClient.IdleGroup = groups.Length == 0 ? null : (ushort?)groups[0];
+
+                await UpdateIdleGroup();
+
+                if(!await _permissionService.RequestAudioRecordPermission())
+                {
+                    //TODO: might need to go into a lissening only mode
+                }
+
+                await ChangeState();
+
+
                 _initialized = true;
                 await _ropuClient.Run();
             }
@@ -309,6 +322,11 @@ namespace Ropu.Gui.Shared.ViewModels
         {
             PttState = "PTT Up";
             _ropuClient.PttUp();
+        });
+
+        public ICommand SelectIdleGroup => new ActionCommand(() => 
+        {
+            _navigator.Navigate("SelectIdleGroupView");
         });
     }
 }

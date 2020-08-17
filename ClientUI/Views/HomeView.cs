@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using Eto.Drawing;
 using Eto.Forms;
@@ -24,6 +25,11 @@ namespace Ropu.ClientUI.Views
             _navigator.SetSubViewChangeHandler(view => 
             {
                 _rightPanel.Content = view;
+            });
+            _navigator.RegisterNavigatorHome("HomeRightPanel", async view => 
+            {
+                _rightPanel.Content = view;
+                await Task.CompletedTask;
             });
 
             this.Content = CreateLayout();

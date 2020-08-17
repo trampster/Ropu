@@ -520,20 +520,27 @@ namespace Ropu.Client
             }
         }
 
+        public event EventHandler? IdleGroupChanged;
+
         public ushort? IdleGroup
         {
             get => _idleGroup;
             set
             {
+                if(_idleGroup == value)
+                {
+                    return;
+                }
                 _idleGroup = value;
                 if(value != null)
                 {
                     _stateManager.HandleEvent(EventId.GroupSelected);
                 }
-                if(value == null)
+                else
                 {
                     _stateManager.HandleEvent(EventId.GroupDeselected);
                 }
+                IdleGroupChanged?.Invoke(this, EventArgs.Empty);
             }
         }
 

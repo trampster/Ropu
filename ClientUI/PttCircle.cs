@@ -61,7 +61,7 @@ namespace Ropu.ClientUI
             set
             {
                 _radius = value;
-                _font = new Font(_fontFamily, _radius/4);
+                _font = new Font(_fontFamily, _radius/5);
                 UpdateGroupTextSize();
             }            
         }
