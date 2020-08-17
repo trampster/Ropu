@@ -1,6 +1,5 @@
 ﻿using System;
 using Xamarin.Forms;
-using Xamarin.Forms.Xaml;
 using RopuForms.Services;
 using RopuForms.Views;
 using RopuForms.Inject;
@@ -22,17 +21,13 @@ namespace RopuForms
 {
     public partial class App : Application
     {
-
         public App()
         {
-            Console.WriteLine("RegisterTypes (Xamarin.Forms)");
             Injection.RegisterTypes(RegisterTypes);
 
             InitializeComponent();
 
-
             var navigationService = Injection.Resolve<INavigationService>();
-            Console.WriteLine("Register LoginPage with navigation service");
 
             navigationService.Register<LoginViewModel, LoginPage>(() => Injection.Resolve<LoginPage>());
             navigationService.Register<SignupViewModel, SignupPage>(() => Injection.Resolve<SignupPage>());
