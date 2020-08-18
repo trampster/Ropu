@@ -90,7 +90,8 @@ namespace RopuForms
                     i.Get<IColorService<Color>>(), 
                     toDo => Device.BeginInvokeOnMainThread(async () => await toDo()), 
                     i.Get<IPermissionService>(),
-                    i.Get<RopuWebClient>()))
+                    i.Get<RopuWebClient>(),
+                    i.Get<INavigator>()))
                 .RegisterSingleton(i => new ImageService())
                 .Register(i => new PttPage())
                 .Register<Func<Group, BrowseGroupPage>>(i => group => new BrowseGroupPage(new BrowseGroupViewModel(group, i.Get<IGroupsClient>(), i.Get<IClientSettings>(), i.Get<INavigator>())));

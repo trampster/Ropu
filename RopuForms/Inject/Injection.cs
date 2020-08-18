@@ -13,7 +13,6 @@ using Ropu.Shared.WebModels;
 using RopuForms.Services;
 using RopuForms.ViewModels;
 using RopuForms.Views;
-using Singularity;
 
 namespace RopuForms.Inject
 {

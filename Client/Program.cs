@@ -7,18 +7,12 @@ using Ropu.Shared.Web;
 
 namespace Ropu.Client
 {
-    public class Program
+    public class Programa
     {
         const ushort _controlPortStarting = 5061;
         RopuClient? _ropuClient;
         const int LoadBalancerPort = 5069;
         IMediaClient? _mediaClient;
-
-        static void Main(string[] args)
-        {
-            var program = new Program();
-            program.Run(args);
-        }
 
         public void Run(string[] args)
         {
