@@ -20,13 +20,13 @@ namespace Ropu.ClientUI.Drawables
         public int X 
         {
             set;
-            private get;
+            get;
         }
 
         public int Y
         {
             set;
-            private get;
+            get;
         }
 
         readonly Action _invalidate;
@@ -155,6 +155,11 @@ namespace Ropu.ClientUI.Drawables
 
         public void MouseUp(MouseEventArgs args)
         {
+            if(args.Location.X < X || args.Location.Y > Y + Width ||
+                args.Location.Y < Y || args.Location.Y > Y + Height)
+            {
+                return;
+            }
             _isSelected = false;
             ClickedCommand?.Execute(this);
             _invalidate();
@@ -162,6 +167,11 @@ namespace Ropu.ClientUI.Drawables
 
         public void MouseDown(MouseEventArgs args)
         {
+            if(args.Location.X < X || args.Location.Y > Y + Width ||
+                args.Location.Y < Y || args.Location.Y > Y + Height)
+            {
+                return;
+            }
             _isSelected = true;
             _invalidate();
         }

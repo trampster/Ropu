@@ -9,8 +9,8 @@ namespace Ropu.ClientUI
         int Width {get;}
         int Height {get;}
 
-        int X {set;}
-        int Y {set;}
+        int X {get; set;}
+        int Y {get; set;}
 
         bool Hidden
         {
