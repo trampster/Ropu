@@ -7,7 +7,7 @@ using Ropu.Shared.Web;
 
 namespace Ropu.Client
 {
-    public class Programa
+    public class Program
     {
         const ushort _controlPortStarting = 5061;
         RopuClient? _ropuClient;
