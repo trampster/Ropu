@@ -100,7 +100,7 @@ namespace Ropu.ClientUI
         {
             return Eto.Drawing.Fonts.AvailableFontFamilies
                 .Where(f => f.Name == name)
-                .FirstOrDefault();
+                .First()!;
         }
 
         public Color TransmittingAnimationColor

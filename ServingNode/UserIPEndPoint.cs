@@ -19,7 +19,7 @@ namespace Ropu.ServingNode
             return _hashCode;
         }
 
-        public override bool Equals(object comparand)
+        public override bool Equals(object? comparand)
         {
             var other = comparand as UserIPEndPoint;
             if(other == null)

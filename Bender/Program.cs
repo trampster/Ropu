@@ -22,7 +22,7 @@ namespace Ropu.Bender
             var file = args[0];
             if(!File.Exists(file))
             {
-                Console.Error.WriteLine($"Could not load config file {file}");
+                Console.Error.WriteLine($"Could not load config file {file} in directory {Directory.GetCurrentDirectory()}");
                 return 1;
             }
             var config = File.ReadAllText(file);

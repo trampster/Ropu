@@ -48,7 +48,7 @@ namespace RopuForms
                 .RegisterSingleton<IClientSettings>(i => new FormsClientSettings())
                 .RegisterSingleton(i => new CredentialsProvider())
                 .RegisterSingleton(i => new UsersClient(i.Get<RopuWebClient>()))
-                .RegisterSingleton(i => new RopuWebClient("https://192.168.1.6:5001/", i.Get<CredentialsProvider>()))
+                .RegisterSingleton(i => new RopuWebClient("https://192.168.1.8:5001/", i.Get<CredentialsProvider>()))
                 .RegisterSingleton<INavigationService>(i => new Navigator())
                 .RegisterSingleton<INavigator>(i => i.Get<INavigationService>())
                 .RegisterSingleton<ICredentialsStore>(i => new CredentialsStore())

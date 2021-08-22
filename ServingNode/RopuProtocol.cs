@@ -257,7 +257,7 @@ namespace Ropu.ServingNode
 
             lock(_asyncCompleteLock)
             {
-                var token = (BulkRequestToken)args.UserToken;
+                var token = (BulkRequestToken)args.UserToken!;
                 int newCount = token.DecrementWaitingCount();
                 if(newCount == 0)
                 {

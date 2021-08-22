@@ -33,7 +33,7 @@ namespace Ropu.ClientUI
             }
 
             var credentialsProvider = new CredentialsProvider();
-            var webClient = new RopuWebClient("https://192.168.1.6:5001/", credentialsProvider);
+            var webClient = new RopuWebClient("https://192.168.1.8:5001/", credentialsProvider);
 
             var keysClient = new KeysClient(webClient, false, encryptionKey => new CachedEncryptionKey(encryptionKey, key => new AesGcmWrapper(key)));
             var packetEncryption = new PacketEncryption(keysClient);

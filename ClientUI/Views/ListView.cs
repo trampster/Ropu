@@ -35,7 +35,7 @@ namespace Ropu.ClientUI.Views
             }
             if(args.Action == NotifyCollectionChangedAction.Add)
             {
-                foreach(T? group in args.NewItems)
+                foreach(T? group in args.NewItems!)
                 {
                     if(group == null)
                     {

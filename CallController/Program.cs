@@ -29,7 +29,7 @@ namespace Ropu.CallController
                 Email = settings.Email,
                 Password = settings.Password
             };
-            var webClient = new RopuWebClient("https://192.168.1.6:5001", credentialsProvider); 
+            var webClient = new RopuWebClient("https://192.168.1.8:5001", credentialsProvider); 
 
             var portFinder = new PortFinder();
             var keysClient = new KeysClient(webClient, true, encryptionKey => new CachedEncryptionKey(encryptionKey, key => new AesGcmWrapper(key)));

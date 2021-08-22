@@ -27,12 +27,12 @@ namespace Ropu.Client
         RopuState _unregistered;
         RopuState _noGroup;
         RopuState _deregistering;
-        RopuState _startingCall;
+        readonly RopuState _startingCall;
         RopuState _inCallIdle;
         RopuState _inCallReceiveing;
         RopuState _inCallTransmitting;
-        RopuState _inCallReleasingFloor;
-        RopuState _inCallRequestingFloor;
+        readonly RopuState _inCallReleasingFloor;
+        readonly RopuState _inCallRequestingFloor;
 
         StateManager<StateId, EventId> _stateManager;
         LoadBalancerProtocol _loadBalancerProtocol;
@@ -105,8 +105,8 @@ namespace Ropu.Client
                 },
             };
             _stateManager.AddState(_registered);
-            _registered.AddTransition(EventId.CallRequest, () => _startingCall);
-            _registered.AddTransition(EventId.PttDown, () => _startingCall);
+            _registered.AddTransition(EventId.CallRequest, () => _startingCall!);
+            _registered.AddTransition(EventId.PttDown, () => _startingCall!);
             _registered.AddTransition(EventId.RegistrationResponseReceived, () => _registered);
             _registered.AddTransition(EventId.CallStartFailed, () => _registered);
             _registered.AddTransition(EventId.PttUp, () => _registered);
@@ -156,7 +156,6 @@ namespace Ropu.Client
             _deregistering.AddTransition(EventId.GroupSelected, () => _deregistering);
             _stateManager.AddState(_deregistering);
 
-
             //starting call
             _startingCall = new RopuState(StateId.StartingCall)
             {
@@ -180,7 +179,7 @@ namespace Ropu.Client
 
             //in call idle
             _inCallIdle = new RopuState(StateId.InCallIdle);
-            _inCallIdle.AddTransition(EventId.PttDown, () => _inCallRequestingFloor);
+            _inCallIdle.AddTransition(EventId.PttDown, () => _inCallRequestingFloor!);
             _inCallIdle.AddTransition(EventId.PttUp, () => _inCallIdle);
             _inCallIdle.AddTransition(EventId.RegistrationResponseReceived, () => _inCallIdle);
             _inCallIdle.AddTransition(EventId.CallRequest, () => _inCallIdle);
@@ -214,7 +213,7 @@ namespace Ropu.Client
                     }
                 }
             };
-            _inCallTransmitting.AddTransition(EventId.PttUp, () => _inCallReleasingFloor);
+            _inCallTransmitting.AddTransition(EventId.PttUp, () => _inCallReleasingFloor!);
             _inCallTransmitting.AddTransition(EventId.RegistrationResponseReceived, () => _inCallTransmitting);
             _inCallTransmitting.AddTransition(EventId.CallRequest, () => _inCallTransmitting);
             _inCallTransmitting.AddTransition(EventId.CallStartFailed, () => _inCallTransmitting);
@@ -243,8 +242,8 @@ namespace Ropu.Client
                     }
                 }
             };
-            _inCallRequestingFloor.AddTransition(EventId.RegistrationResponseReceived, () => _inCallReleasingFloor);
-            _inCallRequestingFloor.AddTransition(EventId.CallRequest, () => _inCallReleasingFloor);
+            _inCallRequestingFloor.AddTransition(EventId.RegistrationResponseReceived, () => _inCallReleasingFloor!);
+            _inCallRequestingFloor.AddTransition(EventId.CallRequest, () => _inCallReleasingFloor!);
             _inCallRequestingFloor.AddTransition(EventId.CallStartFailed, () => _registered);
             _inCallRequestingFloor.AddTransition(EventId.PttDown, () => _inCallRequestingFloor);
             _inCallRequestingFloor.AddTransition(EventId.PttUp, () => _inCallIdle);
