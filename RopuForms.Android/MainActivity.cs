@@ -15,6 +15,8 @@ namespace RopuForms.Droid
     [Activity(Label = "RopuForms", Icon = "@mipmap/icon", Theme = "@style/MainTheme", MainLauncher = true, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation)]
     public class MainActivity : global::Xamarin.Forms.Platform.Android.FormsAppCompatActivity
     {
+        static bool InjectionInitilaized = false;
+
         protected override void OnCreate(Bundle savedInstanceState)
         {
             TabLayoutResource = Resource.Layout.Tabbar;
@@ -26,7 +28,11 @@ namespace RopuForms.Droid
 
             global::Xamarin.Forms.Forms.Init(this, savedInstanceState);
 
-            Injection.RegisterTypes(RegisterTypes);
+            if (!InjectionInitilaized)
+            {
+                Injection.RegisterTypes(RegisterTypes);
+                InjectionInitilaized = true;
+            }
 
             LoadApplication(new App());
         }

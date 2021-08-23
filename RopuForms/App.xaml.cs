@@ -21,17 +21,25 @@ namespace RopuForms
 {
     public partial class App : Application
     {
+        static bool InjectionInitilaized = false;
         public App()
         {
-            Injection.RegisterTypes(RegisterTypes);
+            if (!InjectionInitilaized)
+            {
+                Injection.RegisterTypes(RegisterTypes);
+            }
 
             InitializeComponent();
 
             var navigationService = Injection.Resolve<INavigationService>();
 
-            navigationService.Register<LoginViewModel, LoginPage>(() => Injection.Resolve<LoginPage>());
-            navigationService.Register<SignupViewModel, SignupPage>(() => Injection.Resolve<SignupPage>());
-            navigationService.Register<BrowseGroupViewModel, BrowseGroupPage, Group>(group => Injection.Resolve<Func<Group, BrowseGroupPage>>()(group));
+            if (!InjectionInitilaized)
+            {
+                navigationService.Register<LoginViewModel, LoginPage>(() => Injection.Resolve<LoginPage>());
+                navigationService.Register<SignupViewModel, SignupPage>(() => Injection.Resolve<SignupPage>());
+                navigationService.Register<BrowseGroupViewModel, BrowseGroupPage, Group>(group => Injection.Resolve<Func<Group, BrowseGroupPage>>()(group));
+                InjectionInitilaized = true;
+            }
 
             var mainPage = Injection.Resolve<MainPage>();
 
