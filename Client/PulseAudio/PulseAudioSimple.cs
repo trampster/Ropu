@@ -15,13 +15,25 @@ namespace Ropu.Client.PulseAudio
 
             IntPtr sampleSpecPtr = Marshal.AllocHGlobal(Marshal.SizeOf(sampleSpec));
             Marshal.StructureToPtr(sampleSpec, sampleSpecPtr, true);
+
+            BufferAttributes bufferAttributes = new BufferAttributes();
             
-            BufferAttributes bufferAttributes;
-            bufferAttributes.maxlength = 160*12;
-            bufferAttributes.tlength = 160*2;
-            bufferAttributes.prebuf = 160*12;
-            bufferAttributes.minreq = 160*2;
-            bufferAttributes.fragsize = 160*2;
+            if(streamDirection == StreamDirection.Playback)
+            {
+                bufferAttributes.maxlength = uint.MaxValue;
+                bufferAttributes.tlength = 160*2;
+                bufferAttributes.prebuf = uint.MaxValue;
+                bufferAttributes.minreq = uint.MaxValue;
+                bufferAttributes.fragsize = uint.MaxValue;
+            }
+            if(streamDirection == StreamDirection.Record)
+            {
+                bufferAttributes.maxlength = 160*12;
+                bufferAttributes.tlength = 160*2;
+                bufferAttributes.prebuf = 160*12;
+                bufferAttributes.minreq = 160*2;
+                bufferAttributes.fragsize = 160*2;
+            }
             IntPtr bufferAttributesPtr = Marshal.AllocHGlobal(Marshal.SizeOf(bufferAttributes));
             Marshal.StructureToPtr(bufferAttributes, bufferAttributesPtr, true);
 

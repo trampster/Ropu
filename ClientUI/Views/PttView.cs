@@ -1,6 +1,5 @@
 ﻿using Eto.Forms;
 using Eto.Drawing;
-using Ropu.ClientUI.ViewModels;
 using Ropu.Gui.Shared.ViewModels;
 
 namespace Ropu.ClientUI.Views

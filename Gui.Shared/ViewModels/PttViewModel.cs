@@ -88,6 +88,7 @@ namespace Ropu.Gui.Shared.ViewModels
         {
             if(!_initialized)
             {
+                _initialized = true;
                 await _webClient.WaitForLogin();
                 _clientSettings.UserId = (await _usersClient.GetCurrentUser())?.Id;
 
@@ -105,8 +106,6 @@ namespace Ropu.Gui.Shared.ViewModels
 
                 await ChangeState();
 
-
-                _initialized = true;
                 await _ropuClient.Run();
             }
         }
