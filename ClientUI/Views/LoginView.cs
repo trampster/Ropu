@@ -13,6 +13,9 @@ namespace Ropu.ClientUI.Views
             _loginViewModel = loginViewModel;
             DataContext = loginViewModel;
 
+            var addressBox = new TextBox();
+            addressBox.TextBinding.BindDataContext<LoginViewModel>(m => m.ServerAddress);
+
             var emailBox = new TextBox();
             emailBox.TextBinding.BindDataContext<LoginViewModel>(m => m.Email);
 
@@ -35,6 +38,8 @@ namespace Ropu.ClientUI.Views
                     layout.AddSpace();
                     layout.Add(imageService.Ropu);
                     layout.Add(errorLabel);
+                    layout.Add(new Label(){Text = "Server"});
+                    layout.Add(addressBox);
                     layout.Add(new Label(){Text = "Email"});
                     layout.Add(emailBox);
                     layout.Add(new Label(){Text = "Password"});
@@ -48,6 +53,11 @@ namespace Ropu.ClientUI.Views
                 layout.AddSpace();
             layout.EndHorizontal();
             Content = layout;
+
+            this.Shown += async (sender, args) => 
+            {
+                await _loginViewModel.Initialize();
+            };
         }
     }
 }

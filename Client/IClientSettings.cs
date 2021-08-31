@@ -1,5 +1,4 @@
-using System;
-using System.Net;
+using JsonSrcGen;
 
 namespace Ropu.Client
 {
@@ -14,6 +13,25 @@ namespace Ropu.Client
         }
 
         string? FileMediaSource
+        {
+            get;
+            set;
+        }
+
+        string? WebAddress
+        {
+            get;
+            set;
+        }
+
+        string? Email
+        {
+            get;
+            set;
+        }
+
+        [JsonIgnore]
+        string? Password
         {
             get;
             set;

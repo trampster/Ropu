@@ -24,16 +24,16 @@ namespace Ropu.ClientUI
         {
             const ushort controlPortStarting = 5061;
 
-            var settingsReader = new CommandLineClientSettingsReader();
+            var settingsManager = new CommandLineClientSettingsReader();
 
-            var settings = settingsReader.ParseArgs(args);
-            if(settings == null)
+            if(!settingsManager.ParseArgs(args))
             {
                 return;
             }
 
-            var credentialsProvider = new CredentialsProvider();
-            var webClient = new RopuWebClient("https://192.168.1.8:5001/", credentialsProvider);
+            var settings = settingsManager.ClientSettings;
+
+            var webClient = new RopuWebClient("https://192.168.1.8:5001/", settingsManager);
 
             var keysClient = new KeysClient(webClient, false, encryptionKey => new CachedEncryptionKey(encryptionKey, key => new AesGcmWrapper(key)));
             var packetEncryption = new PacketEncryption(keysClient);
@@ -69,12 +69,12 @@ namespace Ropu.ClientUI
             var pttPage = new PttPage(imageService);
 
             var navigator = new Navigator();
-            
-            navigator.Register<LoginViewModel, LoginView>(() => new LoginView(new LoginViewModel(settings, navigator, webClient, credentialsProvider, new CredentialsStore()), imageService));
-            
-            navigator.Register<SignupViewModel, SignupPage>(() => new SignupPage(new SignupViewModel(navigator, usersClient), imageService));
 
             var colorService = new ColorService();
+            
+            navigator.Register<LoginViewModel, LoginView>(() => new LoginView(new LoginViewModel(settings, navigator, webClient, settingsManager), imageService));
+            
+            navigator.Register<SignupViewModel, SignupPage>(() => new SignupPage(new SignupViewModel(navigator, usersClient), imageService));
 
             Action<Func<Task>> invoke = toDo => Application.Instance.Invoke(toDo);
 

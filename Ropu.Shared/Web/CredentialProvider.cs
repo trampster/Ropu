@@ -1,6 +1,6 @@
 namespace Ropu.Shared.Web
 {
-    public class CredentialsProvider
+    public class CredentialsProvider : ICredentialsProvider
     {
         public CredentialsProvider()
         {

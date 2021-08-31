@@ -12,12 +12,12 @@ namespace Ropu.Shared.Web
 {
     public class RopuWebClient : IDisposable
     {
-        readonly HttpClient _httpClient;
+        HttpClient _httpClient;
         readonly HttpClientHandler _httpClientHandler;
         string? _jwt;
-        readonly CredentialsProvider _credentialsProvider;
+        readonly ICredentialsProvider _credentialsProvider;
 
-        public RopuWebClient(string uri, CredentialsProvider credentialsProvider)
+        public RopuWebClient(string uri, ICredentialsProvider credentialsProvider)
         {
             _credentialsProvider = credentialsProvider;
             _httpClientHandler = new HttpClientHandler();
@@ -29,7 +29,16 @@ namespace Ropu.Shared.Web
         public string ServerAddress
         {
             get => _httpClient.BaseAddress.ToString();
-            set => _httpClient.BaseAddress = new Uri(value);
+            set
+            {
+                if(!value.StartsWith("http"))
+                {
+                    value = $"https://{value}";
+                }
+                var httpClient = new HttpClient(_httpClientHandler);
+                httpClient.BaseAddress = new Uri(value, UriKind.Absolute);
+                _httpClient = httpClient;
+            } 
         }
 
         class JwtResponse

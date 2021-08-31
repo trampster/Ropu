@@ -17,9 +17,22 @@ namespace Ropu.Client
         public void Run(string[] args)
         {
             var settingsReader = new CommandLineClientSettingsReader();
-            var settings = settingsReader.ParseArgs(args);
-            if(settings == null)
+            if(!settingsReader.ParseArgs(args))
             {
+                return;
+            }
+
+            var settings = settingsReader.ClientSettings;
+
+            if(settings.Email == null)
+            {
+                Console.Error.WriteLine("No Email configured");
+                return;
+            }
+
+            if(settings.Password == null)
+            {
+                Console.Error.WriteLine("No Password configured");
                 return;
             }
 

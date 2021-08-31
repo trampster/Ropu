@@ -13,34 +13,32 @@ namespace Ropu.Gui.Shared.ViewModels
         readonly IClientSettings _clientSettings;
         readonly INavigator _navigator;
         readonly RopuWebClient _webClient;
-        readonly CredentialsProvider _credentialsProvider;
-        readonly ICredentialsStore _credentialsStore;
+        readonly ISettingsManager _settingsManager;
 
         public LoginViewModel(
             IClientSettings clientSettings, 
             INavigator navigator, 
             RopuWebClient webClient, 
-            CredentialsProvider credentialProvider,
-            ICredentialsStore credentialsStore)
+            ISettingsManager settingsManager)
         {
             _clientSettings = clientSettings;
             _navigator = navigator;
             _webClient = webClient;
-            _credentialsProvider = credentialProvider;
-            _credentialsStore = credentialsStore;
+            _settingsManager = settingsManager;
         }
 
         public override async Task Initialize()
         {
-            (string email, string password) = await _credentialsStore.Load();
-            Email = email;
-            Password = password;
+            var settings = _settingsManager.ClientSettings;
+            Email = settings.Email ?? "";
+            Password = settings.Password ?? "";
+            await Task.CompletedTask;
         }
 
         public string ServerAddress
         {
-            get => _webClient.ServerAddress;
-            set => _webClient.ServerAddress = value;
+            get => _clientSettings.WebAddress ?? "";
+            set => _clientSettings.WebAddress = value;
         }
 
         bool _isServerAddressEditable = false;
@@ -85,16 +83,24 @@ namespace Ropu.Gui.Shared.ViewModels
 
         public ICommand Login => new AsyncCommand(async () => 
         {
-            _credentialsProvider.Password = Password;
-            _credentialsProvider.Email = Email;
+            var settings = _settingsManager.ClientSettings;
+            settings.Password = Password;
+            settings.Email = Email;
+
+            if(_clientSettings.WebAddress == null)
+            {
+                FailureMessage = "Missing server address.";
+                return;
+            }
+
+            _webClient.ServerAddress = _clientSettings.WebAddress;
             try
             {
                 if (await _webClient.Login())
                 {
                     await _navigator.Back();
-                
-                    await _credentialsStore.Save(Email, Password);
 
+                    await _settingsManager.SaveSettings();
                     return;
                 }
                 FailureMessage = "Failed to login";
