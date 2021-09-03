@@ -24,6 +24,7 @@ namespace Ropu.Shared.Web
             _httpClientHandler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => { return true; };
             _httpClient = new HttpClient(_httpClientHandler);
             _httpClient.BaseAddress = new Uri(uri);
+            _httpClient.Timeout = new TimeSpan(0, 0, 5);
         }
 
         public string ServerAddress
@@ -64,24 +65,40 @@ namespace Ropu.Shared.Web
 
         public async ValueTask<bool> Login()
         {
-            var credentials = new Credentials(){Email = _credentialsProvider.Email, Password = _credentialsProvider.Password};
-            var json = JsonConvert.SerializeObject(credentials);
-
-            var response = await _httpClient.PostAsync($"api/Login", new StringContent(json, Encoding.UTF8, "application/json"));
-            if(response.StatusCode != HttpStatusCode.OK)
+            try
             {
-                _manualResetEvent.Reset();
+                var credentials = new Credentials() { Email = _credentialsProvider.Email, Password = _credentialsProvider.Password };
+                var json = JsonConvert.SerializeObject(credentials);
+
+                var cancellationTokenSource = new CancellationTokenSource();
+                var postTask = _httpClient.PostAsync($"api/Login", new StringContent(json, Encoding.UTF8, "application/json"), cancellationTokenSource.Token);
+                if(postTask != await Task.WhenAny(postTask, Task.Delay(5000)))
+                {
+                    cancellationTokenSource.Cancel();
+                    Console.WriteLine($"Login timeout after 5000 ms");
+                    return false;
+                }
+                var response = await postTask;
+                if (response.StatusCode != HttpStatusCode.OK)
+                {
+                    _manualResetEvent.Reset();
+                    return false;
+                }
+                _jwt = Newtonsoft.Json.JsonConvert.DeserializeObject<JwtResponse>(await response.Content.ReadAsStringAsync()).Token;
+                if (_httpClient.DefaultRequestHeaders.Contains("Authorization"))
+                {
+                    _httpClient.DefaultRequestHeaders.Remove("Authorization");
+                }
+                _httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + _jwt);
+
+                _manualResetEvent.Set();
+                return true;
+            }
+            catch (Exception exception) when (exception is HttpRequestException || exception is TaskCanceledException)
+            {
+                Console.WriteLine($"Login Failure {exception}");
                 return false;
             }
-            _jwt = Newtonsoft.Json.JsonConvert.DeserializeObject<JwtResponse>(await response.Content.ReadAsStringAsync()).Token;
-            if(_httpClient.DefaultRequestHeaders.Contains("Authorization"))
-            {
-                _httpClient.DefaultRequestHeaders.Remove("Authorization");
-            }
-            _httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + _jwt);
-
-            _manualResetEvent.Set();
-            return true;
         }
 
         public async ValueTask<Response> Post<T>(string uri, T payload)

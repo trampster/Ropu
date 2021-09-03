@@ -10,18 +10,15 @@ namespace Ropu.Gui.Shared.ViewModels
 {
     public class LoginViewModel : BaseViewModel
     {
-        readonly IClientSettings _clientSettings;
         readonly INavigator _navigator;
         readonly RopuWebClient _webClient;
         readonly ISettingsManager _settingsManager;
 
         public LoginViewModel(
-            IClientSettings clientSettings, 
             INavigator navigator, 
             RopuWebClient webClient, 
             ISettingsManager settingsManager)
         {
-            _clientSettings = clientSettings;
             _navigator = navigator;
             _webClient = webClient;
             _settingsManager = settingsManager;
@@ -29,16 +26,19 @@ namespace Ropu.Gui.Shared.ViewModels
 
         public override async Task Initialize()
         {
+            await _settingsManager.Initialize();
             var settings = _settingsManager.ClientSettings;
             Email = settings.Email ?? "";
             Password = settings.Password ?? "";
+            ServerAddress = settings.WebAddress ?? "";
             await Task.CompletedTask;
         }
 
+        string _serverAddress = "";
         public string ServerAddress
         {
-            get => _clientSettings.WebAddress ?? "";
-            set => _clientSettings.WebAddress = value;
+            get => _serverAddress;
+            set => SetProperty(ref _serverAddress, value);
         }
 
         bool _isServerAddressEditable = false;
@@ -86,30 +86,23 @@ namespace Ropu.Gui.Shared.ViewModels
             var settings = _settingsManager.ClientSettings;
             settings.Password = Password;
             settings.Email = Email;
+            settings.WebAddress = ServerAddress;
 
-            if(_clientSettings.WebAddress == null)
+            if(settings.WebAddress == null)
             {
                 FailureMessage = "Missing server address.";
                 return;
             }
 
-            _webClient.ServerAddress = _clientSettings.WebAddress;
-            try
+            _webClient.ServerAddress = settings.WebAddress;
+            if (await _webClient.Login())
             {
-                if (await _webClient.Login())
-                {
-                    await _navigator.Back();
+                await _navigator.Back();
 
-                    await _settingsManager.SaveSettings();
-                    return;
-                }
-                FailureMessage = "Failed to login";
+                await _settingsManager.SaveSettings();
+                return;
             }
-            catch(HttpRequestException exception)
-            {
-                Console.WriteLine($"Login Failure {exception}");
-                FailureMessage = "Failed to talk to Ropu Server";
-            }
+            FailureMessage = "Failed to login";
         });
     }
 }

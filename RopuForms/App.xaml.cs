@@ -54,17 +54,19 @@ namespace RopuForms
 
             injection
                 .RegisterSingleton<IClientSettings>(i => new FormsClientSettings())
-                .RegisterSingleton(i => new CredentialsProvider())
+                .RegisterSingleton<ICredentialsProvider>(i => i.Get<XamarinSettingsManager>())
+                .RegisterSingleton<XamarinSettingsManager>(i => new XamarinSettingsManager(i.Get<IClientSettings>(), i.Get<ICredentialsStore>()))
                 .RegisterSingleton(i => new UsersClient(i.Get<RopuWebClient>()))
-                .RegisterSingleton(i => new RopuWebClient("https://192.168.1.8:5001/", i.Get<CredentialsProvider>()))
+                .RegisterSingleton(i => new RopuWebClient("https://192.168.1.8:5001/", i.Get<ICredentialsProvider>()))
                 .RegisterSingleton<INavigationService>(i => new Navigator())
                 .RegisterSingleton<INavigator>(i => i.Get<INavigationService>())
                 .RegisterSingleton<ICredentialsStore>(i => new CredentialsStore())
-                .RegisterSingleton(i => new LoginViewModel(i.Get<IClientSettings>(), i.Get<INavigationService>(), i.Get<RopuWebClient>(), i.Get<CredentialsProvider>(), i.Get<ICredentialsStore>()))
+                .RegisterSingleton<ISettingsManager>(i => i.Get<XamarinSettingsManager>())
+                .RegisterSingleton(i => new LoginViewModel(i.Get<INavigationService>(), i.Get<RopuWebClient>(), i.Get<ISettingsManager>()))
                 .RegisterSingleton(i => new LoginPage(i.Get<LoginViewModel>()))
                 .RegisterSingleton(i => new SignupViewModel(i.Get<INavigator>(), i.Get<UsersClient>()))
                 .RegisterSingleton(i => new SignupPage(i.Get<SignupViewModel>()))
-                .RegisterSingleton(i => new MainViewModel(i.Get<IClientSettings>(), i.Get<INavigationService>()))
+                .RegisterSingleton(i => new MainViewModel(i.Get<ISettingsManager>(), i.Get<INavigationService>()))
                 .RegisterSingleton(i => new BrowseGroupsViewModel(i.Get<IGroupsClient>(), i.Get<INavigationService>()))
                 .RegisterSingleton(i => new BrowseGroupsPage(i.Get<BrowseGroupsViewModel>()))
                 .RegisterSingleton(i => new MainPage(i.Get<MainViewModel>(), () => i.Get<BrowseGroupsPage>()))
@@ -74,7 +76,7 @@ namespace RopuForms
                 .RegisterSingleton<Func<EncryptionKey, CachedEncryptionKey>>(i => encryptionKey => new CachedEncryptionKey(encryptionKey, i.Get<Func<byte[], IAesGcm>>()))
                 .RegisterSingleton(i => new KeysClient(i.Get<RopuWebClient>(), false, i.Get<Func<EncryptionKey, CachedEncryptionKey>>()))
                 .RegisterSingleton(i => new PacketEncryption(i.Get<KeysClient>()))
-                .RegisterSingleton(i => new ProtocolSwitch(ControlPortStarting, i.Get<IPortFinder>(), i.Get<PacketEncryption>(), i.Get<KeysClient>(), i.Get<IClientSettings>()))
+                .RegisterSingleton(i => new ProtocolSwitch(ControlPortStarting, i.Get<IPortFinder>(), i.Get<PacketEncryption>(), i.Get<KeysClient>(), i.Get<ISettingsManager>().ClientSettings))
                 .RegisterSingleton(i => new ServingNodeClient(i.Get<ProtocolSwitch>()))
                 .RegisterSingleton<IJitterBuffer>(i => new AdaptiveJitterBuffer(2, 50))
                 .RegisterSingleton<IAudioCodec>(i => new OpusCodec())
@@ -91,7 +93,7 @@ namespace RopuForms
                 .Register<IColorService<Color>>( i => new ColorService())
                 .RegisterSingleton(i => new PttViewModel<Color>(
                     i.Get<RopuClient>(), 
-                    i.Get<IClientSettings>(), 
+                    i.Get<ISettingsManager>(), 
                     i.Get<IGroupsClient>(), 
                     i.Get<IUsersClient>(), 
                     i.Get<ImageClient>(), 

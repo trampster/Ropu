@@ -7,18 +7,18 @@ namespace RopuForms.ViewModels
 {
     public class MainViewModel : BaseViewModel
     {
-        readonly IClientSettings _clientSettings;
+        readonly ISettingsManager _settingsManager;
         readonly INavigationService _navigator;
 
-        public MainViewModel(IClientSettings clientSettings, INavigationService navigator)
+        public MainViewModel(ISettingsManager settingsManager, INavigationService navigator)
         {
-            _clientSettings = clientSettings;
+            _settingsManager = settingsManager;
             _navigator = navigator;
         }
 
         public override async Task Initialize()
         {
-            if (_clientSettings.UserId == null)
+            if (_settingsManager.ClientSettings?.UserId == null)
             {
                 await _navigator.ShowModal<LoginViewModel>();
             }

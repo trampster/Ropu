@@ -55,6 +55,8 @@ namespace Ropu.Client
 
     public interface ISettingsManager
     {
+        Task Initialize();
+
         Task SaveSettings();
 
         IClientSettings ClientSettings
@@ -69,6 +71,8 @@ namespace Ropu.Client
         readonly ClientSettings _clientSettings = new ClientSettings();
 
         public IClientSettings ClientSettings => _clientSettings;
+
+        public Task Initialize() => Task.CompletedTask;
 
         public string Email
         {

@@ -12,7 +12,7 @@ namespace Ropu.Gui.Shared.ViewModels
     public class PttViewModel<ColorT> : BaseViewModel
     {
         readonly RopuClient _ropuClient;
-        readonly IClientSettings _clientSettings;
+        readonly ISettingsManager _settingsManager;
         readonly IGroupsClient _groupsClient;
         readonly IUsersClient _usersClient;
         readonly ImageClient _imageClient;
@@ -22,8 +22,8 @@ namespace Ropu.Gui.Shared.ViewModels
         readonly INavigator _navigator;
 
         public PttViewModel(
-            RopuClient ropuClient, 
-            IClientSettings clientSettings, 
+            RopuClient ropuClient,
+            ISettingsManager settingsManager, 
             IGroupsClient groupsClient, 
             IUsersClient usersClient, 
             ImageClient imageClient,
@@ -50,7 +50,7 @@ namespace Ropu.Gui.Shared.ViewModels
             _usersClient = usersClient;
             _imageClient = imageClient;
 
-            _clientSettings = clientSettings;
+            _settingsManager = settingsManager;
             _colorService = colorService;
             _permissionService = permissionService;
 
@@ -61,6 +61,7 @@ namespace Ropu.Gui.Shared.ViewModels
 
             _pttColor = Gray;
             _receivingColor = Red;
+            _transmittingColor = Green;
 
             _state = _ropuClient.State.ToString();
         }
@@ -90,11 +91,11 @@ namespace Ropu.Gui.Shared.ViewModels
             {
                 _initialized = true;
                 await _webClient.WaitForLogin();
-                _clientSettings.UserId = (await _usersClient.GetCurrentUser())?.Id;
+                _settingsManager.ClientSettings.UserId = (await _usersClient.GetCurrentUser())?.Id;
 
-                if(_clientSettings.UserId == null) throw new InvalidOperationException("UserId is not set");
+                if(_settingsManager.ClientSettings.UserId == null) throw new InvalidOperationException("UserId is not set");
 
-                var groups = (await _groupsClient.GetUsersGroups(_clientSettings.UserId.Value));
+                var groups = (await _groupsClient.GetUsersGroups(_settingsManager.ClientSettings.UserId.Value));
                 _ropuClient.IdleGroup = groups.Length == 0 ? null : (ushort?)groups[0];
 
                 await UpdateIdleGroup();
@@ -237,6 +238,15 @@ namespace Ropu.Gui.Shared.ViewModels
             get => _receivingColor;
             set => SetProperty(ref _receivingColor, value);
         }
+
+        ColorT _transmittingColor;
+        public ColorT TransmittingColor
+        {
+            get => _transmittingColor;
+            set => SetProperty(ref _transmittingColor, value);
+        }
+
+        
 
         ColorT _pttColor;
         public ColorT PttColor
