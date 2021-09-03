@@ -28,7 +28,7 @@ namespace Ropu.LoadBalancer
                 Email = settings.Email,
                 Password = settings.Password
             };
-            var webClient = new RopuWebClient("https://192.168.1.8:5001/", credentialsProvider);
+            var webClient = new RopuWebClient("https://192.168.1.9:5001/", credentialsProvider);
             var groupsClient = new GroupsClient(webClient, new ImageClient(webClient));
             
 

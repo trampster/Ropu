@@ -57,7 +57,7 @@ namespace RopuForms
                 .RegisterSingleton<ICredentialsProvider>(i => i.Get<XamarinSettingsManager>())
                 .RegisterSingleton<XamarinSettingsManager>(i => new XamarinSettingsManager(i.Get<IClientSettings>(), i.Get<ICredentialsStore>()))
                 .RegisterSingleton(i => new UsersClient(i.Get<RopuWebClient>()))
-                .RegisterSingleton(i => new RopuWebClient("https://192.168.1.8:5001/", i.Get<ICredentialsProvider>()))
+                .RegisterSingleton(i => new RopuWebClient("https://192.168.1.9:5001/", i.Get<CredentialsProvider>()))
                 .RegisterSingleton<INavigationService>(i => new Navigator())
                 .RegisterSingleton<INavigator>(i => i.Get<INavigationService>())
                 .RegisterSingleton<ICredentialsStore>(i => new CredentialsStore())

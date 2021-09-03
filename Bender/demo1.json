@@ -3,12 +3,12 @@
         "Name": "Hulk",
         "Folder": "../ClientUI/",
         "Command": "dotnet",
-        "Args": "run --configuration Release -- -w https://192.168.1.8:5001 -u hulk@marvel.com"
+        "Args": "run --configuration Release -- -w https://192.168.1.9:5001 -u hulk@marvel.com"
     },
     {
         "Name": "IronMan",
         "Folder": "../ClientUI/",
         "Command": "dotnet",
-        "Args": "run --configuration Release -- -w https://192.168.1.8:5001 -u ironman@marvel.com"
+        "Args": "run --configuration Release -- -w https://192.168.1.9:5001 -u ironman@marvel.com"
     }
 ]

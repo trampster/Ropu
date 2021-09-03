@@ -33,7 +33,7 @@ namespace Ropu.ClientUI
 
             var settings = settingsManager.ClientSettings;
 
-            var webClient = new RopuWebClient("https://192.168.1.8:5001/", settingsManager);
+            var webClient = new RopuWebClient("https://192.168.1.9:5001/", settingsManager);
 
             var keysClient = new KeysClient(webClient, false, encryptionKey => new CachedEncryptionKey(encryptionKey, key => new AesGcmWrapper(key)));
             var packetEncryption = new PacketEncryption(keysClient);
@@ -72,7 +72,7 @@ namespace Ropu.ClientUI
 
             var colorService = new ColorService();
             
-            navigator.Register<LoginViewModel, LoginView>(() => new LoginView(new LoginViewModel(settings, navigator, webClient, settingsManager), imageService));
+            navigator.Register<LoginViewModel, LoginView>(() => new LoginView(new LoginViewModel(navigator, webClient, settingsManager), imageService));
             
             navigator.Register<SignupViewModel, SignupPage>(() => new SignupPage(new SignupViewModel(navigator, usersClient), imageService));
 
@@ -80,7 +80,7 @@ namespace Ropu.ClientUI
 
             var permissionServices = new PermissionServices();
 
-            var pttView = new PttView(new PttViewModel<Color>(ropuClient, settings, groupsClient, usersClient, imageClient, colorService, invoke, permissionServices, webClient, navigator), pttPage);
+            var pttView = new PttView(new PttViewModel<Color>(ropuClient, settingsManager, groupsClient, usersClient, imageClient, colorService, invoke, permissionServices, webClient, navigator), pttPage);
             navigator.Register<PttViewModel<Color>, PttView>(() => pttView);
             navigator.RegisterView("HomeRightPanel", "PttView", () => pttView);
 
