@@ -30,7 +30,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - uses: microsoft/setup-msbuild@v16.11.0
+    - uses: microsoft/setup-msbuild@v1.0.3
 
     - name: Android
       run: |
