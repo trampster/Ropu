@@ -105,5 +105,15 @@ namespace Ropu.Client.PulseAudio
         public void Stop()
         {
         }
+
+        public void Pause()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Resume()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

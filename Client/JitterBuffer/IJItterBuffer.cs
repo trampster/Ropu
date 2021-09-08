@@ -6,7 +6,7 @@ namespace Ropu.Client.JitterBuffer
     {
         void AddAudio(uint userId, ushort sequenceNumber, Span<byte> audioData);
 
-        (AudioData?, bool) GetNext(Action reset);
+        (AudioData?, bool) GetNext(Action streamFinished, Action streamStart);
 
         /// <summary>
         /// Set by client to indicate who has the floor.

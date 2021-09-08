@@ -8,7 +8,15 @@ namespace Client.NoAudio
         {
         }
 
+        public void Pause()
+        {
+        }
+
         public void PlayAudio(short[] buffer)
+        {
+        }
+
+        public void Resume()
         {
         }
     }

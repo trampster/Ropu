@@ -57,7 +57,7 @@ namespace RopuForms
                 .RegisterSingleton<ICredentialsProvider>(i => i.Get<XamarinSettingsManager>())
                 .RegisterSingleton<XamarinSettingsManager>(i => new XamarinSettingsManager(i.Get<IClientSettings>(), i.Get<ICredentialsStore>()))
                 .RegisterSingleton(i => new UsersClient(i.Get<RopuWebClient>()))
-                .RegisterSingleton(i => new RopuWebClient("https://192.168.1.9:5001/", i.Get<CredentialsProvider>()))
+                .RegisterSingleton(i => new RopuWebClient("https://192.168.1.9:5001/", i.Get<ICredentialsProvider>()))
                 .RegisterSingleton<INavigationService>(i => new Navigator())
                 .RegisterSingleton<INavigator>(i => i.Get<INavigationService>())
                 .RegisterSingleton<ICredentialsStore>(i => new CredentialsStore())
@@ -84,7 +84,7 @@ namespace RopuForms
                 .RegisterSingleton<IMediaClient>(i => new MediaClient(
                     i.Get<ProtocolSwitch>(), i.Get<IAudioSource>(), i.Get<IAudioPlayer>(), i.Get<IAudioCodec>(), i.Get<IJitterBuffer>(), i.Get<IClientSettings>()))
                 .RegisterSingleton(i => new LoadBalancerProtocol(i.Get<IPortFinder>(), 5079, i.Get<PacketEncryption>(), i.Get<KeysClient>()))
-                .RegisterSingleton<IBeepPlayer>(i => new NoBeepPlayer())
+                .RegisterSingleton<IBeepPlayer>(i => new BeepPlayer(i.Get<IAudioPlayer>()))
                 .RegisterSingleton(i => new RopuClient(
                     i.Get<ProtocolSwitch>(), i.Get<ServingNodeClient>(), i.Get<IMediaClient>(), i.Get<LoadBalancerProtocol>(),
                     i.Get<IClientSettings>(), i.Get<IBeepPlayer>(), i.Get<RopuWebClient>(), i.Get<KeysClient>()))

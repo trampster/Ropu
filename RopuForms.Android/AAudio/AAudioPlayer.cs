@@ -9,6 +9,7 @@ namespace RopuForms.Droid.AAudio
     {
         Stream _stream;
         readonly Resampler _resampler;
+        readonly object _lock = new object();
 
         public AAudioPlayer(Resampler resampler)
         {
@@ -52,37 +53,79 @@ namespace RopuForms.Droid.AAudio
 
         public void PlayAudio(short[] buffer)
         {
-            if (_stream == null)
+            lock (_lock)
             {
-                OpenStream();
-            }
-            if(buffer.Any(u => u != 0))
-            {
-                Console.WriteLine("Found none zero");
-            }
+                if (_stream == null)
+                {
+                    OpenStream();
+                }
 
-            _resampler.UpSample(buffer, _buffer);
+                if(_stream.State != StreamState.Started && _stream.State != StreamState.Starting)
+                {
+                    return;
+                }
 
-            var result = (int)_stream.Write(_buffer, _numFrames, 10000*1000000L);
-            if(result == _numFrames)
-            {
-                return;
-            }
-            if(result < 0)
-            {
-                Console.Error.WriteLine($"Failed to write audio with result {(Result)(result)}");
-                return;
-            }
-            if(result >= 0)
-            {
-                Console.Error.WriteLine($"Unexpected ammount of samples written expected 960 but got {result}, State {_stream.State}");
+                _resampler.UpSample(buffer, _buffer);
+
+                var result = (int)_stream.Write(_buffer, _numFrames, 10000 * 1000000L);
+                if (result == _numFrames)
+                {
+                    return;
+                }
+                if (result < 0)
+                {
+                    Console.Error.WriteLine($"Failed to write audio with result {(Result)(result)}");
+                    return;
+                }
+                if (result >= 0)
+                {
+                    Console.Error.WriteLine($"Unexpected ammount of samples written expected 960 but got {result}, State {_stream.State}");
+                }
             }
         }
 
-        void Stop()
+
+        public void Pause()
         {
-            _stream?.Dispose();
-            _stream = null;
+            lock (_lock)
+            {
+                if (_stream != null)
+                {
+                    var result = _stream.RequestPause();
+                    if (result != Result.OK)
+                    {
+                        Console.Error.WriteLine($"Failed to pause stream");
+                    }
+                }
+            }
+        }
+
+        public void Resume()
+        {
+            lock (_lock)
+            {
+                if (_stream != null)
+                {
+                    if(_stream.State != StreamState.Paused && _stream.State != StreamState.Pausing)
+                    {
+                        return;
+                    }
+                    var result = _stream.RequestStart();
+                    if (result != Result.OK)
+                    {
+                        Console.Error.WriteLine($"Failed to resume stream");
+                    }
+                }
+            }
+        }
+
+        public void Stop()
+        {
+            lock (_lock)
+            {
+                _stream?.Dispose();
+                _stream = null;
+            }
         }
 
         #region IDisposable Support

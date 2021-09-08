@@ -44,25 +44,34 @@ namespace Ropu.Client
             }
         }
 
-        volatile bool _sendingAudio = false;
+        CancellationTokenSource? _sendingCancellationTokenSource;
+        Task? _sendingTask = null;
 
         public async Task StartSendingAudio(ushort groupId)
         {
-            var task = new Task(() =>
+            if(_sendingTask != null)
             {
-                _sendingAudio = true;
+                await _sendingTask;
+                _sendingTask = null;
+            }
+            _sendingCancellationTokenSource = new CancellationTokenSource();
+
+            var token = _sendingCancellationTokenSource.Token;
+
+            _sendingTask = new Task(() =>
+            {
                 short[] audio = new short[160];
                 //bump the sequence number by 1000, this allows the receivers to reset there jitter buffers on new overs.
                 //this is required because we don't have a over id in media packets
                 _sequenceNumber += 1000; 
 
                 _audioSource.Start();
-                while(_sendingAudio)
+                while(!token.IsCancellationRequested)
                 {
                     _audioSource.ReadAudio(audio);
-                    if(!_sendingAudio)
+                    if(token.IsCancellationRequested)
                     {
-                        break; //nothing available
+                        break; //cancelled
                     }
                     if(_clientSettings.UserId == null) throw new InvalidOperationException("Cannot send audio because no UserId is set");
                     SendMediaPacket(groupId, _sequenceNumber, _clientSettings.UserId.Value, audio);
@@ -70,13 +79,13 @@ namespace Ropu.Client
                 }
                 _audioSource.Stop();
             }, TaskCreationOptions.LongRunning);
-            task.Start();
-            await task;
+            _sendingTask.Start();
+            await _sendingTask;
         }
 
         public void StopSendingAudio()
         {
-            _sendingAudio = false;
+            _sendingCancellationTokenSource?.Cancel();
         }
 
         public void ParseMediaPacketGroupCall(Span<byte> data)
@@ -101,13 +110,21 @@ namespace Ropu.Client
             short[] outputBuffer = new short[160];
             
             bool newStream = true;
-            Action reset = () =>
+            Action streamFinsihed = () =>
+            {
+                _audioPlayer.Pause();
+            };
+            Action streamStart = () =>
             {
                 newStream = true;
+                _audioPlayer.Resume();
             };
             while(!_disposing)
             {
-                (AudioData? data, bool isNext) = _jitterBuffer.GetNext(reset);
+                (AudioData? data, bool isNext) = _jitterBuffer.GetNext(streamFinsihed, streamStart);
+                if(newStream)
+                {
+                }
 
                 if(data != null)
                 {

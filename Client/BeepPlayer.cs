@@ -21,9 +21,9 @@ namespace Ropu.Client
             _deniedPartTwo = BuildTone(329.628, 400);
         }
 
-        public void PlayGoAhead()
+        public async void PlayGoAhead()
         {
-            Task.Run(() =>  
+            await Task.Run(() =>  
             {
                 lock(_lock)
                 {
@@ -76,6 +76,7 @@ namespace Ropu.Client
         void Play(short[] audio)
         {
             Console.WriteLine("PlayBeep");
+            _audioPlayer.Resume();
             const double attenationFactor = 1d/160d;
 
             //attenuate start of tone
@@ -102,6 +103,7 @@ namespace Ropu.Client
                 }
                 _audioPlayer.PlayAudio(_buffer);
             }
+            _audioPlayer.Pause();
         }
 
         readonly short[] _silence = new short[160];

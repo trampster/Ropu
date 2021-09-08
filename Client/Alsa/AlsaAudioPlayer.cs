@@ -1,6 +1,4 @@
 using System;
-using System.Diagnostics;
-using System.Linq;
 
 namespace Ropu.Client.Alsa
 {
@@ -101,6 +99,14 @@ namespace Ropu.Client.Alsa
         {
             Dispose(true);
             GC.SuppressFinalize(this);
+        }
+
+        public void Pause()
+        {
+        }
+        
+        public void Resume()
+        {
         }
     }
 }

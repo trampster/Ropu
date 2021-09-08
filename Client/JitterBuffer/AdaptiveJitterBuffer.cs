@@ -228,7 +228,7 @@ namespace Ropu.Client.JitterBuffer
 
         bool _returnedAudioSinceEmpty = false;
 
-        public (AudioData?, bool) GetNext(Action reset)
+        public (AudioData?, bool) GetNext(Action streamFinished, Action streamStart)
         {
             if(_packetsInBuffer == 0)
             {
@@ -237,10 +237,11 @@ namespace Ropu.Client.JitterBuffer
                     Console.WriteLine("Giving up on stream, starting wait for new packet.");
                     _currentUserId = 0;
                     _nextExpectedSequenceNumber = 0;
+                    streamFinished();
                     _dataInBuffer.WaitOne();
                     _emptyCount = 0;
                     _returnedAudioSinceEmpty = false;
-                    reset();
+                    streamStart();
                 }
 
                 _emptyCount++;

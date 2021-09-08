@@ -8,6 +8,7 @@ namespace RopuForms.Droid.AAudio
     {
         Stream _stream;
         readonly Resampler _resampler;
+        readonly object _lock = new object();
 
         public AAudioSource(Resampler resampler)
         {
@@ -52,48 +53,57 @@ namespace RopuForms.Droid.AAudio
 
         public void ReadAudio(short[] buffer)
         {
-            if (_stream == null)
+            lock (_lock)
             {
-                throw new InvalidOperationException("You must call start before ReadAudio");
-            }
+                if (_stream == null)
+                {
+                    throw new InvalidOperationException("You must call start before ReadAudio");
+                }
 
-            var result = (int)_stream.Read(_buffer, _numFrames, 10000*1000000L);
-            if(result == _numFrames)
-            {
-                try
+                var result = (int)_stream.Read(_buffer, _numFrames, 10000 * 1000000L);
+                if (result == _numFrames)
                 {
-                    _resampler.DownSample(_buffer, buffer);
+                    try
+                    {
+                        _resampler.DownSample(_buffer, buffer);
+                    }
+                    catch (Exception exception)
+                    {
+                        Console.WriteLine($"DownSample threw exception {exception}");
+                        throw;
+                    }
+                    return;
                 }
-                catch(Exception exception)
+                if (result < 0)
                 {
-                    Console.WriteLine($"DownSample threw exception {exception}");
-                    throw;
+                    Console.Error.WriteLine($"Failed to read audio with result {(Result)(result)}");
+                    return;
                 }
-                return;
-            }
-            if(result < 0)
-            {
-                Console.Error.WriteLine($"Failed to read audio with result {(Result)(result)}");
-                return;
-            }
-            if(result >= 0)
-            {
-                Console.Error.WriteLine($"Unexpected ammount of samples read expected 960 but got {result}, State {_stream.State}");
+                if (result >= 0)
+                {
+                    Console.Error.WriteLine($"Unexpected ammount of samples read expected 960 but got {result}, State {_stream.State}");
+                }
             }
         }
 
         public void Start()
         {
-            if (_stream == null)
+            lock (_lock)
             {
-                OpenStream();
+                if (_stream == null)
+                {
+                    OpenStream();
+                }
             }
         }
 
         public void Stop()
         {
-            _stream?.Dispose();
-            _stream = null;
+            lock (_lock)
+            {
+                _stream?.Dispose();
+                _stream = null;
+            }
         }
 
         #region IDisposable Support

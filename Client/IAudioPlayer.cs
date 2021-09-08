@@ -10,5 +10,9 @@ namespace Ropu.Client
         /// <param name="buffer"></param>
         /// <returns></returns>
         void PlayAudio(short[] buffer);
+
+        void Pause();
+
+        void Resume();
     }
 }
