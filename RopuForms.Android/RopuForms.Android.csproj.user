@@ -1,9 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup>
-    <SelectedDevice>Google Pixel 4a</SelectedDevice>
-    <AndroidDesignerPreferredTheme>Theme.AppCompat.Light.NoActionBar</AndroidDesignerPreferredTheme>
-    <ProjectView>ShowAllFiles</ProjectView>
-    <ActiveDebugProfile>Google Pixel 4a</ActiveDebugProfile>
-  </PropertyGroup>
-</Project>
