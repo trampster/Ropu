@@ -1,0 +1,206 @@
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Net;
+using System.Net.Sockets;
+using Ropu.BalancerProtocol;
+using Serilog;
+
+namespace Ropu.Balancer;
+
+public class Listener
+{
+    readonly byte[] _buffer = new byte[1024];
+    readonly Socket _socket;
+    readonly BalancerPacketFactory _balancerPacketFactory = new();
+    readonly ILogger _logger;
+
+    readonly byte[] _heartbeatResponse;
+    readonly Router[] _routers;
+
+    public Listener(
+        ILogger logger,
+        ushort port)
+    {
+        _logger = logger.ForContext<Listener>();
+
+        _heartbeatResponse = _balancerPacketFactory.HeartbeatResponse;
+
+
+        _socket = new Socket(SocketType.Dgram, ProtocolType.Udp);
+
+        var endpoint = new IPEndPoint(IPAddress.Any, port);
+        _socket.Bind(endpoint);
+
+        _routers = new Router[2000];
+        for (int index = 0; index < _routers.Length; index++)
+        {
+            _routers[index] = new Router()
+            {
+                Id = (ushort)index
+            };
+        }
+    }
+
+    void RunReceive()
+    {
+        EndPoint receivedEndPoint = new IPEndPoint(IPAddress.Any, 0);
+
+        Stopwatch stopwatch = new Stopwatch();
+        stopwatch.Start();
+
+        var lastLastSeenCheck = stopwatch.ElapsedMilliseconds;
+
+        while (true)
+        {
+            var received = _socket.ReceiveFrom(_buffer, ref receivedEndPoint);
+            if (received != 0)
+            {
+                switch (_buffer[0])
+                {
+                    case (byte)BalancerPacketTypes.RegisterRouter:
+                        HandleRegisterRouter(received, receivedEndPoint);
+                        break;
+                    case (byte)BalancerPacketTypes.Heartbeat:
+                        HandleHeartbeat(_buffer.AsSpan(0, received), receivedEndPoint);
+                        break;
+                    case (byte)BalancerPacketTypes.RouterAssignmentRequest:
+                        HandleRegisterAssignmentRequest(receivedEndPoint);
+                        break;
+                    default:
+                        //unhandled message
+                        break;
+                }
+            }
+            if (lastLastSeenCheck + 5000 < stopwatch.ElapsedMilliseconds)
+            {
+                CheckLastSeen();
+                lastLastSeenCheck = stopwatch.ElapsedMilliseconds;
+            }
+        }
+
+    }
+
+    void CheckLastSeen()
+    {
+        for (int index = 0; index < _routers.Length; index++)
+        {
+            var router = _routers[index];
+            if (router.IsUsed && !router.Seen)
+            {
+                _logger.Information($"Router {router.Id} timed out removing");
+                router.IsUsed = false;
+            }
+            else
+            {
+                router.Seen = false;
+            }
+        }
+    }
+
+    bool TryGetRouter(int routerId, [NotNullWhen(true)] out Router? router)
+    {
+        if (routerId >= _buffer.Length)
+        {
+            router = null;
+            return false;
+        }
+        var routerAtIndex = _routers[routerId];
+        if (routerAtIndex.IsUsed)
+        {
+            router = routerAtIndex;
+            return true;
+        }
+        router = null;
+        return false;
+    }
+
+    void HandleHeartbeat(Span<byte> packet, EndPoint receivedEndPoint)
+    {
+        if (!_balancerPacketFactory.TryParseHeartbeatPacket(packet, out HeartbeatPacket? heartbeatPacket))
+        {
+            _logger.Warning("Failed to parse heartbeat packet");
+            return;
+        }
+
+        if (!TryGetRouter(heartbeatPacket.Value.RouterId, out Router? router))
+        {
+            _logger.Warning($"Failed to find Router for Heartbeat with Router ID {heartbeatPacket.Value.RouterId}");
+            return;
+        }
+
+        _logger.Debug($"Heartbeak from Id: {router.Id}, NumberRegistered: {router.NumberRegistered}, Capacity {router.Capacity} ");
+        router.NumberRegistered = heartbeatPacket.Value.RegisteredUsers;
+        router.Seen = true;
+        _socket.SendTo(_heartbeatResponse, receivedEndPoint);
+    }
+
+    void HandleRegisterAssignmentRequest(EndPoint receivedEndPoint)
+    {
+        _logger.Information("Got Router Assignment Request");
+        float smallestLoad = float.PositiveInfinity;
+        Router? smallest = null;
+        foreach (var router in _routers)
+        {
+            var loadLevel = router.NumberRegistered / router.Capacity;
+            if (loadLevel < smallestLoad)
+            {
+                smallestLoad = loadLevel;
+                smallest = router;
+            }
+        }
+
+        if (smallest != null)
+        {
+            _logger.Information($"Sending Router Assignment Request, {smallest.Endpoint}");
+            smallest.NumberRegistered++;
+            var packet = _balancerPacketFactory.BuildRouterAssignmentPacket(_buffer, smallest.Endpoint);
+            _socket.SendTo(packet, receivedEndPoint);
+        }
+    }
+
+    Router? FindNextUnusedRouter()
+    {
+        for (int index = 0; index < _routers.Length; index++)
+        {
+            var router = _routers[index];
+            if (!router.IsUsed)
+            {
+                return router;
+            }
+        }
+        return null;
+    }
+
+    void HandleRegisterRouter(int recieved, EndPoint receivedEndPoint)
+    {
+        var router = FindNextUnusedRouter();
+        if (router == null)
+        {
+            //TODO: max capacity reached, need to tell router to back off
+            return;
+        }
+        if (!_balancerPacketFactory.TryParseRouterRegisterPacket(_buffer.AsSpan(0, recieved), out var routerRegisterPacket))
+        {
+            _logger.Warning($"Failed to parse RegisterRouter packet");
+            return;
+        }
+        var packet = routerRegisterPacket.Value;
+
+        router.Endpoint = packet.EndPoint;
+        router.Capacity = packet.Capacity;
+        router.NumberRegistered = 0;
+        router.IsUsed = true;
+        _logger.Debug($"Router registered Id: {router.Id}, Capacity: {router.Capacity}, Endpoint: {router.Endpoint}");
+
+        var registerResponsePacket = _balancerPacketFactory.BuildRegisterRouterResponsePacket(_buffer, router.Id);
+        _socket.SendTo(registerResponsePacket, receivedEndPoint);
+    }
+
+    public Task RunAsync()
+    {
+        var taskFactory = new TaskFactory();
+        var receiveTask = taskFactory.StartNew(RunReceive, TaskCreationOptions.LongRunning);
+
+        return Task.WhenAny(receiveTask);
+    }
+}
