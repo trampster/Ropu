@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 using Ropu.BalancerProtocol;
-using Serilog;
+using Ropu.Logging;
 
 namespace Ropu.Router;
 
@@ -10,8 +10,7 @@ public class BalancerClient
 {
     readonly byte[] _registerMessage;
     readonly byte[] _buffer = new byte[1024];
-    readonly IPEndPoint _routerIpEndpoint;
-    readonly IPEndPoint _ballancerEndpoint;
+    readonly SocketAddress _balancerEndpoint;
     readonly Socket _socket;
     readonly ILogger _logger;
 
@@ -22,22 +21,22 @@ public class BalancerClient
     public BalancerClient(
         ILogger logger,
         IPEndPoint routerIpEndpoint,
-        IPEndPoint ballancerEndpoint,
+        IPEndPoint balancerEndpoint,
         ushort capacity)
     {
-        _logger = logger.ForContext<BalancerClient>();
-        _ballancerEndpoint = ballancerEndpoint;
-        _routerIpEndpoint = routerIpEndpoint;
+        _logger = logger;
+        logger.ForContext(nameof(BalancerClient));
+        _balancerEndpoint = balancerEndpoint.Serialize();
 
         _registerMessage = new byte[11];
 
-
-        _logger.Information($"Router Endpoint {routerIpEndpoint}");
-        _balancerPacketFactory.BuildRegisterRouterPacket(_registerMessage, routerIpEndpoint, capacity);
+        var routerAddress = routerIpEndpoint.Serialize();
+        _logger.Information($"Router Endpoint {routerAddress}");
+        _balancerPacketFactory.BuildRegisterRouterPacket(_registerMessage, routerAddress, capacity);
 
         _socket = new Socket(SocketType.Dgram, ProtocolType.Udp);
 
-        var endpoint = new IPEndPoint(IPAddress.Any, _routerIpEndpoint.Port);
+        var endpoint = new IPEndPoint(IPAddress.Any, routerIpEndpoint.Port);
         _socket.Bind(endpoint);
     }
 
@@ -46,7 +45,7 @@ public class BalancerClient
         while (true)
         {
             _logger.Information("Registering");
-            _socket.SendTo(_registerMessage, _ballancerEndpoint);
+            _socket.SendTo(_registerMessage, SocketFlags.None, _balancerEndpoint);
 
             _registerResponseEvent.Reset();
             if (_registerResponseEvent.WaitOne(2000))
@@ -62,16 +61,16 @@ public class BalancerClient
         }
     }
 
-    ManualResetEvent _registerResponseEvent = new ManualResetEvent(false);
-    ManualResetEvent _heartBeatResponseEvent = new ManualResetEvent(false);
+    ManualResetEvent _registerResponseEvent = new(false);
+    ManualResetEvent _heartBeatResponseEvent = new(false);
 
     void RunReceive()
     {
-        EndPoint recievedEndPoint = new IPEndPoint(IPAddress.Any, 0);
+        SocketAddress socketAddress = new SocketAddress(AddressFamily.InterNetworkV6);
 
         while (true)
         {
-            var received = _socket.ReceiveFrom(_buffer, ref recievedEndPoint);
+            var received = _socket.ReceiveFrom(_buffer, SocketFlags.None, socketAddress);
             if (received != 0)
             {
                 switch (_buffer[0])
@@ -129,7 +128,7 @@ public class BalancerClient
                 (ushort)_routerId,
                 (ushort)_registeredUsers.Count);
 
-            _socket.SendTo(heartbeat, _ballancerEndpoint);
+            _socket.SendTo(heartbeat, SocketFlags.None, _balancerEndpoint);
             _heartBeatResponseEvent.Reset();
             if (!_heartBeatResponseEvent.WaitOne(2000))
             {

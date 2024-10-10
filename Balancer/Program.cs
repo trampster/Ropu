@@ -1,16 +1,11 @@
 ﻿using Ropu.Balancer;
-using Serilog;
+using Ropu.Logging;
 
 Console.WriteLine("Ropu Balancer");
-var logger = new LoggerConfiguration()
-    .MinimumLevel.Debug()
-    .WriteTo.Console()
-    .CreateLogger();
+var logger = new Logger(LogLevel.Debug);
 
 var listener = new Listener(
     logger,
     2000);
 
-var task = listener.RunAsync();
-
-await Task.WhenAny(task);
+await listener.RunAsync();

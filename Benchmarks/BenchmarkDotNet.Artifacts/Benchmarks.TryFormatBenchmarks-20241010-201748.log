@@ -1,0 +1,68 @@
+// Validating benchmarks:
+// ***** BenchmarkRunner: Start   *****
+// ***** Found 1 benchmark(s) in total *****
+// ***** Building 1 exe(s) in Parallel: Start   *****
+// ***** Done, took 00:00:00 (0.08 sec)   *****
+// Found 1 benchmarks:
+//   TryFormatBenchmarks.TryFormat: DefaultJob [value=13456]
+
+// Generate Exception: System.UnauthorizedAccessException: Access to the path '/home/daniel/Work/Ropu/data' is denied.
+ ---> System.IO.IOException: Permission denied
+   --- End of inner exception stack trace ---
+   at System.IO.Enumeration.FileSystemEnumerator`1.CreateDirectoryHandle(String path, Boolean ignoreNotFound)
+   at System.IO.Enumeration.FileSystemEnumerator`1.DequeueNextDirectory()
+   at System.IO.Enumeration.FileSystemEnumerator`1.DirectoryFinished()
+   at System.IO.Enumeration.FileSystemEnumerator`1.FindNextEntry(Byte* entryBufferPtr, Int32 bufferLength)
+   at System.IO.Enumeration.FileSystemEnumerator`1.MoveNext()
+   at System.Linq.Enumerable.WhereEnumerableIterator`1.ToArray()
+   at BenchmarkDotNet.Toolchains.CsProj.CsProjGenerator.GetProjectFilePath(Type benchmarkTarget, ILogger logger)
+   at BenchmarkDotNet.Toolchains.CsProj.CsProjGenerator.GenerateProject(BuildPartition buildPartition, ArtifactsPaths artifactsPaths, ILogger logger)
+   at BenchmarkDotNet.Toolchains.GeneratorBase.GenerateProject(BuildPartition buildPartition, ILogger logger, String rootArtifactsFolderPath)
+
+// BenchmarkDotNet has failed to build the auto-generated boilerplate code.
+// It can be found in /home/daniel/Work/Ropu/Benchmarks/bin/Release/net8.0/dc008118-54bc-4455-ade3-8beaf04113e2
+// Please follow the troubleshooting guide: https://benchmarkdotnet.org/articles/guides/troubleshooting.html
+
+// ** Remained 0 (0.0%) benchmark(s) to run. Estimated finish 2024-10-10 20:17 (0h 0m from now) **
+// ***** BenchmarkRunner: Finish  *****
+
+// * Export *
+  BenchmarkDotNet.Artifacts/results/Benchmarks.TryFormatBenchmarks-report.csv
+  BenchmarkDotNet.Artifacts/results/Benchmarks.TryFormatBenchmarks-report-github.md
+  BenchmarkDotNet.Artifacts/results/Benchmarks.TryFormatBenchmarks-report.html
+
+// * Detailed results *
+TryFormatBenchmarks.TryFormat: DefaultJob [value=13456]
+Runtime = ; GC = 
+There are not any results runs
+
+// * Summary *
+
+BenchmarkDotNet v0.14.0, Ubuntu 20.04.6 LTS (Focal Fossa)
+Intel Core i7-2600 CPU 3.40GHz (Sandy Bridge), 1 CPU, 8 logical and 4 physical cores
+.NET SDK 8.0.101
+  [Host] : .NET 8.0.1 (8.0.123.58001), X64 RyuJIT AVX
+
+
+| Method    | value | Mean | Error |
+|---------- |------ |-----:|------:|
+| TryFormat | 13456 |   NA |    NA |
+
+Benchmarks with issues:
+  TryFormatBenchmarks.TryFormat: DefaultJob [value=13456]
+
+// * Legends *
+  value : Value of the 'value' parameter
+  Mean  : Arithmetic mean of all measurements
+  Error : Half of 99.9% confidence interval
+  1 ns  : 1 Nanosecond (0.000000001 sec)
+
+// * Diagnostic Output - MemoryDiagnoser *
+
+
+// ***** BenchmarkRunner: End *****
+Run time: 00:00:00 (0.03 sec), executed benchmarks: 0
+
+Global total time: 00:00:00 (0.3 sec), executed benchmarks: 0
+// * Artifacts cleanup *
+Artifacts cleanup is finished

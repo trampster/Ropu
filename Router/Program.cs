@@ -1,7 +1,6 @@
-﻿using System.ComponentModel.Design.Serialization;
-using System.Net;
+﻿using System.Net;
+using Ropu.Logging;
 using Ropu.Router;
-using Serilog;
 
 Console.WriteLine("Ropu Router");
 
@@ -19,9 +18,7 @@ if (!ushort.TryParse(portString, out ushort port))
     return;
 }
 
-var logger = new LoggerConfiguration()
-    .WriteTo.Console()
-    .CreateLogger();
+var logger = new Logger(LogLevel.Debug);
 
 var ballancerClient = new BalancerClient(
     logger,

@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Sockets;
 
 namespace Ropu.Balancer;
 
@@ -29,19 +30,19 @@ public class Router
         set;
     }
 
-    public IPEndPoint Endpoint
+    public SocketAddress Endpoint
     {
         get;
         set;
-    } = new IPEndPoint(IPAddress.None, 0);
+    } = new SocketAddress(AddressFamily.InterNetwork);
 
-    public int Capacity
+    public ushort Capacity
     {
         get;
         set;
     }
 
-    public int NumberRegistered
+    public ushort NumberRegistered
     {
         get;
         set;

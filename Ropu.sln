@@ -11,6 +11,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Router", "Router\Router.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BalancerProtocol", "BalancerProtocol\BalancerProtocol.csproj", "{2EEF1B74-84C9-4513-8CBA-15D106E801F8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Benchmarks", "Benchmarks\Benchmarks.csproj", "{D8A96F43-F21F-46F2-981E-7AA4F77113FE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Logging", "Logging\Logging.csproj", "{2B797489-1A85-4B1B-8F1D-3C684A4DE759}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +37,14 @@ Global
 		{2EEF1B74-84C9-4513-8CBA-15D106E801F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2EEF1B74-84C9-4513-8CBA-15D106E801F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2EEF1B74-84C9-4513-8CBA-15D106E801F8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D8A96F43-F21F-46F2-981E-7AA4F77113FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D8A96F43-F21F-46F2-981E-7AA4F77113FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D8A96F43-F21F-46F2-981E-7AA4F77113FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D8A96F43-F21F-46F2-981E-7AA4F77113FE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2B797489-1A85-4B1B-8F1D-3C684A4DE759}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2B797489-1A85-4B1B-8F1D-3C684A4DE759}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2B797489-1A85-4B1B-8F1D-3C684A4DE759}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2B797489-1A85-4B1B-8F1D-3C684A4DE759}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

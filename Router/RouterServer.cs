@@ -18,11 +18,11 @@ public class RouterServer
         var socket = new Socket(SocketType.Dgram, ProtocolType.Udp);
 
         var endpoint = new IPEndPoint(IPAddress.Any, 8001);
-        socket.Connect(endpoint);
+        socket.Bind(endpoint);
 
         while (true)
         {
-            var recieved = await socket.ReceiveAsync(_buffer);
+            var recieved = await socket.ReceiveAsync(_buffer); //TODO: Should be ReceiveFrom
             if (recieved == 0)
             {
                 continue;

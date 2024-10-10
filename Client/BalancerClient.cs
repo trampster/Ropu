@@ -20,16 +20,18 @@ public class BalancerClient
         _balancerEndpoint = balancerEndpoint;
         _logger = logger.ForContext<BalancerClient>();
 
-        _socket = new Socket(SocketType.Dgram, ProtocolType.Udp);
+        _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 
         var endpoint = new IPEndPoint(IPAddress.Any, port);
         _socket.Bind(endpoint);
     }
 
-    public async Task<IPEndPoint> Register()
+    public async Task<SocketAddress> Register()
     {
         var packetFactory = new BalancerPacketFactory();
-        EndPoint recievedEndPoint = new IPEndPoint(IPAddress.Any, 0);
+        SocketAddress socketAddress = new SocketAddress(AddressFamily.InterNetwork);
+
+        SocketAddress routerAddress = new(AddressFamily.InterNetwork);
 
         while (true)
         {
@@ -40,8 +42,8 @@ public class BalancerClient
             receiveCancellationSource.CancelAfter(2000);
             try
             {
-                var result = await _socket.ReceiveFromAsync(_buffer, recievedEndPoint, receiveCancellationSource.Token);
-                if (result.ReceivedBytes == 0)
+                var receivedBytes = await _socket.ReceiveFromAsync(_buffer, SocketFlags.None, socketAddress, receiveCancellationSource.Token);
+                if (receivedBytes == 0)
                 {
                     await Task.Delay(1000);
                     continue;
@@ -52,12 +54,12 @@ public class BalancerClient
                 {
                     _logger.Information("Received RouterAssignment");
 
-                    if (!packetFactory.TryParseRouterAssignmentPacket(_buffer.AsSpan(0, result.ReceivedBytes), out IPEndPoint? routerEndpoint))
+                    if (!packetFactory.TryParseRouterAssignmentPacket(_buffer.AsSpan(0, receivedBytes), routerAddress))
                     {
                         await Task.Delay(1000);
                         continue;
                     }
-                    return routerEndpoint;
+                    return routerAddress;
                 }
 
             }

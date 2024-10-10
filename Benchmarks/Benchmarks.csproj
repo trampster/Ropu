@@ -8,8 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BalancerProtocol\BalancerProtocol.csproj" />
-    <ProjectReference Include="..\Logging\Logging.csproj" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
   </ItemGroup>
 
 </Project>
