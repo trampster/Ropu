@@ -28,8 +28,11 @@ public class Logger : ILogger
 
     public void Debug(long value)
     {
-        int written = Write(value, 0);
-        Console.Out.WriteLine(_buffer.AsSpan(0, written));
+        if (_logLevel > LogLevel.Debug)
+        {
+            return;
+        }
+        Log(value, "Debug");
     }
 
     public void Debug(string value)
@@ -38,7 +41,7 @@ public class Logger : ILogger
         {
             return;
         }
-        Log(value);
+        Log(value, "Debug");
     }
 
     public void Warning(string value)
@@ -47,7 +50,7 @@ public class Logger : ILogger
         {
             return;
         }
-        Log(value);
+        Log(value, "Warn");
     }
 
     public void Information(string value)
@@ -56,7 +59,7 @@ public class Logger : ILogger
         {
             return;
         }
-        Log(value);
+        Log(value, "Info");
     }
 
     public void Debug(ZeroAllocationInterpolationHandler handler)
@@ -95,9 +98,20 @@ public class Logger : ILogger
         Console.Out.WriteLine(_buffer.AsSpan(0, index));
     }
 
-    void Log(string value)
+    void Log(string value, string level)
     {
-        Console.Out.WriteLine(value.AsSpan());
+        var index = WriteContext(level);
+        var formatted = value;
+        formatted.CopyTo(_buffer.AsSpan(index));
+        index += formatted.Length;
+        Console.Out.WriteLine(_buffer.AsSpan(0, index));
+    }
+
+    void Log(long value, string level)
+    {
+        var index = WriteContext(level);
+        int written = Write(value, index);
+        Console.Out.WriteLine(_buffer.AsSpan(0, written));
     }
 
     int WriteContext(string level)

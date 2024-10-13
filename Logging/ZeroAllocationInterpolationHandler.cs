@@ -12,6 +12,10 @@ public ref struct ZeroAllocationInterpolationHandler
 
     public ZeroAllocationInterpolationHandler(int literalLength, int formattedCount)
     {
+        if (_buffer == null)
+        {
+            _buffer = new char[1024];
+        }
     }
 
     public void AppendLiteral(string s)
@@ -23,6 +27,18 @@ public ref struct ZeroAllocationInterpolationHandler
     public void AppendFormatted<T>(T formatted)
     {
         throw new NotImplementedException();
+    }
+
+    public void AppendFormatted(int formatted)
+    {
+        int written = Write(formatted, _currentIndex);
+        _currentIndex += written;
+    }
+
+    public void AppendFormatted(byte formatted)
+    {
+        int written = Write(formatted, _currentIndex);
+        _currentIndex += written;
     }
 
     public void AppendFormatted(long formatted)

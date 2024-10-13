@@ -76,7 +76,7 @@ A router should request these when they first connect and periodically afterward
 | -------- | ------------------- | -----------------------------------------|
 | 0        | Packet Identifier   | 0x06                                     |
 | 1        | Page Number         | Page Number (1 - 10)                     |
-The following can be repeated for each router upto 500 times.               |
+The following can be repeated for each router upto 200 times.               |
 | 2-4      | Router ID (index)   | The ID (index) of the router             |
 | 5-8      | Router IP Address   | Public IPv4 address of router            |
 | 9-10     | Router Port         | Public port of router                    |
@@ -87,7 +87,7 @@ Requests a router info page from the Balancer.
 | Bytes    | Field               | Description                              |
 | -------- | ------------------- | -----------------------------------------|
 | 0        | Packet Identifier   | 0x07                                     |
-| 1-2      | Page Nujber         | Page Number (1 - 10)                     |
+| 1        | Page Number         | Page Number (1 - 10)                     |
 
 
 ## Router Added

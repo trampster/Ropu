@@ -7,5 +7,9 @@ public enum BalancerPacketTypes
     Heartbeat = 0x02,
     HeartbeatResponse = 0x03,
     RouterAssignmentRequest = 0x04,
-    RouterAssignment = 0x05
+    RouterAssignment = 0x05,
+    RouterInfoPage = 0x06,
+    RouterInfoPageRequest = 0x07,
+    RouterAdded = 0x08,
+    RouterRemoved = 0x09
 }

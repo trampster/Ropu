@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Sockets;
+using System.Reflection.Metadata;
 using Ropu.BalancerProtocol;
 using Ropu.Logging;
 
@@ -76,6 +77,9 @@ public class Listener
                         break;
                     case (byte)BalancerPacketTypes.RouterAssignmentRequest:
                         HandleRegisterAssignmentRequest(receivedAddress);
+                        break;
+                    case (byte)BalancerPacketTypes.RouterInfoPageRequest:
+                        HandleRouterInfoPageRequest(_buffer.AsSpan(0, received), receivedAddress);
                         break;
                     default:
                         //unhandled message
@@ -167,6 +171,27 @@ public class Listener
             var packet = _balancerPacketFactory.BuildRouterAssignmentPacket(_buffer, smallest.Endpoint);
             _socket.SendTo(packet, SocketFlags.None, receivedEndPoint);
         }
+    }
+
+    void HandleRouterInfoPageRequest(Span<byte> packet, SocketAddress fromAddress)
+    {
+        if (!_balancerPacketFactory.TryParseRouterInfoPageRequest(packet, out byte pageNumber))
+        {
+            return;
+        }
+        var span = _buffer.AsSpan();
+        int written = _balancerPacketFactory.BuildRouterInfoPageHeader(span, pageNumber);
+        var startIndex = (pageNumber - 1) * 200;
+        for (int index = startIndex; index < startIndex + 200; index++)
+        {
+            var router = _routers[index];
+            if (router.IsUsed)
+            {
+                _logger.Debug($"Sending router info for router {index}");
+                written += _balancerPacketFactory.WriteRouterInfoPageEntry(span.Slice(written), router.Id, router.Endpoint);
+            }
+        }
+        _socket.SendTo(span.Slice(0, written), SocketFlags.None, fromAddress);
     }
 
     Router? FindNextUnusedRouter()

@@ -57,6 +57,11 @@ public static class SocketAddressExtensions
         return true;
     }
 
+    public static void CopyFrom(this SocketAddress socketAddress, SocketAddress otherAddress)
+    {
+        otherAddress.Buffer.Span.Slice(2, 6).CopyTo(socketAddress.Buffer.Span.Slice(2, 6));
+    }
+
     /// <summary>
     /// Allocates memory should only be used for debuggin
     /// </summary>

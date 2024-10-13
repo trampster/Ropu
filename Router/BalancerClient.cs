@@ -9,7 +9,7 @@ namespace Ropu.Router;
 public class BalancerClient
 {
     readonly byte[] _registerMessage;
-    readonly byte[] _buffer = new byte[1024];
+    readonly byte[] _receiveThreadBuffer = new byte[1024];
     readonly SocketAddress _balancerEndpoint;
     readonly Socket _socket;
     readonly ILogger _logger;
@@ -17,6 +17,9 @@ public class BalancerClient
     readonly BalancerPacketFactory _balancerPacketFactory = new();
     int _routerId = IdNotAssigned;
     const ushort IdNotAssigned = ushort.MaxValue;
+
+    //must only be used from the receive
+    readonly SocketAddress[] _routers = new SocketAddress[2000];
 
     public BalancerClient(
         ILogger logger,
@@ -38,6 +41,11 @@ public class BalancerClient
 
         var endpoint = new IPEndPoint(IPAddress.Any, routerIpEndpoint.Port);
         _socket.Bind(endpoint);
+
+        for (int index = 0; index < _routers.Length; index++)
+        {
+            _routers[index] = new SocketAddress(AddressFamily.InterNetwork);
+        }
     }
 
     void ManageConnection()
@@ -52,6 +60,7 @@ public class BalancerClient
             {
                 _logger.Information("Registration Successful starting heartbeats");
 
+                StartRouterSync();
                 DoHeartBeat();
             }
             else
@@ -59,6 +68,58 @@ public class BalancerClient
                 _logger.Information("Registration timed out after 2000 ms");
             }
         }
+    }
+
+    int _routerSyncPage = 0;
+
+    void StartRouterSync()
+    {
+        _logger.Information("Starting Router Sync");
+
+        _routerSyncPage = Interlocked.Exchange(ref _routerSyncPage, 1);
+        var pageInfoRequest = _balancerPacketFactory.BuildRouterInfoPageRequest(
+            _connectionManagementBuffer,
+            1);
+        _socket.SendTo(pageInfoRequest, SocketFlags.None, _balancerEndpoint);
+    }
+
+    // should only be used from the receive thread
+    SocketAddress _tempSocketAddress = new SocketAddress(AddressFamily.InterNetwork);
+
+    void HandleRouterInfoPage(Span<byte> buffer)
+    {
+        _logger.Debug("Received Header Info Page");
+
+        if (!_balancerPacketFactory.TryParseRouterInfoPage(buffer, out byte pageNumber, out Span<byte> routersBuffer))
+        {
+            return;
+        }
+        _logger.Debug($"Received Header Info Page Number {pageNumber}");
+
+        int routerCount = routersBuffer.Length / 8;
+
+        for (int index = 0; index < routerCount; index++)
+        {
+            if (_balancerPacketFactory.TryParseRouterInfo(
+                routersBuffer.Slice(index * 8),
+                out ushort routerId, _tempSocketAddress))
+            {
+                _routers[routerId].CopyFrom(_tempSocketAddress);
+                _logger.Debug($"Got Router: {routerId} @ {_routers[routerId]}");
+
+            }
+        }
+        if (pageNumber == 10)
+        {
+            _logger.Debug($"Finished router sync.");
+            return;
+        }
+        byte nextPageNumber = (byte)(pageNumber + 1);
+        Interlocked.Exchange(ref _routerSyncPage, nextPageNumber);
+        var pageInfoRequest = _balancerPacketFactory.BuildRouterInfoPageRequest(
+            _receiveThreadBuffer,
+            nextPageNumber);
+        _socket.SendTo(pageInfoRequest, SocketFlags.None, _balancerEndpoint);
     }
 
     ManualResetEvent _registerResponseEvent = new(false);
@@ -70,16 +131,19 @@ public class BalancerClient
 
         while (true)
         {
-            var received = _socket.ReceiveFrom(_buffer, SocketFlags.None, socketAddress);
+            var received = _socket.ReceiveFrom(_receiveThreadBuffer, SocketFlags.None, socketAddress);
             if (received != 0)
             {
-                switch (_buffer[0])
+                switch (_receiveThreadBuffer[0])
                 {
                     case (byte)BalancerPacketTypes.RegisterRouterResponse:
-                        HandleRegisterRouterResponse(_buffer.AsSpan(0, received));
+                        HandleRegisterRouterResponse(_receiveThreadBuffer.AsSpan(0, received));
                         break;
                     case (byte)BalancerPacketTypes.HeartbeatResponse:
                         _heartBeatResponseEvent.Set();
+                        break;
+                    case (byte)BalancerPacketTypes.RouterInfoPage:
+                        HandleRouterInfoPage(_receiveThreadBuffer.AsSpan(0, received));
                         break;
                     default:
                         //unhandled message
@@ -115,7 +179,7 @@ public class BalancerClient
 
     readonly ConcurrentDictionary<int, EndPoint> _registeredUsers = new();
 
-    readonly byte[] _heartbeatBuffer = new byte[5];
+    readonly byte[] _connectionManagementBuffer = new byte[5];
 
     void DoHeartBeat()
     {
@@ -124,7 +188,7 @@ public class BalancerClient
             _logger.Information("Sending heartbeat");
 
             var heartbeat = _balancerPacketFactory.BuildHeartbeatPacket(
-                _heartbeatBuffer,
+                _connectionManagementBuffer,
                 (ushort)_routerId,
                 (ushort)_registeredUsers.Count);
 

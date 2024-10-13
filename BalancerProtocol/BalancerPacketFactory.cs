@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
+using System.Net.Sockets;
 
 namespace Ropu.BalancerProtocol;
 
@@ -65,7 +66,7 @@ public class BalancerPacketFactory
         }
         buffer[0] = (byte)BalancerPacketTypes.RouterAssignment;
 
-        endPoint.ReadFromBytes(buffer.AsSpan(1, 6));
+        endPoint.WriteToBytes(buffer.AsSpan(1, 6));
         return buffer.AsSpan(0, 7);
     }
 
@@ -104,6 +105,79 @@ public class BalancerPacketFactory
 
         address.ReadFromBytes(buffer.Slice(1, 6));
         capacity = BitConverter.ToUInt16(buffer.Slice(7, 2));
+        return true;
+    }
+
+    public Span<byte> BuildRouterInfoPageRequest(
+        byte[] buffer,
+        byte pageNumber)
+    {
+        if (buffer.Length < 2)
+        {
+            throw new ArgumentException("Buffer is to small for Router Info Page Request packet");
+        }
+        buffer[0] = (byte)BalancerPacketTypes.RouterInfoPageRequest;
+        buffer[1] = pageNumber;
+        return buffer.AsSpan(0, 2);
+    }
+
+    public bool TryParseRouterInfoPageRequest(
+        Span<byte> buffer,
+        [NotNullWhen(true)] out byte pageNumber)
+    {
+        if (buffer.Length != 2)
+        {
+            pageNumber = 0;
+            return false;
+        }
+
+        pageNumber = buffer[1];
+        return true;
+    }
+
+    public int BuildRouterInfoPageHeader(
+        Span<byte> buffer,
+        byte pageNumber)
+    {
+        if (buffer.Length < 2)
+        {
+            throw new ArgumentException("Buffer is to small for Router Info Page Header");
+        }
+        buffer[0] = (byte)BalancerPacketTypes.RouterInfoPage;
+        buffer[1] = pageNumber;
+        return 2;
+    }
+
+    public int WriteRouterInfoPageEntry(Span<byte> buffer, ushort routerId, SocketAddress routerAddress)
+    {
+        BitConverter.TryWriteBytes(buffer.Slice(0, 2), routerId);
+        routerAddress.WriteToBytes(buffer.Slice(2, 6));
+        return 8;
+    }
+
+    public bool TryParseRouterInfoPage(Span<byte> buffer, out byte pageNumber, out Span<byte> routersSection)
+    {
+        if (buffer.Length < 2)
+        {
+            pageNumber = 0;
+            routersSection = buffer.Slice(0, 0);
+            return false;
+        }
+
+        pageNumber = buffer[1];
+        routersSection = buffer.Slice(2);
+        return true;
+    }
+
+    public bool TryParseRouterInfo(Span<byte> buffer, out ushort routerId, SocketAddress address)
+    {
+        if (buffer.Length < 8)
+        {
+            routerId = 0;
+            return false;
+        }
+        routerId = BitConverter.ToUInt16(buffer.Slice(0, 2));
+        address.ReadFromBytes(buffer.Slice(2, 6));
         return true;
     }
 }
