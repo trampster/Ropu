@@ -2,7 +2,7 @@ namespace Ropu.Logging;
 
 public interface ILogger
 {
-    void ForContext(string context);
+    ILogger ForContext(string context);
 
     void Debug(long value);
 

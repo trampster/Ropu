@@ -4,13 +4,13 @@ namespace Ropu.BalancerProtocol;
 
 public struct HeartbeatPacket
 {
-    public ushort RouterId
+    public ushort Id
     {
         get;
         set;
     }
 
-    public ushort RegisteredUsers
+    public ushort NumberRegistered
     {
         get;
         set;

@@ -8,4 +8,6 @@ var listener = new Listener(
     logger,
     2000);
 
-await listener.RunAsync();
+var cancellationTokenSource = new CancellationTokenSource();
+
+await listener.RunAsync(cancellationTokenSource.Token);

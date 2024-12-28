@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using Ropu.Logging;
 using Ropu.Router;
+using Ropu.Router.Runner;
 
 Console.WriteLine("Ropu Router");
 
@@ -20,12 +21,8 @@ if (!ushort.TryParse(portString, out ushort port))
 
 var logger = new Logger(LogLevel.Debug);
 
-var ballancerClient = new BalancerClient(
-    logger,
-    new IPEndPoint(IPAddress.Parse("192.168.1.115"), port),
-    new IPEndPoint(IPAddress.Parse("192.168.1.115"), 2000),
-    100);
+var routerRunner = new RouterRunner(port, logger);
 
-await ballancerClient.RunAsync();
+await routerRunner.Run(new CancellationTokenSource().Token);
 
 Console.WriteLine("Ropu Router Stopped");

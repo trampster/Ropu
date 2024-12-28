@@ -4,7 +4,7 @@ using System.Net.Sockets;
 using Ropu.BalancerProtocol;
 using Ropu.Logging;
 
-namespace Ropu.Router;
+namespace Ropu.Distributor;
 
 public class BalancerClient
 {
@@ -20,7 +20,7 @@ public class BalancerClient
 
     public BalancerClient(
         ILogger logger,
-        IPEndPoint routerIpEndpoint,
+        IPEndPoint distributorIpEndpoint,
         IPEndPoint balancerEndpoint,
         ushort capacity)
     {
@@ -30,19 +30,19 @@ public class BalancerClient
 
         _registerMessage = new byte[11];
 
-        var routerAddress = routerIpEndpoint.Serialize();
-        _logger.Information($"Router Endpoint {routerAddress}");
-        _balancerPacketFactory.BuildRegisterRouterPacket(_registerMessage, routerAddress, capacity);
+        var distributorAddress = distributorIpEndpoint.Serialize();
+        _logger.Information($"Distributor Endpoint {distributorAddress}");
+        _balancerPacketFactory.BuildRegisterDistributorPacket(_registerMessage, distributorAddress, capacity);
 
         _socket = new Socket(SocketType.Dgram, ProtocolType.Udp);
 
-        var endpoint = new IPEndPoint(IPAddress.Any, routerIpEndpoint.Port);
+        var endpoint = new IPEndPoint(IPAddress.Any, distributorIpEndpoint.Port);
         _socket.Bind(endpoint);
     }
 
-    void ManageConnection(CancellationToken cancellationToken)
+    void ManageConnection()
     {
-        while (!cancellationToken.IsCancellationRequested)
+        while (true)
         {
             _logger.Information("Registering");
             _socket.SendTo(_registerMessage, SocketFlags.None, _balancerEndpoint);
@@ -61,22 +61,25 @@ public class BalancerClient
         }
     }
 
-    readonly ManualResetEvent _registerResponseEvent = new(false);
-    readonly ManualResetEvent _heartBeatResponseEvent = new(false);
+    // should only be used from the receive thread
+    SocketAddress _tempSocketAddress = new SocketAddress(AddressFamily.InterNetwork);
 
-    void RunReceive(CancellationToken cancellationToken)
+    ManualResetEvent _registerResponseEvent = new(false);
+    ManualResetEvent _heartBeatResponseEvent = new(false);
+
+    void RunReceive()
     {
         SocketAddress socketAddress = new SocketAddress(AddressFamily.InterNetworkV6);
 
-        while (!cancellationToken.IsCancellationRequested)
+        while (true)
         {
             var received = _socket.ReceiveFrom(_receiveThreadBuffer, SocketFlags.None, socketAddress);
             if (received != 0)
             {
                 switch (_receiveThreadBuffer[0])
                 {
-                    case (byte)BalancerPacketTypes.RegisterRouterResponse:
-                        HandleRegisterRouterResponse(_receiveThreadBuffer.AsSpan(0, received));
+                    case (byte)BalancerPacketTypes.RegisterDistributorResponse:
+                        HandleRegisterDistributorResponse(_receiveThreadBuffer.AsSpan(0, received));
                         break;
                     case (byte)BalancerPacketTypes.HeartbeatResponse:
                         _heartBeatResponseEvent.Set();
@@ -90,9 +93,9 @@ public class BalancerClient
         }
     }
 
-    void HandleRegisterRouterResponse(Span<byte> packet)
+    void HandleRegisterDistributorResponse(Span<byte> packet)
     {
-        if (!_balancerPacketFactory.TryParseRegisterRouterResponsePacket(
+        if (!_balancerPacketFactory.TryParseRegisterDsitributorResponsePacket(
             packet,
             out ushort routerId))
         {
@@ -104,12 +107,11 @@ public class BalancerClient
         _registerResponseEvent.Set();
     }
 
-    public async Task RunAsync(CancellationToken cancellationToken)
+    public async Task RunAsync()
     {
         var taskFactory = new TaskFactory();
-        cancellationToken.Register(() => _socket.Close());
-        var receiveTask = taskFactory.StartNew(() => RunReceive(cancellationToken), TaskCreationOptions.LongRunning);
-        var connectionTask = taskFactory.StartNew(() => ManageConnection(cancellationToken), TaskCreationOptions.LongRunning);
+        var receiveTask = taskFactory.StartNew(RunReceive, TaskCreationOptions.LongRunning);
+        var connectionTask = taskFactory.StartNew(ManageConnection, TaskCreationOptions.LongRunning);
         var task = await Task.WhenAny(receiveTask, connectionTask);
         await task;
     }
@@ -126,7 +128,7 @@ public class BalancerClient
 
             var heartbeat = _balancerPacketFactory.BuildHeartbeatPacket(
                 _connectionManagementBuffer,
-                BalancerPacketTypes.RouterHeartbeat,
+                BalancerPacketTypes.DistributorHeartbeat,
                 (ushort)_routerId,
                 (ushort)_registeredUsers.Count);
 

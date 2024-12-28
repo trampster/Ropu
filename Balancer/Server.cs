@@ -3,7 +3,8 @@ using System.Net.Sockets;
 
 namespace Ropu.Balancer;
 
-public class Router
+
+public class Server
 {
     bool _isUsed = false;
     public bool IsUsed

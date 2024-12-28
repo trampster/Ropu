@@ -1,5 +1,6 @@
 using System.Net;
 using System.Runtime.CompilerServices;
+using Ropu.BalancerProtocol;
 
 namespace Ropu.Logging;
 
@@ -24,9 +25,10 @@ public ref struct ZeroAllocationInterpolationHandler
         _currentIndex += s.Length;
     }
 
-    public void AppendFormatted<T>(T formatted)
+    public void AppendFormatted(string formatted)
     {
-        throw new NotImplementedException();
+        int written = Write(formatted, _currentIndex);
+        _currentIndex += written;
     }
 
     public void AppendFormatted(int formatted)
@@ -50,6 +52,51 @@ public ref struct ZeroAllocationInterpolationHandler
     public void AppendFormatted(ushort formatted)
     {
         int written = Write(formatted, _currentIndex);
+        _currentIndex += written;
+    }
+
+    public void AppendFormatted(BalancerPacketTypes formatted)
+    {
+        string packetType = "";
+        switch (formatted)
+        {
+            case BalancerPacketTypes.DistributorHeartbeat:
+                packetType = nameof(BalancerPacketTypes.DistributorHeartbeat);
+                break;
+            case BalancerPacketTypes.HeartbeatResponse:
+                packetType = nameof(BalancerPacketTypes.HeartbeatResponse);
+                break;
+            case BalancerPacketTypes.RegisterDistributor:
+                packetType = nameof(BalancerPacketTypes.RegisterDistributor);
+                break;
+            case BalancerPacketTypes.RegisterDistributorResponse:
+                packetType = nameof(BalancerPacketTypes.RegisterDistributorResponse);
+                break;
+            case BalancerPacketTypes.RegisterRouter:
+                packetType = nameof(BalancerPacketTypes.RegisterRouter);
+                break;
+            case BalancerPacketTypes.RegisterRouterResponse:
+                packetType = nameof(BalancerPacketTypes.RegisterRouterResponse);
+                break;
+            case BalancerPacketTypes.ResolveUnit:
+                packetType = nameof(BalancerPacketTypes.ResolveUnit);
+                break;
+            case BalancerPacketTypes.RolveUnitResponse:
+                packetType = nameof(BalancerPacketTypes.RolveUnitResponse);
+                break;
+            case BalancerPacketTypes.RouterAssignment:
+                packetType = nameof(BalancerPacketTypes.RouterAssignment);
+                break;
+            case BalancerPacketTypes.RouterAssignmentRequest:
+                packetType = nameof(BalancerPacketTypes.RouterAssignmentRequest);
+                break;
+            case BalancerPacketTypes.RouterHeartbeat:
+                packetType = nameof(BalancerPacketTypes.RouterHeartbeat);
+                break;
+            default:
+                throw new InvalidOperationException($"Unknown BalancerPacketType {formatted}");
+        }
+        int written = Write(packetType, _currentIndex);
         _currentIndex += written;
     }
 
@@ -78,6 +125,12 @@ public ref struct ZeroAllocationInterpolationHandler
         var port = (ushort)((address[2] << 8) + address[3]);
 
         _currentIndex += Write(port, _currentIndex);
+    }
+
+    int Write(string value, int start)
+    {
+        value.CopyTo(_buffer.AsSpan(start));
+        return value.Length;
     }
 
     int Write(long value, int start)

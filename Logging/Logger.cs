@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices.Marshalling;
+
 namespace Ropu.Logging;
 
 
@@ -11,19 +13,37 @@ public enum LogLevel
 
 public class Logger : ILogger
 {
-    char[] _buffer = new char[1024];
+    [ThreadStatic]
+    static char[]? _buffer;
     string _context = "";
 
     readonly LogLevel _logLevel;
 
-    public Logger(LogLevel logLevel)
+    public Logger(LogLevel logLevel) : this(logLevel, "")
     {
-        _logLevel = logLevel;
     }
 
-    public void ForContext(string context)
+    public Logger(LogLevel logLevel, string context)
     {
+        _logLevel = logLevel;
         _context = context;
+    }
+
+    static char[] Buffer
+    {
+        get
+        {
+            if (_buffer == null)
+            {
+                _buffer = new char[1024];
+            }
+            return _buffer;
+        }
+    }
+
+    public ILogger ForContext(string context)
+    {
+        return new Logger(_logLevel, context);
     }
 
     public void Debug(long value)
@@ -93,53 +113,57 @@ public class Logger : ILogger
     {
         var index = WriteContext(level);
         var formatted = handler.GetFormattedText();
-        formatted.CopyTo(_buffer.AsSpan(index));
+        var buffer = Buffer;
+        formatted.CopyTo(buffer.AsSpan(index));
         index += formatted.Length;
-        Console.Out.WriteLine(_buffer.AsSpan(0, index));
+        Console.Out.WriteLine(buffer.AsSpan(0, index));
     }
 
     void Log(string value, string level)
     {
         var index = WriteContext(level);
         var formatted = value;
-        formatted.CopyTo(_buffer.AsSpan(index));
+        var buffer = Buffer;
+        formatted.CopyTo(buffer.AsSpan(index));
         index += formatted.Length;
-        Console.Out.WriteLine(_buffer.AsSpan(0, index));
+        Console.Out.WriteLine(buffer.AsSpan(0, index));
     }
 
     void Log(long value, string level)
     {
         var index = WriteContext(level);
         int written = Write(value, index);
-        Console.Out.WriteLine(_buffer.AsSpan(0, written));
+        Console.Out.WriteLine(Buffer.AsSpan(0, written));
     }
 
     int WriteContext(string level)
     {
         int index = 0;
-        _buffer[index] = '[';
+        var buffer = Buffer;
+
+        buffer[index] = '[';
         index++;
 
-        DateTime.UtcNow.TryFormat(_buffer.AsSpan(index), out int written, "O");
+        DateTime.UtcNow.TryFormat(buffer.AsSpan(index), out int written, "O");
         index += written;
 
-        _buffer[index] = ' ';
+        buffer[index] = ' ';
         index++;
 
-        level.CopyTo(_buffer.AsSpan(index));
+        level.CopyTo(buffer.AsSpan(index));
 
         index += level.Length;
 
-        _buffer[index] = ' ';
+        buffer[index] = ' ';
         index++;
 
-        _context.CopyTo(_buffer.AsSpan(index));
+        _context.CopyTo(buffer.AsSpan(index));
         index += _context.Length;
 
-        _buffer[index] = ']';
+        buffer[index] = ']';
         index++;
 
-        _buffer[index] = ' ';
+        buffer[index] = ' ';
         index++;
 
         return index;
@@ -148,6 +172,8 @@ public class Logger : ILogger
     int Write(long value, int start)
     {
         int written = 0;
+        var buffer = Buffer;
+
         if (value > 0)
         {
             Span<char> reversed = stackalloc char[19];
@@ -164,7 +190,7 @@ public class Logger : ILogger
             int bufferIndex = start;
             for (int index = reversedIndex - 1; index >= 0; index--)
             {
-                _buffer[start] = reversed[index];
+                buffer[start] = reversed[index];
                 start++;
             }
         }

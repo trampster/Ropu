@@ -4,3 +4,4 @@ bin
 ClientUI/Install
 *.snap
 *.vs
+Benchmarks/BenchmarkDotNet.Artifacts
