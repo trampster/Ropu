@@ -6,7 +6,7 @@ using Ropu.Logging;
 
 namespace Ropu.Distributor;
 
-public class BalancerClient
+public class BalancerClient : IDisposable
 {
     readonly byte[] _registerMessage;
     readonly byte[] _receiveThreadBuffer = new byte[1024];
@@ -40,9 +40,9 @@ public class BalancerClient
         _socket.Bind(endpoint);
     }
 
-    void ManageConnection()
+    void ManageConnection(CancellationToken cancellationToken)
     {
-        while (true)
+        while (!cancellationToken.IsCancellationRequested)
         {
             _logger.Information("Registering");
             _socket.SendTo(_registerMessage, SocketFlags.None, _balancerEndpoint);
@@ -67,11 +67,11 @@ public class BalancerClient
     ManualResetEvent _registerResponseEvent = new(false);
     ManualResetEvent _heartBeatResponseEvent = new(false);
 
-    void RunReceive()
+    void RunReceive(CancellationToken cancellationToken)
     {
         SocketAddress socketAddress = new SocketAddress(AddressFamily.InterNetworkV6);
 
-        while (true)
+        while (!cancellationToken.IsCancellationRequested)
         {
             var received = _socket.ReceiveFrom(_receiveThreadBuffer, SocketFlags.None, socketAddress);
             if (received != 0)
@@ -107,11 +107,12 @@ public class BalancerClient
         _registerResponseEvent.Set();
     }
 
-    public async Task RunAsync()
+    public async Task RunAsync(CancellationToken cancellationToken)
     {
+        cancellationToken.Register(() => _socket.Close());
         var taskFactory = new TaskFactory();
-        var receiveTask = taskFactory.StartNew(RunReceive, TaskCreationOptions.LongRunning);
-        var connectionTask = taskFactory.StartNew(ManageConnection, TaskCreationOptions.LongRunning);
+        var receiveTask = taskFactory.StartNew(() => RunReceive(cancellationToken), TaskCreationOptions.LongRunning);
+        var connectionTask = taskFactory.StartNew(() => ManageConnection(cancellationToken), TaskCreationOptions.LongRunning);
         var task = await Task.WhenAny(receiveTask, connectionTask);
         await task;
     }
@@ -141,5 +142,19 @@ public class BalancerClient
             }
             Thread.Sleep(5000);
         }
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _socket.Dispose();
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
     }
 }
