@@ -1,30 +1,35 @@
 using System.Net;
 using System.Net.Sockets;
-using System.Runtime.CompilerServices;
 using Ropu.Logging;
 using Ropu.RouterProtocol;
 
 namespace Ropu.Client;
 
-public class RouterClient
+public class RouterListener : IDisposable
 {
     readonly Socket _socket;
     readonly ILogger _logger;
     readonly RouterPacketFactory _routerPacketFactory;
 
+    readonly Dictionary<uint, SocketAddress> _addressBook = [];
+    readonly HashSet<SocketAddress> _addresses = [];
+
     [ThreadStatic]
     static byte[]? _buffer;
 
-    public RouterClient(
+    public RouterListener(
+        ushort port,
         RouterPacketFactory routerPacketFactory,
         ILogger logger)
     {
         _routerPacketFactory = routerPacketFactory;
-        _logger = logger.ForContext(nameof(RouterClient));
+        _logger = logger.ForContext(nameof(RouterListener));
         _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-        var endpoint = new IPEndPoint(IPAddress.Any, 0);
+        var endpoint = new IPEndPoint(IPAddress.Any, port);
         _socket.Bind(endpoint);
     }
+
+    public IReadOnlyDictionary<uint, SocketAddress> Clients => _addressBook;
 
     public SocketAddress? RouterAddress
     {
@@ -44,30 +49,6 @@ public class RouterClient
         }
     }
 
-    public bool Register(uint clientId)
-    {
-        if (RouterAddress == null)
-        {
-            throw new InvalidOperationException("You must set a router address before calling Register");
-        }
-        var buffer = Buffer;
-        var packet = _routerPacketFactory.BuildRegisterClientPacket(buffer, clientId);
-        _registerResponseEvent.Reset();
-        _socket.SendTo(packet, SocketFlags.None, RouterAddress);
-        return _registerResponseEvent.WaitOne(2000);
-    }
-
-    public bool SendHeartbeat()
-    {
-        if (RouterAddress == null)
-        {
-            throw new InvalidOperationException("You must set a router address before calling SendHeartbeat");
-        }
-        _heartbeatResponseEvent.Reset();
-        _socket.SendTo(RouterPacketFactory.HeartbeatPacket, SocketFlags.None, RouterAddress);
-        return _heartbeatResponseEvent.WaitOne(2000);
-    }
-
     public Task RunReceiveAsync(CancellationToken cancellationToken)
     {
         var taskFactory = new TaskFactory();
@@ -75,9 +56,6 @@ public class RouterClient
     }
 
     byte[] _receiveBuffer = new byte[1024];
-
-    readonly ManualResetEvent _registerResponseEvent = new(false);
-    readonly ManualResetEvent _heartbeatResponseEvent = new(false);
 
     public void RunReceive(CancellationToken cancellationToken)
     {
@@ -89,11 +67,11 @@ public class RouterClient
             {
                 switch (_receiveBuffer[0])
                 {
-                    case (byte)RouterPacketType.RegisterClientResponse:
-                        _registerResponseEvent.Set();
+                    case (byte)RouterPacketType.RegisterClient:
+                        HandleRegisterClientPacket(_receiveBuffer.AsSpan(0, received), socketAddress);
                         break;
-                    case (byte)RouterPacketType.HeartbeatResponse:
-                        _heartbeatResponseEvent.Set();
+                    case (byte)RouterPacketType.Heartbeat:
+                        HandleHeartbeatPacket(socketAddress);
                         break;
                     default:
                         _logger.Warning($"Received unknown packet type: {_receiveBuffer[0]}");
@@ -101,5 +79,36 @@ public class RouterClient
                 }
             }
         }
+    }
+
+    void HandleRegisterClientPacket(Span<byte> packet, SocketAddress socketAddress)
+    {
+        _routerPacketFactory.TryParseRegisterClientPacket(packet, out uint clientId);
+        _addressBook[clientId] = socketAddress;
+        _addresses.Add(socketAddress);
+        var response = _routerPacketFactory.BuildRegisterClientResponse(_receiveBuffer);
+        _socket.SendTo(response, SocketFlags.None, socketAddress);
+    }
+
+    void HandleHeartbeatPacket(SocketAddress socketAddress)
+    {
+        if (_addresses.Contains(socketAddress))
+        {
+            _socket.SendTo(RouterPacketFactory.HeartbeatResponsePacket, SocketFlags.None, socketAddress);
+        }
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _socket.Dispose();
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
     }
 }

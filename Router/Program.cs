@@ -1,7 +1,5 @@
-﻿using System.Net;
-using Ropu.Logging;
+﻿using Ropu.Logging;
 using Ropu.Router;
-using Ropu.Router.Runner;
 
 Console.WriteLine("Ropu Router");
 
@@ -21,7 +19,7 @@ if (!ushort.TryParse(portString, out ushort port))
 
 var logger = new Logger(LogLevel.Debug);
 
-var routerRunner = new RouterRunner(port, logger);
+using var routerRunner = new RouterService(port, logger);
 
 await routerRunner.Run(new CancellationTokenSource().Token);
 

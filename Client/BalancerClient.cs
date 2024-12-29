@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Sockets;
 using Ropu.BalancerProtocol;
 using Ropu.Logging;
@@ -14,6 +15,7 @@ public class BalancerClient
     readonly ILogger _logger;
     readonly IPEndPoint _balancerEndpoint;
     readonly BalancerPacketFactory _packetFactory = new();
+    readonly SocketAddress _routerAddress = new(AddressFamily.InterNetwork);
 
     public BalancerClient(
         ushort port,
@@ -80,54 +82,74 @@ public class BalancerClient
         return true;
     }
 
-    public Task RegisterAsync() => Task.Run(Register);
+    byte[] _receiveBuffer = new byte[1024];
 
-    public SocketAddress Register()
+    public Task RunReceiveAsync(CancellationToken cancellationToken)
     {
-        SocketAddress socketAddress = new SocketAddress(AddressFamily.InterNetwork);
+        var taskFactory = new TaskFactory();
+        return taskFactory.StartNew(() => RunReceive(cancellationToken), TaskCreationOptions.LongRunning);
+    }
 
-        SocketAddress routerAddress = new(AddressFamily.InterNetwork);
+    public void RunReceive(CancellationToken cancellationToken)
+    {
+        _logger.Warning("Client: starting RunRecieve");
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            var socketAddress = new SocketAddress(AddressFamily.InterNetworkV6);
+            var received = _socket.ReceiveFrom(_receiveBuffer, SocketFlags.None, socketAddress);
+            _logger.Warning($"Client: received bytes {received}");
+            if (received != 0)
+            {
+                switch (_receiveBuffer[0])
+                {
+                    case (byte)BalancerPacketTypes.RouterAssignment:
+                        HandleRouterAssignment(_receiveBuffer.AsSpan(0, received));
+                        break;
+                    default:
+                        _logger.Warning($"Received unknown packet type: {_receiveBuffer[0]}");
+                        break;
+                }
+            }
+        }
+    }
 
+    readonly ManualResetEvent _routerAssignmentEvent = new(false);
+
+    void HandleRouterAssignment(Span<byte> packet)
+    {
+        if (_packetFactory.TryParseRouterAssignmentPacket(packet, _routerAddress))
+        {
+            _logger.Information("parsed router assignment packet");
+            _routerAssignmentEvent.Set();
+            return;
+        }
+        _logger.Warning("Failed to parse router assignment packet");
+    }
+
+    public SocketAddress Register(CancellationToken cancellationToken)
+    {
         byte[] buffer = Buffer;
 
-        while (true)
+        while (!cancellationToken.IsCancellationRequested)
         {
-            _logger.Information("Sending router assignment request");
             var routerAssignmentPacket = _packetFactory.BuildRouterAssignmentRequestPacket(
                 buffer,
                 _clientId);
+
+            _routerAssignmentEvent.Reset();
+
+            _logger.Information("Sending router assignment request");
             _socket.SendTo(routerAssignmentPacket, _balancerEndpoint);
 
-            CancellationTokenSource receiveCancellationSource = new();
-            receiveCancellationSource.CancelAfter(2000);
-            try
+            if (_routerAssignmentEvent.WaitOne(TimeSpan.FromSeconds(2)))
             {
-                var receivedBytes = _socket.ReceiveFrom(buffer, SocketFlags.None, socketAddress);
-                if (receivedBytes == 0)
-                {
-                    Thread.Sleep(1000);
-                    continue;
-                }
-                _logger.Information($"Received {(BalancerPacketTypes)buffer[0]}");
-
-                if (buffer[0] == (byte)BalancerPacketTypes.RouterAssignment)
-                {
-                    _logger.Information("Received RouterAssignment");
-
-                    if (!_packetFactory.TryParseRouterAssignmentPacket(buffer.AsSpan(0, receivedBytes), routerAddress))
-                    {
-                        Thread.Sleep(1000);
-                        continue;
-                    }
-                    return routerAddress;
-                }
+                _logger.Information("Got Router Address to use");
+                return _routerAddress;
             }
-            catch (OperationCanceledException)
-            {
-                Thread.Sleep(2000);
-                continue;
-            }
+            _logger.Information("Timeout trying to get router assignment");
+
         }
+        throw new TaskCanceledException("Register task was cancelled");
     }
 
 }

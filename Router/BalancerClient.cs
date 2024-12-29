@@ -6,7 +6,7 @@ using Ropu.Logging;
 
 namespace Ropu.Router;
 
-public class BalancerClient
+public class BalancerClient : IDisposable
 {
     readonly byte[] _registerMessage;
     readonly byte[] _receiveThreadBuffer = new byte[1024];
@@ -24,8 +24,8 @@ public class BalancerClient
         IPEndPoint balancerEndpoint,
         ushort capacity)
     {
-        _logger = logger;
-        logger.ForContext(nameof(BalancerClient));
+        _logger = logger.ForContext(nameof(BalancerClient));
+
         _balancerEndpoint = balancerEndpoint.Serialize();
 
         _registerMessage = new byte[11];
@@ -36,7 +36,7 @@ public class BalancerClient
 
         _socket = new Socket(SocketType.Dgram, ProtocolType.Udp);
 
-        var endpoint = new IPEndPoint(IPAddress.Any, routerIpEndpoint.Port);
+        var endpoint = new IPEndPoint(IPAddress.Any, 0);
         _socket.Bind(endpoint);
     }
 
@@ -84,7 +84,6 @@ public class BalancerClient
                     default:
                         //unhandled message
                         break;
-
                 }
             }
         }
@@ -139,5 +138,19 @@ public class BalancerClient
             }
             Thread.Sleep(5000);
         }
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _socket.Dispose();
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
     }
 }

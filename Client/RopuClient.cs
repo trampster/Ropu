@@ -21,18 +21,37 @@ public class RopuClient
         _logger = logger.ForContext(nameof(RopuClient));
     }
 
+    async Task RunTasksAsync(params Task[] tasks)
+    {
+        var taskList = tasks.ToList();
+        while (taskList.Count != 0)
+        {
+            var task = await Task.WhenAny(taskList);
+            await task;
+            taskList.Remove(task);
+        }
+    }
+
     public Task RunAsync(CancellationToken cancellationToken)
     {
-        return Task.Run(() => Run(cancellationToken));
+        _logger.Information($"RopuClient RunAsync");
+
+        var routerClientTask = _routerClient.RunReceiveAsync(cancellationToken);
+        var balancerClientTask = _balancerClient.RunReceiveAsync(cancellationToken);
+        var receiveTask = _routerClient.RunReceiveAsync(cancellationToken);
+        var manageConnectionTask = Task.Run(() => ManageConnection(cancellationToken));
+        return RunTasksAsync(routerClientTask, balancerClientTask, manageConnectionTask);
     }
 
     readonly TimeSpan _heartbeatInterval = TimeSpan.FromSeconds(25);
 
-    public void Run(CancellationToken cancellationToken)
+    public void ManageConnection(CancellationToken cancellationToken)
     {
+        _logger.Information($"ManageConnection called");
+
         while (!cancellationToken.IsCancellationRequested)
         {
-            var routerAddress = _balancerClient.Register();
+            var routerAddress = _balancerClient.Register(cancellationToken);
             _logger.Information($"Assigned to router {routerAddress}");
             _routerClient.RouterAddress = routerAddress;
             if (!_routerClient.Register(_clientId))

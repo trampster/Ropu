@@ -1,15 +1,13 @@
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Sockets;
-using System.Reflection.Metadata;
 using BalancerProtocol;
 using Ropu.BalancerProtocol;
 using Ropu.Logging;
 
 namespace Ropu.Balancer;
 
-public class Listener
+public class Listener : IDisposable
 {
     readonly byte[] _buffer = new byte[1024];
     readonly Socket _socket;
@@ -26,8 +24,7 @@ public class Listener
         ILogger logger,
         ushort port)
     {
-        logger.ForContext(nameof(Listener));
-        _logger = logger;
+        _logger = logger.ForContext(nameof(Listener));
 
         _heartbeatResponse = _balancerPacketFactory.HeartbeatResponse;
 
@@ -49,54 +46,64 @@ public class Listener
 
     void RunReceive(CancellationToken cancellationToken)
     {
-        SocketAddress receivedAddress = new(AddressFamily.InterNetwork);
-
-        Stopwatch stopwatch = new Stopwatch();
-        stopwatch.Start();
-
-        var lastLastSeenCheck = stopwatch.ElapsedMilliseconds;
-
-        var allocated = GC.GetAllocatedBytesForCurrentThread();
-        _logger.Debug($"Allocated {allocated}");
-
-        while (!cancellationToken.IsCancellationRequested)
+        try
         {
-            var allocated1 = GC.GetAllocatedBytesForCurrentThread();
+            SocketAddress receivedAddress = new(AddressFamily.InterNetwork);
+
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            var lastLastSeenCheck = stopwatch.ElapsedMilliseconds;
+
+            var allocated = GC.GetAllocatedBytesForCurrentThread();
             _logger.Debug($"Allocated {allocated}");
 
-            var received = _socket.ReceiveFrom(_buffer, SocketFlags.None, receivedAddress);
-            if (received != 0)
+            while (!cancellationToken.IsCancellationRequested)
             {
-                switch (_buffer[0])
+                var allocated1 = GC.GetAllocatedBytesForCurrentThread();
+                _logger.Debug($"Allocated {allocated}");
+
+                var received = _socket.ReceiveFrom(_buffer, SocketFlags.None, receivedAddress);
+                if (received != 0)
                 {
-                    case (byte)BalancerPacketTypes.RegisterRouter:
-                        HandleRegisterRouter(received, receivedAddress);
-                        break;
-                    case (byte)BalancerPacketTypes.RegisterDistributor:
-                        HandleRegisterDistributor(received, receivedAddress);
-                        break;
-                    case (byte)BalancerPacketTypes.RouterHeartbeat:
-                        HandleRouterHeartbeat(_buffer.AsSpan(0, received), receivedAddress);
-                        break;
-                    case (byte)BalancerPacketTypes.DistributorHeartbeat:
-                        HandleDistributorHeartbeat(_buffer.AsSpan(0, received), receivedAddress);
-                        break;
-                    case (byte)BalancerPacketTypes.RouterAssignmentRequest:
-                        HandleRegisterAssignmentRequest(_buffer.AsSpan(0, received), receivedAddress);
-                        break;
-                    case (byte)BalancerPacketTypes.ResolveUnit:
-                        HandleResolveUnit(_buffer.AsSpan(0, received), receivedAddress);
-                        break;
-                    default:
-                        //unhandled message
-                        break;
+                    switch (_buffer[0])
+                    {
+                        case (byte)BalancerPacketTypes.RegisterRouter:
+                            HandleRegisterRouter(received, receivedAddress);
+                            break;
+                        case (byte)BalancerPacketTypes.RegisterDistributor:
+                            HandleRegisterDistributor(received, receivedAddress);
+                            break;
+                        case (byte)BalancerPacketTypes.RouterHeartbeat:
+                            HandleRouterHeartbeat(_buffer.AsSpan(0, received), receivedAddress);
+                            break;
+                        case (byte)BalancerPacketTypes.DistributorHeartbeat:
+                            HandleDistributorHeartbeat(_buffer.AsSpan(0, received), receivedAddress);
+                            break;
+                        case (byte)BalancerPacketTypes.RouterAssignmentRequest:
+                            HandleRouterAssignmentRequest(_buffer.AsSpan(0, received), receivedAddress);
+                            break;
+                        case (byte)BalancerPacketTypes.ResolveUnit:
+                            HandleResolveUnit(_buffer.AsSpan(0, received), receivedAddress);
+                            break;
+                        default:
+                            //unhandled message
+                            break;
+                    }
+                }
+                if (lastLastSeenCheck + 5000 < stopwatch.ElapsedMilliseconds)
+                {
+                    _routers.CheckLastSeen();
+                    _distributors.CheckLastSeen();
+                    lastLastSeenCheck = stopwatch.ElapsedMilliseconds;
                 }
             }
-            if (lastLastSeenCheck + 5000 < stopwatch.ElapsedMilliseconds)
+        }
+        catch (SocketException)
+        {
+            if (!cancellationToken.IsCancellationRequested)
             {
-                _routers.CheckLastSeen();
-                _distributors.CheckLastSeen();
-                lastLastSeenCheck = stopwatch.ElapsedMilliseconds;
+                throw;
             }
         }
 
@@ -142,7 +149,7 @@ public class Listener
         _socket.SendTo(_heartbeatResponse, SocketFlags.None, receivedEndPoint);
     }
 
-    void HandleRegisterAssignmentRequest(Span<byte> buffer, SocketAddress receivedEndPoint)
+    void HandleRouterAssignmentRequest(Span<byte> buffer, SocketAddress receivedEndPoint)
     {
         _logger.Information("Got Router Assignment Request");
 
@@ -159,7 +166,7 @@ public class Listener
             {
                 continue;
             }
-            var loadLevel = router.NumberRegistered / router.Capacity;
+            float loadLevel = router.NumberRegistered / (float)router.Capacity;
             if (loadLevel < smallestLoad)
             {
                 smallestLoad = loadLevel;
@@ -248,6 +255,20 @@ public class Listener
         var taskFactory = new TaskFactory();
         var receiveTask = taskFactory.StartNew(() => RunReceive(cancellationToken), TaskCreationOptions.LongRunning);
 
-        return Task.WhenAny(receiveTask);
+        return receiveTask;
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _socket.Dispose();
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
     }
 }

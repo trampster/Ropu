@@ -11,7 +11,7 @@ public class BalancerTests
     public void Routers_NothingConnected_NoRouters()
     {
         // arrange
-        var system = new TestSystem(0, 0, new Logger(LogLevel.Debug));
+        using var system = new TestSystem(0, 0, new Logger(LogLevel.Debug));
         system.Start();
 
         // act
@@ -26,7 +26,7 @@ public class BalancerTests
     public async Task Routers_OneConnected_HasRouter()
     {
         // arrange
-        var system = new TestSystem(1, 0, new Logger(LogLevel.Debug));
+        using var system = new TestSystem(1, 0, new Logger(LogLevel.Debug));
         system.Start();
 
         // act
@@ -39,6 +39,20 @@ public class BalancerTests
         Assert.That(router.Capacity, Is.EqualTo(100));
         Assert.That(router.NumberRegistered, Is.EqualTo(0));
         system.Stop();
+    }
+
+    [Test]
+    public async Task Clients_Two_BothRegisterWithDifferentRouters()
+    {
+        using var system = new TestSystem(2, 2, new Logger(LogLevel.Debug));
+        system.Start();
+
+        // act
+        var routers = system.Routers;
+
+        // assert
+        Assert.That(await WaitFor(() => routers[0].Service.Clients.Count == 1, TimeSpan.FromSeconds(5)), Is.True);
+        Assert.That(await WaitFor(() => routers[1].Service.Clients.Count == 1, TimeSpan.FromSeconds(5)), Is.True);
     }
 
     async Task<bool> WaitFor(Func<bool> outcome, TimeSpan waitTime)

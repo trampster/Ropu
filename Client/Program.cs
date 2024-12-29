@@ -10,7 +10,7 @@ uint clientId = (uint)Random.Shared.Next();
 
 var balancerClient = new BalancerClient(
     0,
-    new IPEndPoint(IPAddress.Parse("192.168.1.115"), 2000),
+    new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2000),
     clientId,
     logger);
 

@@ -2,11 +2,11 @@ using System.Net;
 using Ropu.Balancer;
 using Ropu.Client;
 using Ropu.Logging;
-using Ropu.Router.Runner;
+using Ropu.Router;
 
 namespace Ropu.IntergrationTests;
 
-public class ServiceInstance<T>
+public class ServiceInstance<T> : IDisposable
 {
     readonly CancellationTokenSource _cancellationTokenSource;
     readonly Func<T, CancellationToken, Task> _starter;
@@ -33,12 +33,26 @@ public class ServiceInstance<T>
         return _task;
     }
 
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            var disposable = _service as IDisposable;
+            disposable?.Dispose();
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
+    }
 }
 
-public class TestSystem
+public class TestSystem : IDisposable
 {
     readonly ServiceInstance<Listener> _balancerService;
-    readonly List<ServiceInstance<RouterRunner>> _routers;
+    readonly List<ServiceInstance<RouterService>> _routers;
     readonly List<ServiceInstance<RopuClient>> _clients;
 
     public TestSystem(int routers, int clients, ILogger logger)
@@ -52,28 +66,30 @@ public class TestSystem
         _routers = new(routers);
         for (int index = 0; index < routers; index++)
         {
-            var serviceInstance = new ServiceInstance<RouterRunner>(
+            var serviceInstance = new ServiceInstance<RouterService>(
                 (routerRunner, cancelationToken) => routerRunner.Run(cancelationToken),
-                new RouterRunner((ushort)(2001 + index), logger));
+                new RouterService((ushort)(2001 + index), logger));
             _routers.Add(serviceInstance);
         }
 
         // clients
-        var balancerEndpoint = new IPEndPoint(IPAddress.Parse("192.168.1.115"), 2000);
+        var balancerEndpoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2000);
         _clients = new(clients);
         for (uint index = 0; index < clients; index++)
         {
-            var balancerClient = new BalancerClient(0, balancerEndpoint, index, logger);
+            var balancerClient = new Client.BalancerClient(0, balancerEndpoint, index, logger);
             var routerClient = new RouterClient(new(), logger);
             RopuClient ropuClient = new(index, balancerClient, routerClient, logger);
             var serviceInstance = new ServiceInstance<RopuClient>(
-                (client, cancelationToken) => Task.CompletedTask,
+                (client, cancelationToken) => client.RunAsync(cancelationToken),
                 ropuClient);
             _clients.Add(serviceInstance);
         }
     }
 
     public Listener Balancer => _balancerService.Service;
+
+    public List<ServiceInstance<RouterService>> Routers => _routers;
 
     public void Start()
     {
@@ -98,5 +114,35 @@ public class TestSystem
         {
             router.Stop();
         }
+
+        foreach (var client in _clients)
+        {
+            client.Stop();
+        }
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _balancerService.Dispose();
+
+            foreach (var router in _routers)
+            {
+                router.Dispose();
+            }
+
+            foreach (var client in _clients)
+            {
+                client.Dispose();
+            }
+        }
+    }
+
+
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
     }
 }

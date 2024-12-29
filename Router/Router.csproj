@@ -10,6 +10,7 @@
   <ItemGroup>
     <ProjectReference Include="..\BalancerProtocol\BalancerProtocol.csproj" />
     <ProjectReference Include="..\Logging\Logging.csproj" />
+    <ProjectReference Include="..\RouterProtocol\RouterProtocol.csproj" />
   </ItemGroup>
 
 </Project>

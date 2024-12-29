@@ -25,7 +25,7 @@ public class GroupSendBenchmark
 
     public GroupSendBenchmark()
     {
-        var address = IPAddress.Parse("192.168.1.115");
+        var address = IPAddress.Parse("127.0.0.1");
         for (int index = 0; index < _addresses.Length; index++)
         {
             _endpoints[index] = new IPEndPoint(address, index + 2000);

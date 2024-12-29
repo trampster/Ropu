@@ -157,6 +157,8 @@ public class Logger : ILogger
         buffer[index] = ' ';
         index++;
 
+        buffer[index] = '[';
+        index++;
         _context.CopyTo(buffer.AsSpan(index));
         index += _context.Length;
 
