@@ -92,6 +92,8 @@ public class TestSystem : IDisposable
 
     public List<ServiceInstance<RouterService>> Routers => _routers;
 
+    public List<ServiceInstance<RopuClient>> Clients => _clients;
+
     public void Start()
     {
         _balancerService.Start();

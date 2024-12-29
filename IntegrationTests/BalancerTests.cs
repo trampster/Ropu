@@ -47,12 +47,29 @@ public class BalancerTests
         using var system = new TestSystem(2, 2, new Logger(LogLevel.Debug));
         system.Start();
 
+        var clients = system.Clients;
+
+        var client0 = clients[0].Service;
+        var client1 = clients[1].Service;
+
+        TaskCompletionSource client0Registered = new();
+        client0.Connected += (sender, args) => client0Registered.SetResult();
+
+        TaskCompletionSource client1Registered = new();
+        client1.Connected += (sender, args) => client1Registered.SetResult();
+
         // act
         var routers = system.Routers;
 
         // assert
-        Assert.That(await WaitFor(() => routers[0].Service.Clients.Count == 1, TimeSpan.FromSeconds(5)), Is.True);
-        Assert.That(await WaitFor(() => routers[1].Service.Clients.Count == 1, TimeSpan.FromSeconds(5)), Is.True);
+        Assert.That(await Task.WhenAny(client0Registered.Task, Task.Delay(5000)), Is.EqualTo(client0Registered.Task), "client0 didn't register in time");
+        Assert.That(await Task.WhenAny(client1Registered.Task, Task.Delay(5000)), Is.EqualTo(client1Registered.Task), "client1 didn't register in time");
+        Assert.That(client0.IsConnected, Is.True);
+        Assert.That(client1.IsConnected, Is.True);
+        Assert.That(routers[0].Service.Clients.Count, Is.EqualTo(1));
+        Assert.That(routers[1].Service.Clients.Count, Is.EqualTo(1));
+
+        system.Stop();
     }
 
     async Task<bool> WaitFor(Func<bool> outcome, TimeSpan waitTime)
