@@ -19,14 +19,21 @@ public class Logger : ILogger
 
     readonly LogLevel _logLevel;
 
-    public Logger(LogLevel logLevel) : this(logLevel, "")
+    public Logger(LogLevel logLevel) : this(logLevel, "", null)
     {
     }
 
-    public Logger(LogLevel logLevel, string context)
+    public string? Module
+    {
+        get;
+        set;
+    } = null;
+
+    public Logger(LogLevel logLevel, string context, string? module)
     {
         _logLevel = logLevel;
         _context = context;
+        Module = module;
     }
 
     static char[] Buffer
@@ -43,7 +50,12 @@ public class Logger : ILogger
 
     public ILogger ForContext(string context)
     {
-        return new Logger(_logLevel, context);
+        return new Logger(_logLevel, context, Module);
+    }
+
+    public ILogger ForModule(string module)
+    {
+        return new Logger(_logLevel, _context, module);
     }
 
     public void Debug(long value)
@@ -159,6 +171,15 @@ public class Logger : ILogger
 
         buffer[index] = '[';
         index++;
+
+        if (Module != null)
+        {
+            Module.CopyTo(buffer.AsSpan(index));
+            index += Module.Length;
+            buffer[index] = '-';
+            index++;
+        }
+
         _context.CopyTo(buffer.AsSpan(index));
         index += _context.Length;
 

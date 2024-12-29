@@ -60,7 +60,7 @@ public class TestSystem : IDisposable
         // balancer
         _balancerService = new ServiceInstance<Listener>(
             (balancer, cancelationToken) => balancer.RunAsync(cancelationToken),
-            new Listener(logger, 2000));
+            new Listener(logger.ForModule("Balancer"), 2000));
 
         // routers
         _routers = new(routers);
@@ -68,7 +68,7 @@ public class TestSystem : IDisposable
         {
             var serviceInstance = new ServiceInstance<RouterService>(
                 (routerRunner, cancelationToken) => routerRunner.Run(cancelationToken),
-                new RouterService((ushort)(2001 + index), logger));
+                new RouterService((ushort)(2001 + index), logger.ForModule($"Router{index}")));
             _routers.Add(serviceInstance);
         }
 
@@ -77,9 +77,10 @@ public class TestSystem : IDisposable
         _clients = new(clients);
         for (uint index = 0; index < clients; index++)
         {
-            var balancerClient = new Client.BalancerClient(0, balancerEndpoint, index, logger);
-            var routerClient = new RouterClient(new(), logger);
-            RopuClient ropuClient = new(index, balancerClient, routerClient, logger);
+            var clientLogger = logger.ForModule($"Client{index}");
+            var balancerClient = new Client.BalancerClient(0, balancerEndpoint, index, clientLogger);
+            var routerClient = new RouterClient(new(), clientLogger);
+            RopuClient ropuClient = new(index, balancerClient, routerClient, clientLogger);
             var serviceInstance = new ServiceInstance<RopuClient>(
                 (client, cancelationToken) => client.RunAsync(cancelationToken),
                 ropuClient);
