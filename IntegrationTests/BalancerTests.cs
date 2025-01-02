@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Ropu.IntergrationTests;
 using Ropu.Logging;
+using Ropu.Shared;
 
 namespace IntegrationTests;
 
@@ -68,6 +69,43 @@ public class BalancerTests
         Assert.That(client1.IsConnected, Is.True);
         Assert.That(routers[0].Service.Clients.Count, Is.EqualTo(1));
         Assert.That(routers[1].Service.Clients.Count, Is.EqualTo(1));
+
+        system.Stop();
+    }
+
+    [Test]
+    public async Task Clients_Two_CanSendMessages()
+    {
+        using var system = new TestSystem(2, 2, new Logger(LogLevel.Debug));
+        system.Start();
+
+        var clients = system.Clients;
+
+        await system.WaitForClientsToConnect();
+
+        var client0 = clients[0].Service;
+        var client1 = clients[1].Service;
+
+        byte[] messageBuffer = new byte[1024];
+        int messageLength = 0;
+
+        TaskCompletionSource messageRecieved = new();
+
+        client1.SetIndividualMessageHandler(message =>
+        {
+            messageLength = message.Length;
+            message.CopyTo(messageBuffer);
+            messageRecieved.SetResult();
+        });
+
+        var expectedMessage = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+        // act
+        await client0.SendToUnit(client1.UnitId, expectedMessage.AsMemory());
+
+        // assert
+        Assert.That(await messageRecieved.Task.WaitOneAsync(TimeSpan.FromSeconds(5)), Is.True);
+        Assert.That(messageBuffer.AsSpan(0, messageLength).ToArray(), Is.EquivalentTo(expectedMessage));
 
         system.Stop();
     }

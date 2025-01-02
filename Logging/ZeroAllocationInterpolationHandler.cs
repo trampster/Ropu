@@ -81,8 +81,8 @@ public ref struct ZeroAllocationInterpolationHandler
             case BalancerPacketTypes.ResolveUnit:
                 packetType = nameof(BalancerPacketTypes.ResolveUnit);
                 break;
-            case BalancerPacketTypes.RolveUnitResponse:
-                packetType = nameof(BalancerPacketTypes.RolveUnitResponse);
+            case BalancerPacketTypes.ResolveUnitResponse:
+                packetType = nameof(BalancerPacketTypes.ResolveUnitResponse);
                 break;
             case BalancerPacketTypes.RouterAssignment:
                 packetType = nameof(BalancerPacketTypes.RouterAssignment);

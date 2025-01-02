@@ -1,4 +1,8 @@
+using System.Collections.Concurrent;
+using System.Net;
+using System.Net.Sockets;
 using Ropu.Logging;
+using Ropu.Shared;
 
 namespace Ropu.Client;
 
@@ -9,6 +13,8 @@ public class RopuClient
     readonly RouterClient _routerClient;
     readonly ILogger _logger;
 
+    readonly ConcurrentDictionary<uint, SocketAddress> _addressLookup = new();
+
     public RopuClient(
         uint clientId,
         BalancerClient balancerClient,
@@ -18,18 +24,30 @@ public class RopuClient
         _clientId = clientId;
         _balancerClient = balancerClient;
         _routerClient = routerClient;
+        _routerClient.UnknownRecipient += OnUnknownRecipient;
+        _routerClient.SetIndividualMessageHandler(OnIndividualMessage);
         _logger = logger.ForContext(nameof(RopuClient));
     }
 
-    async Task RunTasksAsync(params Task[] tasks)
+    IndividualMessageHandler? _individualMessageHandler;
+
+    public void SetIndividualMessageHandler(IndividualMessageHandler? handler)
     {
-        var taskList = tasks.ToList();
-        while (taskList.Count != 0)
-        {
-            var task = await Task.WhenAny(taskList);
-            await task;
-            taskList.Remove(task);
-        }
+        _individualMessageHandler = handler;
+    }
+
+    void OnIndividualMessage(Span<byte> message)
+    {
+        _individualMessageHandler?.Invoke(message);
+    }
+
+    public uint UnitId => _clientId;
+
+    void OnUnknownRecipient(object? sender, uint clientId)
+    {
+        // Remove from lookup, the send will have failed but we will rely
+        // on application level retries to trigger a address resolution
+        _addressLookup.TryRemove(clientId, out SocketAddress? value);
     }
 
     public Task RunAsync(CancellationToken cancellationToken)
@@ -40,7 +58,7 @@ public class RopuClient
         var balancerClientTask = _balancerClient.RunReceiveAsync(cancellationToken);
         var receiveTask = _routerClient.RunReceiveAsync(cancellationToken);
         var manageConnectionTask = Task.Run(() => ManageConnection(cancellationToken));
-        return RunTasksAsync(routerClientTask, balancerClientTask, manageConnectionTask);
+        return TaskHelpers.RunTasksAsync(routerClientTask, balancerClientTask, manageConnectionTask);
     }
 
     readonly TimeSpan _heartbeatInterval = TimeSpan.FromSeconds(25);
@@ -92,4 +110,22 @@ public class RopuClient
 
     public event EventHandler? Connected;
     public event EventHandler? Disconnected;
+
+    public async Task<bool> SendToUnit(uint unitId, Memory<byte> data)
+    {
+        if (!_addressLookup.TryGetValue(unitId, out SocketAddress? routerAddress))
+        {
+            // resolve unit
+            routerAddress = new(AddressFamily.InterNetwork);
+            if (!await _balancerClient.TryResolveUnitAsync(unitId, routerAddress))
+            {
+                _logger.Warning($"Unable to resolve unit {unitId}");
+                return false;
+            }
+
+            _addressLookup[unitId] = routerAddress;
+        }
+        _routerClient.SendToClient(unitId, routerAddress, data.Span);
+        return true;
+    }
 }

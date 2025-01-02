@@ -1,5 +1,7 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices.Marshalling;
 using Ropu.Logging;
 using Ropu.RouterProtocol;
 
@@ -11,7 +13,7 @@ public class RouterListener : IDisposable
     readonly ILogger _logger;
     readonly RouterPacketFactory _routerPacketFactory;
 
-    readonly Dictionary<uint, SocketAddress> _addressBook = [];
+    readonly ConcurrentDictionary<uint, SocketAddress> _addressBook = [];
     readonly HashSet<SocketAddress> _addresses = [];
 
     [ThreadStatic]
@@ -73,12 +75,36 @@ public class RouterListener : IDisposable
                     case (byte)RouterPacketType.Heartbeat:
                         HandleHeartbeatPacket(socketAddress);
                         break;
+                    case (byte)RouterPacketType.IndividualMessage:
+                        HandleIndivdiualMessage(_receiveBuffer.AsSpan(0, received), socketAddress);
+                        break;
                     default:
                         _logger.Warning($"Received unknown packet type: {_receiveBuffer[0]}");
                         break;
                 }
             }
         }
+    }
+
+    void HandleIndivdiualMessage(Span<byte> packet, SocketAddress socketAddress)
+    {
+        _logger.Information("Received Indivdiual Message");
+        if (!_routerPacketFactory.TryParseUnitIdFromIndividualMessagePacket(packet, out uint unitId))
+        {
+            _logger.Warning("Could not parse Individual Message");
+            return;
+        }
+
+        if (!_addressBook.TryGetValue(unitId, out SocketAddress? unitAddress))
+        {
+            _logger.Warning($"Could forward Individual Message because unit {unitId} is not registered");
+            var buffer = Buffer;
+            var unknownRecipientPacket = _routerPacketFactory.BuildUnknownRecipientPacket(buffer, unitId);
+            _socket.SendTo(unknownRecipientPacket, SocketFlags.None, socketAddress);
+            return;
+        }
+
+        _socket.SendTo(packet, SocketFlags.None, unitAddress);
     }
 
     void HandleRegisterClientPacket(Span<byte> packet, SocketAddress socketAddress)

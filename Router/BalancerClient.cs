@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Sockets;
 using Ropu.BalancerProtocol;
 using Ropu.Logging;
+using Ropu.Shared;
 
 namespace Ropu.Router;
 
@@ -109,7 +110,7 @@ public class BalancerClient : IDisposable
         cancellationToken.Register(() => _socket.Close());
         var receiveTask = taskFactory.StartNew(() => RunReceive(cancellationToken), TaskCreationOptions.LongRunning);
         var connectionTask = taskFactory.StartNew(() => ManageConnection(cancellationToken), TaskCreationOptions.LongRunning);
-        var task = await Task.WhenAny(receiveTask, connectionTask);
+        var task = TaskHelpers.RunTasksAsync(receiveTask, connectionTask);
         await task;
     }
 

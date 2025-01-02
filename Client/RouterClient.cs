@@ -1,10 +1,11 @@
 using System.Net;
 using System.Net.Sockets;
-using System.Runtime.CompilerServices;
 using Ropu.Logging;
 using Ropu.RouterProtocol;
 
 namespace Ropu.Client;
+
+public delegate void IndividualMessageHandler(Span<byte> message);
 
 public class RouterClient
 {
@@ -68,6 +69,12 @@ public class RouterClient
         return _heartbeatResponseEvent.WaitOne(2000);
     }
 
+    public void SendToClient(uint clientId, SocketAddress router, Span<byte> data)
+    {
+        var packet = _routerPacketFactory.BuildIndividualMessagePacket(Buffer, clientId, data);
+        _socket.SendTo(packet, SocketFlags.None, router);
+    }
+
     public Task RunReceiveAsync(CancellationToken cancellationToken)
     {
         var taskFactory = new TaskFactory();
@@ -95,11 +102,47 @@ public class RouterClient
                     case (byte)RouterPacketType.HeartbeatResponse:
                         _heartbeatResponseEvent.Set();
                         break;
+                    case (byte)RouterPacketType.UnknownRecipient:
+                        HandleUnknownRecipient(_receiveBuffer.AsSpan(0, received));
+                        break;
+                    case (byte)RouterPacketType.IndividualMessage:
+                        HandleIndividualMessage(_receiveBuffer.AsSpan(0, received));
+                        break;
                     default:
                         _logger.Warning($"Received unknown packet type: {_receiveBuffer[0]}");
                         break;
                 }
             }
         }
+    }
+
+
+    IndividualMessageHandler? _individualMessageHandler;
+
+    public void SetIndividualMessageHandler(IndividualMessageHandler? handler)
+    {
+        _individualMessageHandler = handler;
+    }
+
+    void HandleIndividualMessage(Span<byte> packet)
+    {
+        if (!_routerPacketFactory.TryParseIndividualMessagePacket(packet, out uint clientId, out Span<byte> payload))
+        {
+            _logger.Warning("Could not parse individual message");
+            return;
+        }
+        _individualMessageHandler?.Invoke(payload);
+    }
+
+    public event EventHandler<uint>? UnknownRecipient;
+
+    void HandleUnknownRecipient(Span<byte> packet)
+    {
+        if (!_routerPacketFactory.TryParseUnknownRecipientPacket(packet, out uint clientId))
+        {
+            _logger.Warning("Failed to parse Unknown Recipient pakcet");
+            return;
+        }
+        UnknownRecipient?.Invoke(this, clientId);
     }
 }

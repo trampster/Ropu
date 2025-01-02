@@ -12,5 +12,5 @@ public enum BalancerPacketTypes
     RegisterDistributor = 0x07,
     RegisterDistributorResponse = 0x08,
     ResolveUnit = 0x09,
-    RolveUnitResponse = 0x0A,
+    ResolveUnitResponse = 0x0A,
 }

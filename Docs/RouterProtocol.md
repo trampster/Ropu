@@ -17,7 +17,7 @@ Sent by the client to acknowledge a registration
 | -------- | ------------------- | -----------------------------------------|
 | 0        | Packet Identifier   | 0x01                                     |
 
-## Send to Client
+## Individual Message
 Request to send a packet to a client registered with the router
 
 | Bytes    | Field               | Description                              |

@@ -178,7 +178,7 @@ public class BalancerPacketFactory
 
     public Span<byte> BuildResolveUnit(
         byte[] buffer,
-        int unitId)
+        uint unitId)
     {
         buffer[0] = (byte)BalancerPacketTypes.ResolveUnit;
 
@@ -206,7 +206,7 @@ public class BalancerPacketFactory
         int unitId,
         SocketAddress? routerAddress = null)
     {
-        buffer[0] = (byte)BalancerPacketTypes.ResolveUnit;
+        buffer[0] = (byte)BalancerPacketTypes.ResolveUnitResponse;
 
         buffer[1] = (byte)(success ? 0 : 1);
 
@@ -230,11 +230,10 @@ public class BalancerPacketFactory
     }
 
 
-    public bool TryParseResolveUnitResponse(
+    public bool TryParseResolveUnitResponseResult(
         Span<byte> buffer,
         out bool success,
-        out int unitId,
-        SocketAddress socketAddress)
+        out int unitId)
     {
         if (buffer.Length != 12)
         {
@@ -246,9 +245,14 @@ public class BalancerPacketFactory
         success = buffer[0] == 0;
 
         unitId = BitConverter.ToInt32(buffer.Slice(2, 4));
+        return true;
+    }
 
+    public void ParseResolveUnitResponseSocketAddress(
+        Span<byte> buffer,
+        SocketAddress socketAddress)
+    {
         socketAddress.ReadFromBytes(buffer.Slice(6, 6));
 
-        return true;
     }
 }

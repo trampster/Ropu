@@ -109,6 +109,23 @@ public class TestSystem : IDisposable
         }
     }
 
+    public async Task WaitForClientsToConnect()
+    {
+        foreach (var clientServiceInstance in _clients)
+        {
+            var client = clientServiceInstance.Service;
+
+            if (!client.IsConnected)
+            {
+                var connectedCompletion = new TaskCompletionSource();
+                EventHandler onConnected = (sender, args) => connectedCompletion.SetResult();
+                client.Connected += onConnected;
+                Assert.That(await Task.WhenAny(connectedCompletion.Task, Task.Delay(5000)), Is.EqualTo(connectedCompletion.Task));
+                client.Connected -= onConnected;
+            }
+        }
+    }
+
     public void Stop()
     {
         _balancerService.Stop();

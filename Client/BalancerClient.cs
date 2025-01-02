@@ -47,34 +47,41 @@ public class BalancerClient
 
     readonly SocketAddress _socketAddress = new SocketAddress(AddressFamily.InterNetwork);
 
-    public Task<bool> TryResolveUnitAsync(int unitId, SocketAddress routerAddress)
+    /// <summary>
+    /// Resolves the address of the router that can be used to contact the unit.
+    /// </summary>
+    /// <param name="unitId"></param>
+    /// <param name="routerAddress"></param>
+    /// <returns></returns>
+    public Task<bool> TryResolveUnitAsync(uint unitId, SocketAddress routerAddress)
         => Task.Run(() => TryResolveUnit(unitId, routerAddress));
 
-    bool TryResolveUnit(int unitId, SocketAddress routerAddress)
+    ResolveUnitTracker GetResolveUnitTracker(uint unitId, SocketAddress routerAddress)
+    {
+        foreach (var tracker in _resolveUnitRequests)
+        {
+            if (tracker.TryUse(unitId, routerAddress))
+            {
+                return tracker;
+            }
+        }
+
+        //all in use
+        var newTracker = new ResolveUnitTracker(unitId, routerAddress);
+        newTracker.TryUse(unitId, routerAddress);
+        _resolveUnitRequests.Add(newTracker);
+        return newTracker;
+    }
+
+    bool TryResolveUnit(uint unitId, SocketAddress routerAddress)
     {
         var buffer = Buffer;
         var resolveUnitAddress = _packetFactory.BuildResolveUnit(buffer, unitId);
+
+        var tracker = GetResolveUnitTracker(unitId, routerAddress);
         _socket.SendTo(resolveUnitAddress, _balancerEndpoint);
 
-        var receivedBytes = _socket.ReceiveFrom(buffer, SocketFlags.None, _socketAddress);
-
-        if (!_packetFactory.TryParseResolveUnitResponse(
-            buffer.AsSpan(0, receivedBytes),
-            out bool success,
-            out int resolvedUnitId,
-            routerAddress))
-        {
-            _logger.Warning("Failed to parse Resolve Unit Response packet");
-            return false;
-        }
-
-        if (resolvedUnitId != unitId)
-        {
-            _logger.Warning("Balancer resolved router address for the wrong unit");
-            return false;
-        }
-
-        if (!success)
+        if (!tracker.WaitForResponse(TimeSpan.FromSeconds(5)))
         {
             return false;
         }
@@ -105,12 +112,86 @@ public class BalancerClient
                     case (byte)BalancerPacketTypes.RouterAssignment:
                         HandleRouterAssignment(_receiveBuffer.AsSpan(0, received));
                         break;
+                    case (byte)BalancerPacketTypes.ResolveUnitResponse:
+                        HandleResolveUnitResponse(_receiveBuffer.AsSpan(0, received));
+                        break;
                     default:
                         _logger.Warning($"Received unknown packet type: {_receiveBuffer[0]}");
                         break;
                 }
             }
         }
+    }
+
+    readonly AutoResetEvent _resoleUnitResponse = new(false);
+
+    class ResolveUnitTracker
+    {
+        public uint UnitId { get; private set; }
+        ManualResetEvent _responseRecievedEvent = new(false);
+
+        int _usedFlag = 0;
+
+        public ResolveUnitTracker(uint unitId, SocketAddress routerAddress)
+        {
+            UnitId = unitId;
+            RouterAddress = routerAddress;
+        }
+
+        public bool TryUse(uint unitId, SocketAddress routerAddress)
+        {
+            if (Interlocked.CompareExchange(ref _usedFlag, 1, 0) != 0)
+            {
+                return false;
+            }
+            UnitId = unitId;
+            RouterAddress = routerAddress;
+            _responseRecievedEvent.Reset();
+            return true;
+        }
+
+        public bool WaitForResponse(TimeSpan timeout) => _responseRecievedEvent.WaitOne(timeout);
+
+        public SocketAddress RouterAddress
+        {
+            get;
+            set;
+        }
+
+        public void SetDone()
+        {
+            _responseRecievedEvent.Set();
+        }
+
+        public void Release()
+        {
+            Interlocked.Exchange(ref _usedFlag, 0);
+        }
+    }
+
+    List<ResolveUnitTracker> _resolveUnitRequests = new();
+
+    void HandleResolveUnitResponse(Span<byte> span)
+    {
+        SocketAddress socketAddress = new SocketAddress(AddressFamily.InterNetwork);
+        if (!_packetFactory.TryParseResolveUnitResponseResult(
+            span,
+            out bool success,
+            out int resolvedUnitId))
+        {
+            _logger.Warning("Failed to parse Resolve Unit Response packet");
+            return;
+        }
+        foreach (var resolveUnitRequest in _resolveUnitRequests)
+        {
+            if (resolveUnitRequest.UnitId == resolvedUnitId)
+            {
+                _packetFactory.ParseResolveUnitResponseSocketAddress(span, resolveUnitRequest.RouterAddress);
+                resolveUnitRequest.SetDone();
+                return;
+            }
+        }
+        _resoleUnitResponse.Set();
     }
 
     readonly ManualResetEvent _routerAssignmentEvent = new(false);

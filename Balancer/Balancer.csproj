@@ -11,6 +11,7 @@
   <ItemGroup>
     <ProjectReference Include="..\BalancerProtocol\BalancerProtocol.csproj" />
     <ProjectReference Include="..\Logging\Logging.csproj" />
+    <ProjectReference Include="..\Shared\Shared.csproj" />
   </ItemGroup>
 
 </Project>
