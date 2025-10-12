@@ -1,5 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
+using BalancerProtocol;
+using Ropu.BalancerProtocol;
 
 namespace Ropu.Balancer;
 
@@ -31,11 +33,24 @@ public class Server
         set;
     }
 
-    public SocketAddress Endpoint
+    public SocketAddress Address
     {
         get;
         set;
     } = new SocketAddress(AddressFamily.InterNetwork);
+
+    SocketAddress _replyAddress = new SocketAddress(AddressFamily.InterNetwork);
+    public SocketAddress ReplyAddress
+    {
+        get
+        {
+            return _replyAddress;
+        }
+        set
+        {
+            _replyAddress.CopyFrom(value);
+        }
+    }
 
     public ushort Capacity
     {

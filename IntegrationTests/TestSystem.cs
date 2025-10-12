@@ -1,6 +1,8 @@
 using System.Net;
 using Ropu.Balancer;
+using Ropu.BalancerProtocol;
 using Ropu.Client;
+using Ropu.Distributor;
 using Ropu.Logging;
 using Ropu.Router;
 
@@ -13,18 +15,33 @@ public class ServiceInstance<T> : IDisposable
     T _service;
     Task _task = Task.CompletedTask;
 
-    public ServiceInstance(Func<T, CancellationToken, Task> starter, T service)
+    readonly ILogger _logger;
+
+    public ServiceInstance(Func<T, CancellationToken, Task> starter, T service, ILogger logger)
     {
         _cancellationTokenSource = new CancellationTokenSource();
         _starter = starter;
         _service = service;
+        _logger = logger.ForContext(nameof(ServiceInstance<T>));
     }
 
     public T Service => _service;
 
     public void Start()
     {
-        _task = _starter(_service, _cancellationTokenSource.Token);
+        _task = StartAsync();
+    }
+
+    async Task StartAsync()
+    {
+        try
+        {
+            await _starter(_service, _cancellationTokenSource.Token);
+        }
+        catch (Exception exception)
+        {
+            _logger.Warning($"Exception occured running ServiceInstance of type {typeof(T).ToString()}, {exception.ToString()}");
+        }
     }
 
     public Task Stop()
@@ -53,14 +70,27 @@ public class TestSystem : IDisposable
 {
     readonly ServiceInstance<Listener> _balancerService;
     readonly List<ServiceInstance<RouterService>> _routers;
+    readonly List<ServiceInstance<DistributorService>> _distributors;
     readonly List<ServiceInstance<RopuClient>> _clients;
 
-    public TestSystem(int routers, int clients, ILogger logger)
+    public TestSystem(int routers, int clients, int distributors, ILogger logger)
     {
         // balancer
         _balancerService = new ServiceInstance<Listener>(
             (balancer, cancelationToken) => balancer.RunAsync(cancelationToken),
-            new Listener(logger.ForModule("Balancer"), 2000));
+            new Listener(logger.ForModule("Balancer"), 2000),
+            logger);
+
+        // distributors
+        _distributors = new(distributors);
+        for (int index = 0; index < distributors; index++)
+        {
+            var serviceInstance = new ServiceInstance<DistributorService>(
+                (routerRunner, cancelationToken) => routerRunner.Run(cancelationToken),
+                new DistributorService((ushort)(10001 + index), logger.ForModule($"Distributor{index}")),
+                logger);
+            _distributors.Add(serviceInstance);
+        }
 
         // routers
         _routers = new(routers);
@@ -68,7 +98,8 @@ public class TestSystem : IDisposable
         {
             var serviceInstance = new ServiceInstance<RouterService>(
                 (routerRunner, cancelationToken) => routerRunner.Run(cancelationToken),
-                new RouterService((ushort)(2001 + index), logger.ForModule($"Router{index}")));
+                new RouterService((ushort)(2001 + index), logger.ForModule($"Router{index}")),
+                logger);
             _routers.Add(serviceInstance);
         }
 
@@ -78,12 +109,15 @@ public class TestSystem : IDisposable
         for (uint index = 0; index < clients; index++)
         {
             var clientLogger = logger.ForModule($"Client{index}");
-            var balancerClient = new Client.BalancerClient(0, balancerEndpoint, index, clientLogger);
+
+            var clientId = Guid.NewGuid();
+            var balancerClient = new Client.BalancerClient(0, balancerEndpoint, clientId, clientLogger);
             var routerClient = new RouterClient(new(), clientLogger);
-            RopuClient ropuClient = new(index, balancerClient, routerClient, clientLogger);
+            RopuClient ropuClient = new(clientId, balancerClient, routerClient, clientLogger);
             var serviceInstance = new ServiceInstance<RopuClient>(
                 (client, cancelationToken) => client.RunAsync(cancelationToken),
-                ropuClient);
+                ropuClient,
+                logger);
             _clients.Add(serviceInstance);
         }
     }
@@ -93,6 +127,7 @@ public class TestSystem : IDisposable
     public List<ServiceInstance<RouterService>> Routers => _routers;
 
     public List<ServiceInstance<RopuClient>> Clients => _clients;
+    public List<ServiceInstance<DistributorService>> Distributors => _distributors;
 
     public void Start()
     {
@@ -101,6 +136,11 @@ public class TestSystem : IDisposable
         foreach (var router in _routers)
         {
             router.Start();
+        }
+
+        foreach (var distributor in _distributors)
+        {
+            distributor.Start();
         }
 
         foreach (var client in _clients)
@@ -158,7 +198,6 @@ public class TestSystem : IDisposable
             }
         }
     }
-
 
     public void Dispose()
     {

@@ -6,7 +6,7 @@ using Ropu.RouterProtocol;
 Console.WriteLine("Ropu Client");
 var logger = new Logger(LogLevel.Debug);
 
-uint clientId = (uint)Random.Shared.Next();
+var clientId = Guid.NewGuid();
 
 var balancerClient = new BalancerClient(
     0,

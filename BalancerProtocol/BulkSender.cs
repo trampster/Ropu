@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
+using Ropu.BalancerProtocol;
 
 namespace BalancerProtocol;
 
@@ -12,6 +13,7 @@ public class BulkSender
 
     ReadOnlyMemory<byte> _buffer = new byte[0];
     ReadOnlyMemory<SocketAddress> _destinations = new SocketAddress[0];
+    SocketAddress? _except = null;
     int _completedThreads = 0;
     int _threadNumber = 0;
     volatile bool _stopping = false;
@@ -30,10 +32,11 @@ public class BulkSender
         }
     }
 
-    public void SendBulk(ReadOnlyMemory<byte> buffer, Memory<SocketAddress> destinations)
+    public void SendBulk(ReadOnlyMemory<byte> buffer, Memory<SocketAddress> destinations, SocketAddress? except)
     {
         _buffer = buffer;
         _destinations = destinations;
+        _except = except;
         Interlocked.Exchange(ref _threadNumber, 0);
         Interlocked.Exchange(ref _completedThreads, 0);
         _doneEvent.Reset();
@@ -46,31 +49,53 @@ public class BulkSender
 
     void ThreadWorker(object? state)
     {
-        AutoResetEvent resetEvent = (AutoResetEvent)state!;
-        while (!_stopping)
+        try
         {
-            resetEvent.WaitOne();
-            if (_stopping)
+            AutoResetEvent resetEvent = (AutoResetEvent)state!;
+            while (!_stopping)
             {
-                return;
-            }
-            int threadNumber = Interlocked.Increment(ref _threadNumber);
-            int numberOfThreads = _threads.Length;
-            int numberPerThread = _buffer.Length / numberOfThreads;
-            int start = (threadNumber - 1) * numberPerThread;
-            for (int index = start; index < start + numberPerThread; index++)
-            {
-                try
+                resetEvent.WaitOne();
+                if (_stopping)
                 {
-                    _socket.SendTo(_buffer.Span, SocketFlags.None, _destinations.Span[index]);
+                    return;
                 }
-                catch (Exception)
+                int threadNumber = Interlocked.Increment(ref _threadNumber);
+
+                int numberOfThreads = _threads.Length;
+                int numberPerThread = _destinations.Span.Length / numberOfThreads;
+                if (numberPerThread == 0)
                 {
-                    Console.WriteLine($"Index issue: Index: {index}, ArrayLength: {_destinations.Length}, Start: {start}, Number Per Thread {numberPerThread}");
-                    throw;
+                    numberPerThread = 1;
                 }
+
+                int start = (threadNumber - 1) * numberPerThread;
+
+                int end = start + numberPerThread - 1;
+                if (end >= _destinations.Span.Length)
+                {
+                    end = _destinations.Span.Length - 1;
+                }
+                if (threadNumber == numberOfThreads)
+                {
+                    end = _destinations.Span.Length - 1;
+                }
+
+                for (int index = start; index <= end; index++)
+                {
+                    var address = _destinations.Span[index];
+                    if (address == _except)
+                    {
+                        continue;
+                    }
+                    _socket.SendTo(_buffer.Span, SocketFlags.None, address);
+                }
+
+                OnThreadWorkDone();
             }
-            OnThreadWorkDone();
+        }
+        catch (Exception exception)
+        {
+            Console.WriteLine($"Worker failed with error {exception}");
         }
     }
 

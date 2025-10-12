@@ -11,7 +11,7 @@ public class BalancerClient
     [ThreadStatic]
     static byte[]? _buffer;
     readonly Socket _socket;
-    readonly uint _clientId;
+    readonly Guid _clientId;
     readonly ILogger _logger;
     readonly IPEndPoint _balancerEndpoint;
     readonly BalancerPacketFactory _packetFactory = new();
@@ -20,7 +20,7 @@ public class BalancerClient
     public BalancerClient(
         ushort port,
         IPEndPoint balancerEndpoint,
-        uint clientId,
+        Guid clientId,
         ILogger logger)
     {
         _balancerEndpoint = balancerEndpoint;
@@ -53,10 +53,10 @@ public class BalancerClient
     /// <param name="unitId"></param>
     /// <param name="routerAddress"></param>
     /// <returns></returns>
-    public Task<bool> TryResolveUnitAsync(uint unitId, SocketAddress routerAddress)
+    public Task<bool> TryResolveUnitAsync(Guid unitId, SocketAddress routerAddress)
         => Task.Run(() => TryResolveUnit(unitId, routerAddress));
 
-    ResolveUnitTracker GetResolveUnitTracker(uint unitId, SocketAddress routerAddress)
+    ResolveUnitTracker GetResolveUnitTracker(Guid unitId, SocketAddress routerAddress)
     {
         foreach (var tracker in _resolveUnitRequests)
         {
@@ -73,7 +73,7 @@ public class BalancerClient
         return newTracker;
     }
 
-    bool TryResolveUnit(uint unitId, SocketAddress routerAddress)
+    bool TryResolveUnit(Guid unitId, SocketAddress routerAddress)
     {
         var buffer = Buffer;
         var resolveUnitAddress = _packetFactory.BuildResolveUnit(buffer, unitId);
@@ -127,18 +127,18 @@ public class BalancerClient
 
     class ResolveUnitTracker
     {
-        public uint UnitId { get; private set; }
+        public Guid UnitId { get; private set; }
         ManualResetEvent _responseRecievedEvent = new(false);
 
         int _usedFlag = 0;
 
-        public ResolveUnitTracker(uint unitId, SocketAddress routerAddress)
+        public ResolveUnitTracker(Guid unitId, SocketAddress routerAddress)
         {
             UnitId = unitId;
             RouterAddress = routerAddress;
         }
 
-        public bool TryUse(uint unitId, SocketAddress routerAddress)
+        public bool TryUse(Guid unitId, SocketAddress routerAddress)
         {
             if (Interlocked.CompareExchange(ref _usedFlag, 1, 0) != 0)
             {
@@ -177,7 +177,7 @@ public class BalancerClient
         if (!_packetFactory.TryParseResolveUnitResponseResult(
             span,
             out bool success,
-            out int resolvedUnitId))
+            out Guid resolvedUnitId))
         {
             _logger.Warning("Failed to parse Resolve Unit Response packet");
             return;

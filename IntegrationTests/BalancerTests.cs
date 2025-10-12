@@ -1,6 +1,9 @@
 using System.Diagnostics;
+using System.Net;
+using Ropu.BalancerProtocol;
 using Ropu.IntergrationTests;
 using Ropu.Logging;
+using Ropu.Router;
 using Ropu.Shared;
 
 namespace IntegrationTests;
@@ -12,7 +15,7 @@ public class BalancerTests
     public void Routers_NothingConnected_NoRouters()
     {
         // arrange
-        using var system = new TestSystem(0, 0, new Logger(LogLevel.Debug));
+        using var system = new TestSystem(0, 0, 0, new Logger(LogLevel.Debug));
         system.Start();
 
         // act
@@ -27,7 +30,7 @@ public class BalancerTests
     public async Task Routers_OneConnected_HasRouter()
     {
         // arrange
-        using var system = new TestSystem(1, 0, new Logger(LogLevel.Debug));
+        using var system = new TestSystem(1, 0, 0, new Logger(LogLevel.Debug));
         system.Start();
 
         // act
@@ -36,7 +39,7 @@ public class BalancerTests
         // assert
         Assert.IsTrue(await WaitFor(() => routers.Count() == 1, TimeSpan.FromSeconds(1)));
 
-        var router = routers.ServersArray.Where(router => router.IsUsed).First();
+        var router = routers.Span[0];
         Assert.That(router.Capacity, Is.EqualTo(100));
         Assert.That(router.NumberRegistered, Is.EqualTo(0));
         system.Stop();
@@ -45,8 +48,7 @@ public class BalancerTests
     [Test]
     public async Task Clients_Two_BothRegisterWithDifferentRouters()
     {
-        using var system = new TestSystem(2, 2, new Logger(LogLevel.Debug));
-        system.Start();
+        using var system = new TestSystem(2, 2, 0, new Logger(LogLevel.Debug));
 
         var clients = system.Clients;
 
@@ -58,6 +60,9 @@ public class BalancerTests
 
         TaskCompletionSource client1Registered = new();
         client1.Connected += (sender, args) => client1Registered.SetResult();
+
+        system.Start();
+
 
         // act
         var routers = system.Routers;
@@ -76,7 +81,7 @@ public class BalancerTests
     [Test]
     public async Task Clients_Two_CanSendMessages()
     {
-        using var system = new TestSystem(2, 2, new Logger(LogLevel.Debug));
+        using var system = new TestSystem(2, 2, 0, new Logger(LogLevel.Debug));
         system.Start();
 
         var clients = system.Clients;
@@ -109,6 +114,52 @@ public class BalancerTests
 
         system.Stop();
     }
+
+    [Test]
+    public async Task Dispatchers_Nine_RouterLearnsOfDistributors()
+    {
+        // arrange
+        using var system = new TestSystem(9, 2, 2, new Logger(LogLevel.Debug));
+
+
+        var routerCompletionList = new List<(RouterService Router, TaskCompletionSource CompletionSource)>();
+        foreach (var routerServiceInstance in system.Routers)
+        {
+            var router = routerServiceInstance.Service;
+
+            TaskCompletionSource gotTwoDistributors = new();
+
+            router.DistributorsChanged += (sender, args) =>
+            {
+                if (router.Distributors.Length == system.Distributors.Count)
+                {
+                    gotTwoDistributors.SetResult();
+                }
+            };
+
+            routerCompletionList.Add((router, gotTwoDistributors));
+        }
+
+        // act
+        system.Start();
+
+        // assert
+        foreach (var routerCompletion in routerCompletionList)
+        {
+            Assert.That(await routerCompletion.CompletionSource.Task.WaitOneAsync(TimeSpan.FromSeconds(5)), Is.True);
+            var distributors = routerCompletion.Router.Distributors.ToArray();
+
+            Assert.That(distributors.Length, Is.EqualTo(2));
+
+            foreach (var distributor in system.Distributors)
+            {
+                Assert.That(distributors, Has.One.Matches<SocketAddress>(d => d.GetPort() == distributor.Service.Port));
+            }
+        }
+
+        system.Stop();
+    }
+
 
     async Task<bool> WaitFor(Func<bool> outcome, TimeSpan waitTime)
     {

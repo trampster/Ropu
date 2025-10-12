@@ -20,12 +20,9 @@ if (!ushort.TryParse(portString, out ushort port))
 
 var logger = new Logger(LogLevel.Debug);
 
-using var balancerClient = new BalancerClient(
-    logger,
-    new IPEndPoint(IPAddress.Parse("127.0.0.1"), port),
-    new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2000),
-    100);
+using var DistributorService = new DistributorService(port, logger);
 
-await balancerClient.RunAsync(new());
+await DistributorService.Run(new());
+
 
 Console.WriteLine("Ropu Distributor Stopped");

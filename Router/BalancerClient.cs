@@ -10,6 +10,7 @@ namespace Ropu.Router;
 public class BalancerClient : IDisposable
 {
     readonly byte[] _registerMessage;
+    readonly byte[] _requestDistributorListMessage = new byte[1];
     readonly byte[] _receiveThreadBuffer = new byte[1024];
     readonly SocketAddress _balancerEndpoint;
     readonly Socket _socket;
@@ -35,7 +36,14 @@ public class BalancerClient : IDisposable
         _logger.Information($"Router Endpoint {routerAddress}");
         _balancerPacketFactory.BuildRegisterRouterPacket(_registerMessage, routerAddress, capacity);
 
+        _balancerPacketFactory.BuildRequestDistributorList(_requestDistributorListMessage);
+
         _socket = new Socket(SocketType.Dgram, ProtocolType.Udp);
+
+        for (int index = 0; index < _distributorsBuffer.Length; index++)
+        {
+            _distributorsBuffer[index] = new SocketAddress(AddressFamily.InterNetwork);
+        }
 
         var endpoint = new IPEndPoint(IPAddress.Any, 0);
         _socket.Bind(endpoint);
@@ -45,10 +53,12 @@ public class BalancerClient : IDisposable
     {
         while (!cancellationToken.IsCancellationRequested)
         {
-            _logger.Information("Registering");
-            _socket.SendTo(_registerMessage, SocketFlags.None, _balancerEndpoint);
+            _logger.Information($"Registering with {_balancerEndpoint}");
 
             _registerResponseEvent.Reset();
+
+            _socket.SendTo(_registerMessage, SocketFlags.None, _balancerEndpoint);
+
             if (_registerResponseEvent.WaitOne(2000))
             {
                 _logger.Information("Registration Successful starting heartbeats");
@@ -80,7 +90,11 @@ public class BalancerClient : IDisposable
                         HandleRegisterRouterResponse(_receiveThreadBuffer.AsSpan(0, received));
                         break;
                     case (byte)BalancerPacketTypes.HeartbeatResponse:
+                        _logger.Debug("Heartbeat response received");
                         _heartBeatResponseEvent.Set();
+                        break;
+                    case (byte)BalancerPacketTypes.DistributorList:
+                        HandleDistributorList(_receiveThreadBuffer.AsSpan(0, received));
                         break;
                     default:
                         //unhandled message
@@ -88,6 +102,67 @@ public class BalancerClient : IDisposable
                 }
             }
         }
+    }
+
+    readonly SocketAddress[] _distributorsBuffer = new SocketAddress[2000];
+    readonly SocketAddressList _distributors = new SocketAddressList(2000);
+    ushort _sequenceNumber = 0;
+
+    public Span<SocketAddress> Distributors => _distributors.AsSpan();
+
+    public event EventHandler DistributorsChanged;
+
+    void HandleDistributorList(Span<byte> packet)
+    {
+        _logger.Debug("Received Distributor List");
+        if (!_balancerPacketFactory.TryParseDistributorList(
+            packet,
+            _distributorsBuffer,
+            out ushort sequenceNumber,
+            out DistributorChangeType changeType,
+            out Span<SocketAddress> distributors))
+        {
+            _logger.Debug("Warning Failed to parse distributor list");
+            return;
+        }
+
+        switch (changeType)
+        {
+            case DistributorChangeType.Full:
+                _logger.Debug($"Received Distributor List, Full {distributors.Length} distributors");
+                _distributors.Clear();
+                _distributors.AddRange(distributors);
+                _sequenceNumber = sequenceNumber;
+                DistributorsChanged?.Invoke(this, EventArgs.Empty);
+                return;
+            case DistributorChangeType.Added:
+                _logger.Debug($"Received Distributor List, Added {distributors.Length} distributors");
+                foreach (var distributor in distributors)
+                {
+                    _logger.Debug($"   Distributor {distributor}");
+                }
+                _distributors.AddRange(distributors);
+
+                DistributorsChanged?.Invoke(this, EventArgs.Empty);
+                break;
+            case DistributorChangeType.Removed:
+                _logger.Debug($"Received Distributor List, Removed {distributors.Length} distributors");
+                _distributors.RemoveRange(distributors);
+                DistributorsChanged?.Invoke(this, EventArgs.Empty);
+                break;
+            default:
+                _logger.Debug($"Distributor ChangeType {changeType.ToString()} is not suported");
+
+                throw new InvalidOperationException($"Distributor ChangeType {changeType} is not suported");
+        }
+        var expectedSequenceNumber = _sequenceNumber + 1;
+        if (sequenceNumber != expectedSequenceNumber)
+        {
+            // missed an update request full list
+            _socket.SendTo(_requestDistributorListMessage, SocketFlags.None, _balancerEndpoint);
+            return;
+        }
+        _sequenceNumber = sequenceNumber;
     }
 
     void HandleRegisterRouterResponse(Span<byte> packet)
@@ -99,6 +174,8 @@ public class BalancerClient : IDisposable
             _logger.Warning("Failed to parse Register Router Response Packet");
             return;
         }
+
+        _socket.SendTo(_requestDistributorListMessage, SocketFlags.None, _balancerEndpoint);
         Interlocked.Exchange(ref _routerId, routerId);
 
         _registerResponseEvent.Set();
@@ -130,8 +207,10 @@ public class BalancerClient : IDisposable
                 (ushort)_routerId,
                 (ushort)_registeredUsers.Count);
 
-            _socket.SendTo(heartbeat, SocketFlags.None, _balancerEndpoint);
             _heartBeatResponseEvent.Reset();
+
+            _socket.SendTo(heartbeat, SocketFlags.None, _balancerEndpoint);
+
             if (!_heartBeatResponseEvent.WaitOne(2000))
             {
                 _logger.Information("Heartbeat response not received after 2000ms");

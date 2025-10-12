@@ -1,7 +1,15 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
+using System.Net.Sockets;
 
 namespace Ropu.BalancerProtocol;
+
+public enum DistributorChangeType
+{
+    Full = 0,
+    Added = 1,
+    Removed = 2
+}
 
 public class BalancerPacketFactory
 {
@@ -74,25 +82,26 @@ public class BalancerPacketFactory
         return true;
     }
 
-    public Span<byte> BuildRouterAssignmentRequestPacket(byte[] buffer, uint clientId)
+    public Span<byte> BuildRouterAssignmentRequestPacket(byte[] buffer, Guid clientId)
     {
-        if (buffer.Length < 5)
+        if (buffer.Length < 17)
         {
             throw new ArgumentException("Buffer is to small for router assignment request packet");
         }
         buffer[0] = (byte)BalancerPacketTypes.RouterAssignmentRequest;
-        BitConverter.TryWriteBytes(buffer.AsSpan(1, 4), clientId);
-        return buffer.AsSpan(0, 5);
+
+        clientId.TryWriteBytes(buffer.AsSpan(1, 16));
+        return buffer.AsSpan(0, 17);
     }
 
-    public bool TryParseRouterAssignmentRequestPacket(Span<byte> buffer, out int clientId)
+    public bool TryParseRouterAssignmentRequestPacket(Span<byte> buffer, out Guid clientId)
     {
-        if (buffer.Length != 5)
+        if (buffer.Length != 17)
         {
-            clientId = 0;
+            clientId = Guid.Empty;
             return false;
         }
-        clientId = BitConverter.ToInt32(buffer.Slice(1, 4));
+        clientId = new Guid(buffer.Slice(1, 16));
 
         return true;
     }
@@ -178,41 +187,42 @@ public class BalancerPacketFactory
 
     public Span<byte> BuildResolveUnit(
         byte[] buffer,
-        uint unitId)
+        Guid unitId)
     {
         buffer[0] = (byte)BalancerPacketTypes.ResolveUnit;
 
-        BitConverter.TryWriteBytes(buffer.AsSpan(1, 4), unitId);
-        return buffer.AsSpan(0, 5);
+
+        unitId.TryWriteBytes(buffer.AsSpan(1, 16));
+        return buffer.AsSpan(0, 17);
     }
 
     public bool TryParseResolveUnitPacket(
         Span<byte> buffer,
-        out int unitId)
+        out Guid unitId)
     {
-        if (buffer.Length != 5)
+        if (buffer.Length != 17)
         {
-            unitId = 0;
+            unitId = Guid.Empty;
             return false;
         }
 
-        unitId = BitConverter.ToInt32(buffer.Slice(1, 4));
+        unitId = new Guid(buffer.Slice(1, 16));
         return true;
     }
 
     public Span<byte> BuildResolveUnitResponse(
         byte[] buffer,
         bool success,
-        int unitId,
+        Guid unitId,
         SocketAddress? routerAddress = null)
     {
         buffer[0] = (byte)BalancerPacketTypes.ResolveUnitResponse;
 
         buffer[1] = (byte)(success ? 0 : 1);
 
-        BitConverter.TryWriteBytes(buffer.AsSpan(2, 4), unitId);
+        unitId.TryWriteBytes(buffer.AsSpan(2, 16));
 
-        var routerAddressSpan = buffer.AsSpan(6, 6);
+        var routerAddressSpan = buffer.AsSpan(18, 6);
 
         if (routerAddress == null)
         {
@@ -226,25 +236,25 @@ public class BalancerPacketFactory
             routerAddress.WriteToBytes(routerAddressSpan);
         }
 
-        return buffer.AsSpan(0, 12);
+        return buffer.AsSpan(0, 24);
     }
 
 
     public bool TryParseResolveUnitResponseResult(
         Span<byte> buffer,
         out bool success,
-        out int unitId)
+        out Guid unitId)
     {
-        if (buffer.Length != 12)
+        if (buffer.Length != 24)
         {
-            unitId = 0;
+            unitId = Guid.Empty;
             success = false;
             return false;
         }
 
         success = buffer[0] == 0;
 
-        unitId = BitConverter.ToInt32(buffer.Slice(2, 4));
+        unitId = new Guid(buffer.Slice(2, 16));
         return true;
     }
 
@@ -252,7 +262,69 @@ public class BalancerPacketFactory
         Span<byte> buffer,
         SocketAddress socketAddress)
     {
-        socketAddress.ReadFromBytes(buffer.Slice(6, 6));
+        socketAddress.ReadFromBytes(buffer.Slice(18, 6));
+    }
 
+    public Span<byte> BuildDistributorList(
+        byte[] buffer,
+        ushort sequenceNumber,
+        DistributorChangeType changeType,
+        Span<SocketAddress> distributors)
+    {
+        var span = buffer.AsSpan();
+        buffer[0] = (byte)BalancerPacketTypes.DistributorList;
+        BitConverter.TryWriteBytes(span.Slice(1, 2), sequenceNumber);
+        buffer[3] = (byte)changeType;
+        int socketStart = 4;
+        foreach (var socketAddress in distributors)
+        {
+            socketAddress.WriteToBytes(span.Slice(socketStart, 6));
+            socketStart += 6;
+        }
+        return buffer.AsSpan(0, 4 + (distributors.Length * 6));
+    }
+
+    public bool TryParseDistributorList(
+        Span<byte> packet,
+        SocketAddress[] addressesBuffer,
+        out ushort sequenceNumber,
+        out DistributorChangeType changeType,
+        out Span<SocketAddress> distributors)
+    {
+        if (packet.Length < 3)
+        {
+            sequenceNumber = 0;
+            changeType = DistributorChangeType.Added;
+            distributors = Span<SocketAddress>.Empty;
+            return false;
+        }
+
+        int payloadLength = packet.Length - 4;
+
+        if (payloadLength % 6 != 0)
+        {
+            sequenceNumber = 0;
+            changeType = DistributorChangeType.Added;
+            distributors = Span<SocketAddress>.Empty;
+            return false;
+        }
+
+        sequenceNumber = BitConverter.ToUInt16(packet.Slice(1, 2));
+        changeType = (DistributorChangeType)packet[3];
+
+        int outIndex = 0;
+        for (int index = 4; index < packet.Length; index += 6)
+        {
+            addressesBuffer[outIndex].ReadFromBytes(packet.Slice(index, 6));
+            outIndex++;
+        }
+        distributors = addressesBuffer.AsSpan(0, outIndex);
+        return true;
+    }
+
+    public Span<byte> BuildRequestDistributorList(byte[] buffer)
+    {
+        buffer[0] = (byte)BalancerPacketTypes.RequestDistributorList;
+        return buffer.AsSpan(0, 1);
     }
 }

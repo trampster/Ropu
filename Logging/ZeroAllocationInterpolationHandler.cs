@@ -93,6 +93,12 @@ public ref struct ZeroAllocationInterpolationHandler
             case BalancerPacketTypes.RouterHeartbeat:
                 packetType = nameof(BalancerPacketTypes.RouterHeartbeat);
                 break;
+            case BalancerPacketTypes.DistributorList:
+                packetType = nameof(BalancerPacketTypes.RouterHeartbeat);
+                break;
+            case BalancerPacketTypes.RequestDistributorList:
+                packetType = nameof(BalancerPacketTypes.RouterHeartbeat);
+                break;
             default:
                 throw new InvalidOperationException($"Unknown BalancerPacketType {formatted}");
         }

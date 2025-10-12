@@ -33,13 +33,13 @@ consider the Router offline and no longer assign clients to it.
 | 3-4      | Registered Users    | Number of registered users               |
 
 ## Distributor Heartbeat Packet
-Sent every 5 seconds by the router. If this isn't received the Balancer should
-consider the Router offline and no longer assign clients to it.
+Sent every 5 seconds by the Distributor. If this isn't received the Balancer should
+consider the Distributor offline and no longer assign clients to it.
 
 | Bytes    | Field               | Description                              |
 | -------- | ------------------- | -----------------------------------------|
 | 0        | Packet Identifier   | 0x03                                     |
-| 1-2      | Router ID           | Unique identifier for router             |
+| 1-2      | Distributor ID      | Unique identifier for distrubuted        |
 | 3-4      | Registered Users    | Number of registered users               |
 
 ## Heartbeat Response Packet
@@ -56,7 +56,7 @@ Request by a Client to be assigned to a router
 | Bytes    | Field               | Description                              |
 | -------- | ------------------- | -----------------------------------------|
 | 0        | Packet Identifier   | 0x05                                     |
-| 1-5      | Client ID           | ID of client
+| 1-17     | Client ID           | ID of client (GUID)                      |
 
 ## Router Assignment
 Response to a router assignement request specifying the router to use
@@ -93,7 +93,7 @@ Sent by client to get address of router which has the unit
 | Bytes    | Field               | Description                              |
 | -------- | ------------------- | -----------------------------------------|
 | 0        | Packet Identifier   | 0x09                                     |
-| 1-4      | UnitId              | ID of unit to resolve                    |
+| 1-17     | UnitId              | ID of unit to resolve (GUID)             |
 
 ## Resolve Unit Response
 Sent by client to get address of router which has the unit
@@ -102,6 +102,25 @@ Sent by client to get address of router which has the unit
 | -------- | ------------------- | -----------------------------------------|
 | 0        | Packet Identifier   | 0x0A                                     |
 | 1        | Success             | 0 = success, 1 = unit not found          |
-| 2-5      | UnitId              | ID of unit                               |
-| 6-9      | Router IP Address   | Public IPv4 address of router            |
-| 10-11    | Router Port         | Public port of router                    |
+| 2-17     | UnitId              | ID of unit (GUID)                        |
+| 18-21    | Router IP Address   | Public IPv4 address of router            |
+| 22-23    | Router Port         | Public port of router                    |
+
+## Distributors List
+Sent to all routers/distributor to tell them about changes to the distributor list.
+
+| Bytes    | Field                    | Description                              |
+| -------- | ------------------------ | -----------------------------------------|
+| 0        | Packet Identifier        | 0x0C                                     |
+| 1-2      | Sequence Number          | Increments for each change               |
+| 3        | Change Type              | 0=FullList,1=Added,2=Removed,3=Changed   |
+| 4-7      | distributor IP Address   | Public IPv4 address of distributor       |
+| 8-9      | distributor Port         | Public port of distributor               |
+
+
+## Request Distributors List
+Routers/distributors should send this if they miss a sequence number.
+
+| Bytes    | Field                    | Description                              |
+| -------- | ------------------------ | -----------------------------------------|
+| 0        | Packet Identifier        | 0x0D                                     |

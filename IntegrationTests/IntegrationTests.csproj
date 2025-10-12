@@ -25,6 +25,7 @@
     <ProjectReference Include="..\Balancer\Balancer.csproj" />
     <ProjectReference Include="..\Router\Router.csproj" />
     <ProjectReference Include="..\Client\Client.csproj" />
+    <ProjectReference Include="..\Distributor\Distributor.csproj" />
   </ItemGroup>
 
 </Project>

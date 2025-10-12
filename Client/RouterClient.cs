@@ -45,7 +45,7 @@ public class RouterClient
         }
     }
 
-    public bool Register(uint clientId)
+    public bool Register(Guid clientId)
     {
         if (RouterAddress == null)
         {
@@ -69,7 +69,7 @@ public class RouterClient
         return _heartbeatResponseEvent.WaitOne(2000);
     }
 
-    public void SendToClient(uint clientId, SocketAddress router, Span<byte> data)
+    public void SendToClient(Guid clientId, SocketAddress router, Span<byte> data)
     {
         var packet = _routerPacketFactory.BuildIndividualMessagePacket(Buffer, clientId, data);
         _socket.SendTo(packet, SocketFlags.None, router);
@@ -88,30 +88,40 @@ public class RouterClient
 
     public void RunReceive(CancellationToken cancellationToken)
     {
+        var socketAddress = new SocketAddress(AddressFamily.InterNetworkV6);
+
         while (!cancellationToken.IsCancellationRequested)
         {
-            var socketAddress = new SocketAddress(AddressFamily.InterNetworkV6);
-            var received = _socket.ReceiveFrom(_receiveBuffer, SocketFlags.None, socketAddress);
-            if (received != 0)
+            try
             {
-                switch (_receiveBuffer[0])
+                var received = _socket.ReceiveFrom(_receiveBuffer, SocketFlags.None, socketAddress);
+                if (received != 0)
                 {
-                    case (byte)RouterPacketType.RegisterClientResponse:
-                        _registerResponseEvent.Set();
-                        break;
-                    case (byte)RouterPacketType.HeartbeatResponse:
-                        _heartbeatResponseEvent.Set();
-                        break;
-                    case (byte)RouterPacketType.UnknownRecipient:
-                        HandleUnknownRecipient(_receiveBuffer.AsSpan(0, received));
-                        break;
-                    case (byte)RouterPacketType.IndividualMessage:
-                        HandleIndividualMessage(_receiveBuffer.AsSpan(0, received));
-                        break;
-                    default:
-                        _logger.Warning($"Received unknown packet type: {_receiveBuffer[0]}");
-                        break;
+                    switch (_receiveBuffer[0])
+                    {
+                        case (byte)RouterPacketType.RegisterClientResponse:
+                            _logger.Debug("Received register response");
+                            _registerResponseEvent.Set();
+                            break;
+                        case (byte)RouterPacketType.HeartbeatResponse:
+                            _heartbeatResponseEvent.Set();
+                            break;
+                        case (byte)RouterPacketType.UnknownRecipient:
+                            HandleUnknownRecipient(_receiveBuffer.AsSpan(0, received));
+                            break;
+                        case (byte)RouterPacketType.IndividualMessage:
+                            HandleIndividualMessage(_receiveBuffer.AsSpan(0, received));
+                            break;
+                        default:
+                            _logger.Warning($"Received unknown packet type: {_receiveBuffer[0]}");
+                            break;
+                    }
                 }
+            }
+            catch (Exception exception)
+            {
+                _logger.Warning($"Exception occured in RunReceive {exception.ToString()}");
+                throw;
             }
         }
     }
@@ -126,19 +136,19 @@ public class RouterClient
 
     void HandleIndividualMessage(Span<byte> packet)
     {
-        if (!_routerPacketFactory.TryParseIndividualMessagePacket(packet, out uint clientId, out Span<byte> payload))
+        if (!_routerPacketFactory.TryParseIndividualMessagePacket(packet, out Guid clientId, out Span<byte> payload))
         {
-            _logger.Warning("Could not parse individual message");
+            _logger.Warning("Could not parse individual message1");
             return;
         }
         _individualMessageHandler?.Invoke(payload);
     }
 
-    public event EventHandler<uint>? UnknownRecipient;
+    public event EventHandler<Guid>? UnknownRecipient;
 
     void HandleUnknownRecipient(Span<byte> packet)
     {
-        if (!_routerPacketFactory.TryParseUnknownRecipientPacket(packet, out uint clientId))
+        if (!_routerPacketFactory.TryParseUnknownRecipientPacket(packet, out Guid clientId))
         {
             _logger.Warning("Failed to parse Unknown Recipient pakcet");
             return;

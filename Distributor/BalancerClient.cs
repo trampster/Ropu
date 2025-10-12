@@ -9,6 +9,7 @@ namespace Ropu.Distributor;
 public class BalancerClient : IDisposable
 {
     readonly byte[] _registerMessage;
+    readonly byte[] _requestDistributorListMessage = new byte[1];
     readonly byte[] _receiveThreadBuffer = new byte[1024];
     readonly SocketAddress _balancerEndpoint;
     readonly Socket _socket;
@@ -34,7 +35,14 @@ public class BalancerClient : IDisposable
         _logger.Information($"Distributor Endpoint {distributorAddress}");
         _balancerPacketFactory.BuildRegisterDistributorPacket(_registerMessage, distributorAddress, capacity);
 
+        _balancerPacketFactory.BuildRequestDistributorList(_requestDistributorListMessage);
+
         _socket = new Socket(SocketType.Dgram, ProtocolType.Udp);
+
+        for (int index = 0; index < _distributorsBuffer.Length; index++)
+        {
+            _distributorsBuffer[index] = new SocketAddress(AddressFamily.InterNetwork);
+        }
 
         var endpoint = new IPEndPoint(IPAddress.Any, distributorIpEndpoint.Port);
         _socket.Bind(endpoint);
@@ -44,10 +52,10 @@ public class BalancerClient : IDisposable
     {
         while (!cancellationToken.IsCancellationRequested)
         {
-            _logger.Information("Registering");
+            _logger.Information($"Registering with {_balancerEndpoint}");
+            _registerResponseEvent.Reset();
             _socket.SendTo(_registerMessage, SocketFlags.None, _balancerEndpoint);
 
-            _registerResponseEvent.Reset();
             if (_registerResponseEvent.WaitOne(2000))
             {
                 _logger.Information("Registration Successful starting heartbeats");
@@ -69,28 +77,86 @@ public class BalancerClient : IDisposable
 
     void RunReceive(CancellationToken cancellationToken)
     {
-        SocketAddress socketAddress = new SocketAddress(AddressFamily.InterNetworkV6);
-
-        while (!cancellationToken.IsCancellationRequested)
+        try
         {
-            var received = _socket.ReceiveFrom(_receiveThreadBuffer, SocketFlags.None, socketAddress);
-            if (received != 0)
-            {
-                switch (_receiveThreadBuffer[0])
-                {
-                    case (byte)BalancerPacketTypes.RegisterDistributorResponse:
-                        HandleRegisterDistributorResponse(_receiveThreadBuffer.AsSpan(0, received));
-                        break;
-                    case (byte)BalancerPacketTypes.HeartbeatResponse:
-                        _heartBeatResponseEvent.Set();
-                        break;
-                    default:
-                        //unhandled message
-                        break;
+            SocketAddress socketAddress = new SocketAddress(AddressFamily.InterNetworkV6);
 
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                var received = _socket.ReceiveFrom(_receiveThreadBuffer, SocketFlags.None, socketAddress);
+                if (received != 0)
+                {
+                    switch (_receiveThreadBuffer[0])
+                    {
+                        case (byte)BalancerPacketTypes.RegisterDistributorResponse:
+                            _logger.Debug("Received Register response");
+                            HandleRegisterDistributorResponse(_receiveThreadBuffer.AsSpan(0, received));
+                            break;
+                        case (byte)BalancerPacketTypes.HeartbeatResponse:
+                            _logger.Debug("Received Heartbeat response");
+                            _heartBeatResponseEvent.Set();
+                            break;
+                        case (byte)BalancerPacketTypes.DistributorList:
+                            HandleDistributorList(_receiveThreadBuffer.AsSpan(0, received));
+                            break;
+                        default:
+                            //unhandled message
+                            break;
+
+                    }
                 }
             }
         }
+        catch (Exception exception)
+        {
+            _logger.Warning($"Exception occured in RunReceive {exception.ToString()}");
+            throw;
+        }
+    }
+
+    readonly SocketAddress[] _distributorsBuffer = new SocketAddress[2000];
+    SocketAddressList _distributors = new SocketAddressList(2000);
+    ushort _sequenceNumber = 0;
+
+    void HandleDistributorList(Span<byte> packet)
+    {
+        if (!_balancerPacketFactory.TryParseDistributorList(
+            packet,
+            _distributorsBuffer,
+            out ushort sequenceNumber,
+            out DistributorChangeType changeType,
+            out Span<SocketAddress> distributors))
+        {
+            return;
+        }
+
+        switch (changeType)
+        {
+            case DistributorChangeType.Full:
+                _distributors.Clear();
+                _distributors.AddRange(distributors);
+                _sequenceNumber = sequenceNumber;
+                return;
+            case DistributorChangeType.Added:
+                _distributors.AddRange(distributors);
+                break;
+            case DistributorChangeType.Removed:
+                foreach (var distributor in distributors)
+                {
+                    _distributors.Remove(distributor);
+                }
+                break;
+            default:
+                throw new InvalidOperationException($"Distributor ChangeType {changeType} is not suported");
+        }
+        var expectedSequenceNumber = _sequenceNumber + 1;
+        if (sequenceNumber != expectedSequenceNumber)
+        {
+            // missed an update request full list
+            _socket.SendTo(_requestDistributorListMessage, SocketFlags.None, _balancerEndpoint);
+            return;
+        }
+        _sequenceNumber = sequenceNumber;
     }
 
     void HandleRegisterDistributorResponse(Span<byte> packet)
@@ -133,8 +199,8 @@ public class BalancerClient : IDisposable
                 (ushort)_routerId,
                 (ushort)_registeredUsers.Count);
 
-            _socket.SendTo(heartbeat, SocketFlags.None, _balancerEndpoint);
             _heartBeatResponseEvent.Reset();
+            _socket.SendTo(heartbeat, SocketFlags.None, _balancerEndpoint);
             if (!_heartBeatResponseEvent.WaitOne(2000))
             {
                 _logger.Information("Heartbeat response not received after 2000ms");

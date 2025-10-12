@@ -18,13 +18,15 @@ public class Listener : IDisposable
     readonly Servers _routers;
     readonly BulkSender _bulkSender;
     readonly Servers _distributors;
-    readonly Dictionary<int, SocketAddress> _routerAssignments = new();
+    readonly Dictionary<Guid, SocketAddress> _routerAssignments = new();
 
     public Listener(
         ILogger logger,
         ushort port)
     {
         _logger = logger.ForContext(nameof(Listener));
+
+        _logger.Debug($"Listening on port {port}");
 
         _heartbeatResponse = _balancerPacketFactory.HeartbeatResponse;
 
@@ -46,6 +48,8 @@ public class Listener : IDisposable
 
     void RunReceive(CancellationToken cancellationToken)
     {
+        _logger.Debug("RunReceive");
+
         try
         {
             SocketAddress receivedAddress = new(AddressFamily.InterNetwork);
@@ -64,6 +68,7 @@ public class Listener : IDisposable
                 _logger.Debug($"Allocated {allocated}");
 
                 var received = _socket.ReceiveFrom(_buffer, SocketFlags.None, receivedAddress);
+
                 if (received != 0)
                 {
                     switch (_buffer[0])
@@ -86,6 +91,9 @@ public class Listener : IDisposable
                         case (byte)BalancerPacketTypes.ResolveUnit:
                             HandleResolveUnit(_buffer.AsSpan(0, received), receivedAddress);
                             break;
+                        case (byte)BalancerPacketTypes.RequestDistributorList:
+                            HandleRequestDistributorList(_buffer.AsSpan(0, received), receivedAddress);
+                            break;
                         default:
                             //unhandled message
                             break;
@@ -93,8 +101,13 @@ public class Listener : IDisposable
                 }
                 if (lastLastSeenCheck + 5000 < stopwatch.ElapsedMilliseconds)
                 {
-                    _routers.CheckLastSeen();
-                    _distributors.CheckLastSeen();
+                    _routers.CheckLastSeen(_serversBuffer);
+                    var removed = _distributors.CheckLastSeen(_serversBuffer);
+                    if (removed.Length > 0)
+                    {
+                        SendDistributorsRemoved(removed);
+                    }
+
                     lastLastSeenCheck = stopwatch.ElapsedMilliseconds;
                 }
             }
@@ -106,7 +119,52 @@ public class Listener : IDisposable
                 throw;
             }
         }
+        catch (Exception exception)
+        {
+            _logger.Warning($"Exception {exception.ToString()}");
+            throw;
+        }
+    }
 
+    void HandleRequestDistributorList(Span<byte> span, SocketAddress receivedAddress)
+    {
+        var distributors = _distributors.Span;
+        for (int index = 0; index < distributors.Length; index++)
+        {
+            if (receivedAddress != distributors[index].Address)
+            {
+                _socketAddressesBuffer[index] = distributors[index].Address;
+            }
+        }
+        _logger.Warning($"Sending DistributorChange Full: {distributors.Length}");
+        var packet = _balancerPacketFactory.BuildDistributorList(
+            _buffer,
+            _distributorSequenceNumber++,
+            DistributorChangeType.Full,
+            _socketAddressesBuffer.AsSpan(0, distributors.Length));
+
+        _socket.SendTo(packet, SocketFlags.None, receivedAddress);
+    }
+
+    Server[] _serversBuffer = new Server[2000];
+    SocketAddress[] _socketAddressesBuffer = new SocketAddress[2000];
+    void SendDistributorsRemoved(Span<Server> removedServers)
+    {
+        for (int index = 0; index < removedServers.Length; index++)
+        {
+            _socketAddressesBuffer[index] = removedServers[index].Address;
+        }
+        var packet = _balancerPacketFactory.BuildDistributorList(
+            _buffer,
+            _distributorSequenceNumber++,
+            DistributorChangeType.Removed,
+            _socketAddressesBuffer.AsSpan(0, removedServers.Length));
+        var packetMemory = _buffer.AsMemory(0, packet.Length);
+
+        _logger.Warning($"Sending DistributorChange Removed: {removedServers.Length}");
+
+        _bulkSender.SendBulk(packetMemory, _distributors.ReplyAddresses, null);
+        _bulkSender.SendBulk(packetMemory, _routers.ReplyAddresses, null);
     }
 
     void HandleRouterHeartbeat(Span<byte> packet, SocketAddress receivedEndPoint)
@@ -143,7 +201,7 @@ public class Listener : IDisposable
             return;
         }
 
-        _logger.Debug($"Heartbeat from Id: {distributor.Id}, NumberRegistered: {distributor.NumberRegistered}, Capacity {distributor.Capacity} ");
+        _logger.Debug($"Distributor Heartbeat received {distributor.Id}");
         distributor.NumberRegistered = heartbeatPacket.Value.NumberRegistered;
         distributor.Seen = true;
         _socket.SendTo(_heartbeatResponse, SocketFlags.None, receivedEndPoint);
@@ -153,14 +211,13 @@ public class Listener : IDisposable
     {
         _logger.Information("Got Router Assignment Request");
 
-        if (!_balancerPacketFactory.TryParseRouterAssignmentRequestPacket(buffer, out int clientId))
+        if (!_balancerPacketFactory.TryParseRouterAssignmentRequestPacket(buffer, out Guid clientId))
         {
             return;
         }
         float smallestLoad = float.PositiveInfinity;
-        var routers = _routers.ServersArray;
         Server? smallest = null;
-        foreach (var router in _routers.ServersArray)
+        foreach (var router in _routers.Span)
         {
             if (!router.IsUsed)
             {
@@ -181,11 +238,11 @@ public class Listener : IDisposable
             return;
         }
 
-        _routerAssignments[clientId] = smallest.Endpoint;
+        _routerAssignments[clientId] = smallest.Address;
 
-        _logger.Information($"Sending Router Assignment, {smallest.Endpoint}");
+        _logger.Information($"Sending Router Assignment, {smallest.Address}");
         smallest.NumberRegistered++;
-        var packet = _balancerPacketFactory.BuildRouterAssignmentPacket(_buffer, smallest.Endpoint);
+        var packet = _balancerPacketFactory.BuildRouterAssignmentPacket(_buffer, smallest.Address);
         _socket.SendTo(packet, SocketFlags.None, receivedEndPoint);
     }
 
@@ -193,7 +250,7 @@ public class Listener : IDisposable
     {
         _logger.Information("Got Resolve Unit request");
 
-        if (!_balancerPacketFactory.TryParseResolveUnitPacket(buffer, out int clientId))
+        if (!_balancerPacketFactory.TryParseResolveUnitPacket(buffer, out Guid clientId))
         {
             return;
         }
@@ -207,45 +264,79 @@ public class Listener : IDisposable
 
     void HandleRegisterRouter(int recieved, SocketAddress receivedEndPoint)
     {
-        var router = _routers.FindNextUnused();
+        var router = _routers.CheckExisting(receivedEndPoint);
         if (router == null)
         {
-            //TODO: max capacity reached, need to tell router to back off
-            return;
+            router = _routers.FindNextUnused();
+            if (router == null)
+            {
+                //TODO: max capacity reached, need to tell router to back off
+                return;
+            }
+            if (!_balancerPacketFactory.TryParseRouterRegisterPacket(_buffer.AsSpan(0, recieved), router.Address, out ushort? capacity))
+            {
+                _logger.Warning($"Failed to parse RegisterRouter packet");
+                return;
+            }
+            router.Capacity = capacity.Value;
+            router.NumberRegistered = 0;
+            router.ReplyAddress = receivedEndPoint;
+            _routers.SetUsed(router);
         }
-        if (!_balancerPacketFactory.TryParseRouterRegisterPacket(_buffer.AsSpan(0, recieved), router.Endpoint, out ushort? capacity))
-        {
-            _logger.Warning($"Failed to parse RegisterRouter packet");
-            return;
-        }
-        router.Capacity = capacity.Value;
-        router.NumberRegistered = 0;
-        router.IsUsed = true;
 
         var registerResponsePacket = _balancerPacketFactory.BuildRegisterRouterResponsePacket(_buffer, router.Id);
+        _logger.Debug($"Sending register response to {receivedEndPoint}");
         _socket.SendTo(registerResponsePacket, SocketFlags.None, receivedEndPoint);
     }
 
-    void HandleRegisterDistributor(int recieved, SocketAddress receivedEndPoint)
+    void HandleRegisterDistributor(int recieved, SocketAddress fromAddress)
     {
+        _logger.Debug("RegisterDistributor packet received");
         var distributor = _distributors.FindNextUnused();
         if (distributor == null)
         {
             //TODO: max capacity reached, need to tell router to back off
             return;
         }
-        if (!_balancerPacketFactory.TryParseRegisterDistributorPacket(_buffer.AsSpan(0, recieved), distributor.Endpoint, out ushort? capacity))
+        if (!_balancerPacketFactory.TryParseRegisterDistributorPacket(_buffer.AsSpan(0, recieved), distributor.Address, out ushort? capacity))
         {
             _logger.Warning($"Failed to parse RegisterDistributor packet");
             return;
         }
         distributor.Capacity = capacity.Value;
         distributor.NumberRegistered = 0;
-        distributor.IsUsed = true;
+        distributor.ReplyAddress = fromAddress;
+        _distributors.SetUsed(distributor);
 
         var registerResponsePacket = _balancerPacketFactory.BuildRegisterDistributorResponsePacket(_buffer, distributor.Id);
-        _socket.SendTo(registerResponsePacket, SocketFlags.None, receivedEndPoint);
+
+        _logger.Debug($"Sending Register response to {fromAddress}");
+        _socket.SendTo(registerResponsePacket, SocketFlags.None, fromAddress);
+
+        // Inform routers and existing distributors of new distributor
+        _socketAddressesBuffer[0] = fromAddress;
+        var distributorChangedPacket = _balancerPacketFactory.BuildDistributorList(
+            _buffer,
+            _distributorSequenceNumber++,
+            DistributorChangeType.Added,
+            _socketAddressesBuffer.AsSpan(0, 1));
+
+        var packetMemory = _buffer.AsMemory(0, distributorChangedPacket.Length);
+
+        _logger.Debug($"Sending DistributorChanged Added {_socketAddressesBuffer.AsSpan(0, 1)[0]}");
+
+        _bulkSender.SendBulk(
+            packetMemory,
+            _routers.ReplyAddresses,
+            null);
+
+        _bulkSender.SendBulk(
+            packetMemory,
+            _distributors.ReplyAddresses,
+            fromAddress);
     }
+
+    ushort _distributorSequenceNumber = 0;
 
     SocketAddress[] _destinationsBuffer = new SocketAddress[2000];
 

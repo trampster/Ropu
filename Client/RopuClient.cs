@@ -8,15 +8,15 @@ namespace Ropu.Client;
 
 public class RopuClient
 {
-    readonly uint _clientId;
+    readonly Guid _clientId;
     readonly BalancerClient _balancerClient;
     readonly RouterClient _routerClient;
     readonly ILogger _logger;
 
-    readonly ConcurrentDictionary<uint, SocketAddress> _addressLookup = new();
+    readonly ConcurrentDictionary<Guid, SocketAddress> _addressLookup = new();
 
     public RopuClient(
-        uint clientId,
+        Guid clientId,
         BalancerClient balancerClient,
         RouterClient routerClient,
         ILogger logger)
@@ -41,9 +41,9 @@ public class RopuClient
         _individualMessageHandler?.Invoke(message);
     }
 
-    public uint UnitId => _clientId;
+    public Guid UnitId => _clientId;
 
-    void OnUnknownRecipient(object? sender, uint clientId)
+    void OnUnknownRecipient(object? sender, Guid clientId)
     {
         // Remove from lookup, the send will have failed but we will rely
         // on application level retries to trigger a address resolution
@@ -77,6 +77,8 @@ public class RopuClient
                 IsConnected = false;
                 continue;
             }
+            _logger.Debug("Setting IsConnected to true");
+
             IsConnected = true;
 
             while (!cancellationToken.IsCancellationRequested && _routerClient.SendHeartbeat())
@@ -101,6 +103,7 @@ public class RopuClient
             }
             if (value)
             {
+                _logger.Debug("Raising Connected event");
                 Connected?.Invoke(this, EventArgs.Empty);
                 return;
             }
@@ -111,7 +114,7 @@ public class RopuClient
     public event EventHandler? Connected;
     public event EventHandler? Disconnected;
 
-    public async Task<bool> SendToUnit(uint unitId, Memory<byte> data)
+    public async Task<bool> SendToUnit(Guid unitId, Memory<byte> data)
     {
         if (!_addressLookup.TryGetValue(unitId, out SocketAddress? routerAddress))
         {
@@ -119,7 +122,7 @@ public class RopuClient
             routerAddress = new(AddressFamily.InterNetwork);
             if (!await _balancerClient.TryResolveUnitAsync(unitId, routerAddress))
             {
-                _logger.Warning($"Unable to resolve unit {unitId}");
+                _logger.Warning($"Unable to resolve unit {unitId.ToString()}");
                 return false;
             }
 

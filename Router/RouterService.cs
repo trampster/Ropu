@@ -32,7 +32,7 @@ public class RouterService : IDisposable
         }
     }
 
-    public IReadOnlyDictionary<uint, SocketAddress> Clients => _routerListener.Clients;
+    public IReadOnlyDictionary<Guid, SocketAddress> Clients => _routerListener.Clients;
 
     public async Task Run(CancellationToken cancellationToken)
     {
@@ -49,6 +49,20 @@ public class RouterService : IDisposable
                 return;
             }
             throw;
+        }
+    }
+
+    public Span<SocketAddress> Distributors => _balancerClient.Distributors;
+
+    public event EventHandler DistributorsChanged
+    {
+        add
+        {
+            _balancerClient.DistributorsChanged += value;
+        }
+        remove
+        {
+            _balancerClient.DistributorsChanged -= value;
         }
     }
 

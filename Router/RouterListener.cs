@@ -13,7 +13,7 @@ public class RouterListener : IDisposable
     readonly ILogger _logger;
     readonly RouterPacketFactory _routerPacketFactory;
 
-    readonly ConcurrentDictionary<uint, SocketAddress> _addressBook = [];
+    readonly ConcurrentDictionary<Guid, SocketAddress> _addressBook = [];
     readonly HashSet<SocketAddress> _addresses = [];
 
     [ThreadStatic]
@@ -31,7 +31,7 @@ public class RouterListener : IDisposable
         _socket.Bind(endpoint);
     }
 
-    public IReadOnlyDictionary<uint, SocketAddress> Clients => _addressBook;
+    public IReadOnlyDictionary<Guid, SocketAddress> Clients => _addressBook;
 
     public SocketAddress? RouterAddress
     {
@@ -89,15 +89,15 @@ public class RouterListener : IDisposable
     void HandleIndivdiualMessage(Span<byte> packet, SocketAddress socketAddress)
     {
         _logger.Information("Received Indivdiual Message");
-        if (!_routerPacketFactory.TryParseUnitIdFromIndividualMessagePacket(packet, out uint unitId))
+        if (!_routerPacketFactory.TryParseUnitIdFromIndividualMessagePacket(packet, out Guid unitId))
         {
-            _logger.Warning("Could not parse Individual Message");
+            _logger.Warning("Could not parse Individual Message2");
             return;
         }
 
         if (!_addressBook.TryGetValue(unitId, out SocketAddress? unitAddress))
         {
-            _logger.Warning($"Could forward Individual Message because unit {unitId} is not registered");
+            _logger.Warning($"Could not forward Individual Message because unit {unitId.ToString()} is not registered");
             var buffer = Buffer;
             var unknownRecipientPacket = _routerPacketFactory.BuildUnknownRecipientPacket(buffer, unitId);
             _socket.SendTo(unknownRecipientPacket, SocketFlags.None, socketAddress);
@@ -109,9 +109,14 @@ public class RouterListener : IDisposable
 
     void HandleRegisterClientPacket(Span<byte> packet, SocketAddress socketAddress)
     {
-        _routerPacketFactory.TryParseRegisterClientPacket(packet, out uint clientId);
+        if (!_routerPacketFactory.TryParseRegisterClientPacket(packet, out Guid clientId))
+        {
+            _logger.Warning($"Failed to parse Register Client packet");
+            return;
+        }
         _addressBook[clientId] = socketAddress;
         _addresses.Add(socketAddress);
+        _logger.Debug($"Client registered {clientId.ToString()}");
         var response = _routerPacketFactory.BuildRegisterClientResponse(_receiveBuffer);
         _socket.SendTo(response, SocketFlags.None, socketAddress);
     }

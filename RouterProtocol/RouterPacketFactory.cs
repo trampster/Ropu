@@ -2,22 +2,22 @@ namespace Ropu.RouterProtocol;
 
 public class RouterPacketFactory
 {
-    public Span<byte> BuildRegisterClientPacket(byte[] buffer, uint clientId)
+    public Span<byte> BuildRegisterClientPacket(byte[] buffer, Guid clientId)
     {
         buffer[0] = (byte)RouterPacketType.RegisterClient;
-        BitConverter.TryWriteBytes(buffer.AsSpan(1, 4), clientId);
-        return buffer.AsSpan(0, 5);
+        clientId.TryWriteBytes(buffer.AsSpan(1, 16));
+        return buffer.AsSpan(0, 17);
     }
 
-    public bool TryParseRegisterClientPacket(Span<byte> packet, out uint clientId)
+    public bool TryParseRegisterClientPacket(Span<byte> packet, out Guid clientId)
     {
-        if (packet.Length != 5)
+        if (packet.Length != 17)
         {
-            clientId = 0;
+            clientId = Guid.Empty;
             return false;
         }
 
-        clientId = BitConverter.ToUInt32(packet.Slice(1, 4));
+        clientId = new Guid(packet.Slice(1, 16));
         return true;
     }
 
@@ -27,59 +27,83 @@ public class RouterPacketFactory
         return buffer.AsSpan(0, 1);
     }
 
-    public Span<byte> BuildIndividualMessagePacket(byte[] buffer, uint clientId, Span<byte> payload)
+    public Span<byte> BuildIndividualMessagePacket(byte[] buffer, Guid clientId, Span<byte> payload)
     {
         buffer[0] = (byte)RouterPacketType.IndividualMessage;
-        BitConverter.TryWriteBytes(buffer.AsSpan(1, 4), clientId);
+        clientId.TryWriteBytes(buffer.AsSpan(1, 16));
 
-        payload.CopyTo(buffer.AsSpan(5));
+        payload.CopyTo(buffer.AsSpan(17));
 
-        return buffer.AsSpan(0, 5 + payload.Length);
+        return buffer.AsSpan(0, 17 + payload.Length);
     }
 
-    public bool TryParseIndividualMessagePacket(Span<byte> packet, out uint clientId, out Span<byte> payload)
+    public bool TryParseIndividualMessagePacket(Span<byte> packet, out Guid clientId, out Span<byte> payload)
     {
-        if (packet.Length < 5)
+        if (packet.Length < 17)
         {
-            clientId = 0;
+            clientId = Guid.Empty;
             payload = [];
             return false;
         }
 
-        clientId = BitConverter.ToUInt32(packet.Slice(1, 4));
-        payload = packet.Slice(5);
+        clientId = new Guid(packet.Slice(1, 16));
+        payload = packet.Slice(17);
         return true;
     }
 
-    public bool TryParseUnitIdFromIndividualMessagePacket(Span<byte> packet, out uint clientId)
+    public Span<byte> BuildGroupMessagePacket(byte[] buffer, Guid groupId, Span<byte> payload)
     {
-        if (packet.Length < 5)
+        buffer[0] = (byte)RouterPacketType.IndividualMessage;
+        groupId.TryWriteBytes(buffer.AsSpan(1, 16));
+
+        payload.CopyTo(buffer.AsSpan(17));
+
+        return buffer.AsSpan(0, 17 + payload.Length);
+    }
+
+    public bool TryParseGroupMessagePacket(Span<byte> packet, out Guid groupId, out Span<byte> payload)
+    {
+        if (packet.Length < 17)
         {
-            clientId = 0;
+            groupId = Guid.Empty;
+            payload = [];
             return false;
         }
 
-        clientId = BitConverter.ToUInt32(packet.Slice(1, 4));
+        groupId = new Guid(packet.Slice(1, 16));
+        payload = packet.Slice(17);
         return true;
     }
 
-    public bool TryParseUnknownRecipientPacket(Span<byte> packet, out uint unitId)
+    public bool TryParseUnitIdFromIndividualMessagePacket(Span<byte> packet, out Guid clientId)
     {
-        if (packet.Length != 5)
+        if (packet.Length < 17)
         {
-            unitId = 0;
+            clientId = Guid.Empty;
             return false;
         }
 
-        unitId = BitConverter.ToUInt32(packet.Slice(1, 4));
+        clientId = new Guid(packet.Slice(1, 16));
         return true;
     }
 
-    public Span<byte> BuildUnknownRecipientPacket(byte[] buffer, uint unitId)
+    public bool TryParseUnknownRecipientPacket(Span<byte> packet, out Guid unitId)
+    {
+        if (packet.Length != 17)
+        {
+            unitId = Guid.Empty;
+            return false;
+        }
+
+        unitId = new Guid(packet.Slice(1, 16));
+        return true;
+    }
+
+    public Span<byte> BuildUnknownRecipientPacket(byte[] buffer, Guid unitId)
     {
         buffer[0] = (byte)RouterPacketType.UnknownRecipient;
-        BitConverter.TryWriteBytes(buffer.AsSpan(1, 4), unitId);
-        return buffer.AsSpan(0, 5);
+        unitId.TryWriteBytes(buffer.AsSpan(1, 16));
+        return buffer.AsSpan(0, 17);
     }
 
     public static byte[] HeartbeatPacket = [(byte)RouterPacketType.Heartbeat];
