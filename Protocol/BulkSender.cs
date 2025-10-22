@@ -1,8 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
-using Ropu.BalancerProtocol;
 
-namespace BalancerProtocol;
+namespace Ropu.Protocol;
 
 public class BulkSender
 {

@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Sockets;
-using Ropu.BalancerProtocol;
+using Ropu.Protocol;
 using Ropu.Logging;
 
 namespace Ropu.Client;
@@ -109,10 +109,10 @@ public class BalancerClient
             {
                 switch (_receiveBuffer[0])
                 {
-                    case (byte)BalancerPacketTypes.RouterAssignment:
+                    case (byte)PacketTypes.RouterAssignment:
                         HandleRouterAssignment(_receiveBuffer.AsSpan(0, received));
                         break;
-                    case (byte)BalancerPacketTypes.ResolveUnitResponse:
+                    case (byte)PacketTypes.ResolveUnitResponse:
                         HandleResolveUnitResponse(_receiveBuffer.AsSpan(0, received));
                         break;
                     default:

@@ -1,8 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
-using System.Net.Sockets;
 
-namespace Ropu.BalancerProtocol;
+namespace Ropu.Protocol;
 
 public enum DistributorChangeType
 {
@@ -15,7 +14,7 @@ public class BalancerPacketFactory
 {
     public Span<byte> BuildRegisterRouterResponsePacket(byte[] buffer, ushort routerId)
     {
-        buffer[0] = (byte)BalancerPacketTypes.RegisterRouterResponse;
+        buffer[0] = (byte)PacketTypes.RegisterRouterResponse;
         BitConverter.TryWriteBytes(buffer.AsSpan(1, 2), routerId);
         return buffer.AsSpan(0, 3);
     }
@@ -34,7 +33,7 @@ public class BalancerPacketFactory
 
     public Span<byte> BuildRegisterDistributorResponsePacket(byte[] buffer, ushort distributorId)
     {
-        buffer[0] = (byte)BalancerPacketTypes.RegisterDistributorResponse;
+        buffer[0] = (byte)PacketTypes.RegisterDistributorResponse;
         BitConverter.TryWriteBytes(buffer.AsSpan(1, 2), distributorId);
         return buffer.AsSpan(0, 3);
     }
@@ -51,12 +50,12 @@ public class BalancerPacketFactory
         return true;
     }
 
-    readonly byte[] _heartbeatResponse = [(byte)BalancerPacketTypes.HeartbeatResponse];
+    readonly byte[] _heartbeatResponse = [(byte)PacketTypes.BalancerHeartbeatResponse];
     public byte[] HeartbeatResponse => _heartbeatResponse;
 
     public Span<byte> BuildHeartbeatPacket(
         byte[] buffer,
-        BalancerPacketTypes heartbeatType,
+        PacketTypes heartbeatType,
         ushort id,
         ushort registeredUsers)
     {
@@ -88,7 +87,7 @@ public class BalancerPacketFactory
         {
             throw new ArgumentException("Buffer is to small for router assignment request packet");
         }
-        buffer[0] = (byte)BalancerPacketTypes.RouterAssignmentRequest;
+        buffer[0] = (byte)PacketTypes.RouterAssignmentRequest;
 
         clientId.TryWriteBytes(buffer.AsSpan(1, 16));
         return buffer.AsSpan(0, 17);
@@ -112,7 +111,7 @@ public class BalancerPacketFactory
         {
             throw new ArgumentException("Buffer is to small for router assignment packet");
         }
-        buffer[0] = (byte)BalancerPacketTypes.RouterAssignment;
+        buffer[0] = (byte)PacketTypes.RouterAssignment;
 
         endPoint.WriteToBytes(buffer.AsSpan(1, 6));
         return buffer.AsSpan(0, 7);
@@ -133,7 +132,7 @@ public class BalancerPacketFactory
         SocketAddress routerAddress,
         ushort capacity)
     {
-        buffer[0] = (byte)BalancerPacketTypes.RegisterRouter;
+        buffer[0] = (byte)PacketTypes.RegisterRouter;
 
         routerAddress.WriteToBytes(buffer.AsSpan(1, 6));
 
@@ -162,7 +161,7 @@ public class BalancerPacketFactory
         SocketAddress distributorAddress,
         ushort capacity)
     {
-        buffer[0] = (byte)BalancerPacketTypes.RegisterDistributor;
+        buffer[0] = (byte)PacketTypes.RegisterDistributor;
 
         distributorAddress.WriteToBytes(buffer.AsSpan(1, 6));
         BitConverter.TryWriteBytes(buffer.AsSpan(7, 2), capacity);
@@ -189,7 +188,7 @@ public class BalancerPacketFactory
         byte[] buffer,
         Guid unitId)
     {
-        buffer[0] = (byte)BalancerPacketTypes.ResolveUnit;
+        buffer[0] = (byte)PacketTypes.ResolveUnit;
 
 
         unitId.TryWriteBytes(buffer.AsSpan(1, 16));
@@ -216,7 +215,7 @@ public class BalancerPacketFactory
         Guid unitId,
         SocketAddress? routerAddress = null)
     {
-        buffer[0] = (byte)BalancerPacketTypes.ResolveUnitResponse;
+        buffer[0] = (byte)PacketTypes.ResolveUnitResponse;
 
         buffer[1] = (byte)(success ? 0 : 1);
 
@@ -272,7 +271,7 @@ public class BalancerPacketFactory
         Span<SocketAddress> distributors)
     {
         var span = buffer.AsSpan();
-        buffer[0] = (byte)BalancerPacketTypes.DistributorList;
+        buffer[0] = (byte)PacketTypes.DistributorList;
         BitConverter.TryWriteBytes(span.Slice(1, 2), sequenceNumber);
         buffer[3] = (byte)changeType;
         int socketStart = 4;
@@ -324,7 +323,7 @@ public class BalancerPacketFactory
 
     public Span<byte> BuildRequestDistributorList(byte[] buffer)
     {
-        buffer[0] = (byte)BalancerPacketTypes.RequestDistributorList;
+        buffer[0] = (byte)PacketTypes.RequestDistributorList;
         return buffer.AsSpan(0, 1);
     }
 }

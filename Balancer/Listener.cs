@@ -1,8 +1,7 @@
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
-using BalancerProtocol;
-using Ropu.BalancerProtocol;
+using Ropu.Protocol;
 using Ropu.Logging;
 
 namespace Ropu.Balancer;
@@ -73,25 +72,25 @@ public class Listener : IDisposable
                 {
                     switch (_buffer[0])
                     {
-                        case (byte)BalancerPacketTypes.RegisterRouter:
+                        case (byte)PacketTypes.RegisterRouter:
                             HandleRegisterRouter(received, receivedAddress);
                             break;
-                        case (byte)BalancerPacketTypes.RegisterDistributor:
+                        case (byte)PacketTypes.RegisterDistributor:
                             HandleRegisterDistributor(received, receivedAddress);
                             break;
-                        case (byte)BalancerPacketTypes.RouterHeartbeat:
+                        case (byte)PacketTypes.RouterHeartbeat:
                             HandleRouterHeartbeat(_buffer.AsSpan(0, received), receivedAddress);
                             break;
-                        case (byte)BalancerPacketTypes.DistributorHeartbeat:
+                        case (byte)PacketTypes.DistributorHeartbeat:
                             HandleDistributorHeartbeat(_buffer.AsSpan(0, received), receivedAddress);
                             break;
-                        case (byte)BalancerPacketTypes.RouterAssignmentRequest:
+                        case (byte)PacketTypes.RouterAssignmentRequest:
                             HandleRouterAssignmentRequest(_buffer.AsSpan(0, received), receivedAddress);
                             break;
-                        case (byte)BalancerPacketTypes.ResolveUnit:
+                        case (byte)PacketTypes.ResolveUnit:
                             HandleResolveUnit(_buffer.AsSpan(0, received), receivedAddress);
                             break;
-                        case (byte)BalancerPacketTypes.RequestDistributorList:
+                        case (byte)PacketTypes.RequestDistributorList:
                             HandleRequestDistributorList(_buffer.AsSpan(0, received), receivedAddress);
                             break;
                         default:
@@ -169,6 +168,7 @@ public class Listener : IDisposable
 
     void HandleRouterHeartbeat(Span<byte> packet, SocketAddress receivedEndPoint)
     {
+        _logger.Debug("Got Router Heartbeat");
         if (!_balancerPacketFactory.TryParseHeartbeatPacket(packet, out HeartbeatPacket? heartbeatPacket))
         {
             _logger.Warning("Failed to parse heartbeat packet");
@@ -264,6 +264,7 @@ public class Listener : IDisposable
 
     void HandleRegisterRouter(int recieved, SocketAddress receivedEndPoint)
     {
+        _logger.Debug("HandleRegisterRouter");
         var router = _routers.CheckExisting(receivedEndPoint);
         if (router == null)
         {

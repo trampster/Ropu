@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace Ropu.BalancerProtocol;
+namespace Ropu.Protocol;
 
 public static class SocketAddressExtensions
 {

@@ -1,6 +1,6 @@
 using System.Net;
 using System.Runtime.CompilerServices;
-using Ropu.BalancerProtocol;
+using Ropu.Protocol;
 
 namespace Ropu.Logging;
 
@@ -55,49 +55,49 @@ public ref struct ZeroAllocationInterpolationHandler
         _currentIndex += written;
     }
 
-    public void AppendFormatted(BalancerPacketTypes formatted)
+    public void AppendFormatted(PacketTypes formatted)
     {
         string packetType = "";
         switch (formatted)
         {
-            case BalancerPacketTypes.DistributorHeartbeat:
-                packetType = nameof(BalancerPacketTypes.DistributorHeartbeat);
+            case PacketTypes.DistributorHeartbeat:
+                packetType = nameof(PacketTypes.DistributorHeartbeat);
                 break;
-            case BalancerPacketTypes.HeartbeatResponse:
-                packetType = nameof(BalancerPacketTypes.HeartbeatResponse);
+            case PacketTypes.ClientHeartbeat:
+                packetType = nameof(PacketTypes.ClientHeartbeatResponse);
                 break;
-            case BalancerPacketTypes.RegisterDistributor:
-                packetType = nameof(BalancerPacketTypes.RegisterDistributor);
+            case PacketTypes.RegisterDistributor:
+                packetType = nameof(PacketTypes.RegisterDistributor);
                 break;
-            case BalancerPacketTypes.RegisterDistributorResponse:
-                packetType = nameof(BalancerPacketTypes.RegisterDistributorResponse);
+            case PacketTypes.RegisterDistributorResponse:
+                packetType = nameof(PacketTypes.RegisterDistributorResponse);
                 break;
-            case BalancerPacketTypes.RegisterRouter:
-                packetType = nameof(BalancerPacketTypes.RegisterRouter);
+            case PacketTypes.RegisterRouter:
+                packetType = nameof(PacketTypes.RegisterRouter);
                 break;
-            case BalancerPacketTypes.RegisterRouterResponse:
-                packetType = nameof(BalancerPacketTypes.RegisterRouterResponse);
+            case PacketTypes.RegisterRouterResponse:
+                packetType = nameof(PacketTypes.RegisterRouterResponse);
                 break;
-            case BalancerPacketTypes.ResolveUnit:
-                packetType = nameof(BalancerPacketTypes.ResolveUnit);
+            case PacketTypes.ResolveUnit:
+                packetType = nameof(PacketTypes.ResolveUnit);
                 break;
-            case BalancerPacketTypes.ResolveUnitResponse:
-                packetType = nameof(BalancerPacketTypes.ResolveUnitResponse);
+            case PacketTypes.ResolveUnitResponse:
+                packetType = nameof(PacketTypes.ResolveUnitResponse);
                 break;
-            case BalancerPacketTypes.RouterAssignment:
-                packetType = nameof(BalancerPacketTypes.RouterAssignment);
+            case PacketTypes.RouterAssignment:
+                packetType = nameof(PacketTypes.RouterAssignment);
                 break;
-            case BalancerPacketTypes.RouterAssignmentRequest:
-                packetType = nameof(BalancerPacketTypes.RouterAssignmentRequest);
+            case PacketTypes.RouterAssignmentRequest:
+                packetType = nameof(PacketTypes.RouterAssignmentRequest);
                 break;
-            case BalancerPacketTypes.RouterHeartbeat:
-                packetType = nameof(BalancerPacketTypes.RouterHeartbeat);
+            case PacketTypes.RouterHeartbeat:
+                packetType = nameof(PacketTypes.RouterHeartbeat);
                 break;
-            case BalancerPacketTypes.DistributorList:
-                packetType = nameof(BalancerPacketTypes.RouterHeartbeat);
+            case PacketTypes.DistributorList:
+                packetType = nameof(PacketTypes.RouterHeartbeat);
                 break;
-            case BalancerPacketTypes.RequestDistributorList:
-                packetType = nameof(BalancerPacketTypes.RouterHeartbeat);
+            case PacketTypes.RequestDistributorList:
+                packetType = nameof(PacketTypes.RouterHeartbeat);
                 break;
             default:
                 throw new InvalidOperationException($"Unknown BalancerPacketType {formatted}");

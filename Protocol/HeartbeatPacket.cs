@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace Ropu.BalancerProtocol;
+namespace Ropu.Protocol;
 
 public struct HeartbeatPacket
 {

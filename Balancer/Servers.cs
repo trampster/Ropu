@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
-using BalancerProtocol;
 using Ropu.Logging;
 
 namespace Ropu.Balancer;

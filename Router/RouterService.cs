@@ -1,24 +1,37 @@
 using System.Net;
 using System.Net.Sockets;
-using Ropu.Client;
 using Ropu.Logging;
+using Ropu.Protocol;
+using Router.Router;
 
 namespace Ropu.Router;
 
 public class RouterService : IDisposable
 {
+    readonly RopuSocket _ropuSocket;
+    readonly DistributorsManager _distributorsManager;
     readonly BalancerClient _balancerClient;
+    readonly RopuProtocol _ropuProtocol;
     readonly RouterListener _routerListener;
 
     public RouterService(ushort port, ILogger logger)
     {
-        _routerListener = new RouterListener(port, new(), logger);
+        _ropuSocket = new RopuSocket(port);
+
+        _distributorsManager = new();
+
+
+        _routerListener = new RouterListener(_ropuSocket, new(), _distributorsManager, logger);
 
         _balancerClient = new BalancerClient(
             logger,
+            _ropuSocket,
             new IPEndPoint(IPAddress.Parse("127.0.0.1"), port),
             new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2000),
+            _distributorsManager,
             100);
+
+        _ropuProtocol = new RopuProtocol(_ropuSocket, _balancerClient, _routerListener, logger);
     }
 
     async Task RunTasksAsync(params Task[] tasks)
@@ -32,15 +45,15 @@ public class RouterService : IDisposable
         }
     }
 
-    public IReadOnlyDictionary<Guid, SocketAddress> Clients => _routerListener.Clients;
+    public IReadOnlyDictionary<Guid, Client> Clients => _routerListener.Clients;
 
     public async Task Run(CancellationToken cancellationToken)
     {
         try
         {
             var balancerTask = _balancerClient.RunAsync(cancellationToken);
-            var routerListenerTask = _routerListener.RunReceiveAsync(cancellationToken);
-            await RunTasksAsync(balancerTask, routerListenerTask);
+            var protocolReceiveTask = _ropuProtocol.RunReceiveAsync(cancellationToken);
+            await RunTasksAsync(balancerTask, protocolReceiveTask);
         }
         catch (SocketException)
         {
@@ -52,17 +65,17 @@ public class RouterService : IDisposable
         }
     }
 
-    public Span<SocketAddress> Distributors => _balancerClient.Distributors;
+    public Span<SocketAddress> Distributors => _distributorsManager.Distributors;
 
     public event EventHandler DistributorsChanged
     {
         add
         {
-            _balancerClient.DistributorsChanged += value;
+            _distributorsManager.DistributorsChanged += value;
         }
         remove
         {
-            _balancerClient.DistributorsChanged -= value;
+            _distributorsManager.DistributorsChanged -= value;
         }
     }
 
@@ -70,8 +83,7 @@ public class RouterService : IDisposable
     {
         if (disposing)
         {
-            _balancerClient.Dispose();
-            _routerListener.Dispose();
+            _ropuSocket.Dispose();
         }
     }
 

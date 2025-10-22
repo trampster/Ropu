@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 using Ropu.Logging;
-using Ropu.RouterProtocol;
+using Ropu.Protocol;
 
 namespace Ropu.Client;
 
@@ -99,18 +99,21 @@ public class RouterClient
                 {
                     switch (_receiveBuffer[0])
                     {
-                        case (byte)RouterPacketType.RegisterClientResponse:
+                        case (byte)PacketTypes.RegisterClientResponse:
                             _logger.Debug("Received register response");
                             _registerResponseEvent.Set();
                             break;
-                        case (byte)RouterPacketType.HeartbeatResponse:
+                        case (byte)PacketTypes.ClientHeartbeat:
                             _heartbeatResponseEvent.Set();
                             break;
-                        case (byte)RouterPacketType.UnknownRecipient:
+                        case (byte)PacketTypes.UnknownRecipient:
                             HandleUnknownRecipient(_receiveBuffer.AsSpan(0, received));
                             break;
-                        case (byte)RouterPacketType.IndividualMessage:
+                        case (byte)PacketTypes.IndividualMessage:
                             HandleIndividualMessage(_receiveBuffer.AsSpan(0, received));
+                            break;
+                        case (byte)PacketTypes.SubscribeGroupsResponse:
+                            HandleSubscribeGroupsResponse(_receiveBuffer.AsSpan(0, received));
                             break;
                         default:
                             _logger.Warning($"Received unknown packet type: {_receiveBuffer[0]}");
@@ -125,7 +128,6 @@ public class RouterClient
             }
         }
     }
-
 
     IndividualMessageHandler? _individualMessageHandler;
 
@@ -154,5 +156,22 @@ public class RouterClient
             return;
         }
         UnknownRecipient?.Invoke(this, clientId);
+    }
+
+    public void SendSubscribeGroups(Span<Guid> groups)
+    {
+        if (RouterAddress == null)
+        {
+            throw new InvalidOperationException("You must set a router address before calling SubscribeGroups");
+        }
+        var packet = _routerPacketFactory.BuildSubscribeGroupsRequest(Buffer, groups);
+        _socket.SendTo(packet, SocketFlags.None, RouterAddress);
+    }
+
+    public event EventHandler? GroupSubscribeReponse;
+
+    void HandleSubscribeGroupsResponse(Span<byte> span)
+    {
+        GroupSubscribeReponse?.Invoke(this, EventArgs.Empty);
     }
 }

@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using Ropu.Client;
 using Ropu.Logging;
-using Ropu.RouterProtocol;
+using Ropu.Protocol;
 
 Console.WriteLine("Ropu Client");
 var logger = new Logger(LogLevel.Debug);

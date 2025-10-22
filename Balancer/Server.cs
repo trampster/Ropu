@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
-using BalancerProtocol;
-using Ropu.BalancerProtocol;
+using Ropu.Protocol;
 
 namespace Ropu.Balancer;
 

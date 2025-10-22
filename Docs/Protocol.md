@@ -111,7 +111,7 @@ Sent to all routers/distributor to tell them about changes to the distributor li
 
 | Bytes    | Field                    | Description                              |
 | -------- | ------------------------ | -----------------------------------------|
-| 0        | Packet Identifier        | 0x0C                                     |
+| 0        | Packet Identifier        | 0x0B                                     |
 | 1-2      | Sequence Number          | Increments for each change               |
 | 3        | Change Type              | 0=FullList,1=Added,2=Removed,3=Changed   |
 | 4-7      | distributor IP Address   | Public IPv4 address of distributor       |
@@ -123,4 +123,78 @@ Routers/distributors should send this if they miss a sequence number.
 
 | Bytes    | Field                    | Description                              |
 | -------- | ------------------------ | -----------------------------------------|
-| 0        | Packet Identifier        | 0x0D                                     |
+| 0        | Packet Identifier        | 0x0C                                     |
+
+# Router Protocol
+This is the protocol used for comunication from clients to the router and from distributors to routers
+
+## Register Client
+Sent by the client to register with the Router
+
+| Bytes    | Field               | Description                              |
+| -------- | ------------------- | -----------------------------------------|
+| 0        | Packet Identifier   | 0x0D                                     |
+| 1-17     | Client ID           | Unique identifier for client (GUID)      |
+
+
+## Register Client Response
+Sent by the client to acknowledge a registration
+
+| Bytes    | Field               | Description                              |
+| -------- | ------------------- | -----------------------------------------|
+| 0        | Packet Identifier   | 0x0E                                     |
+
+## Individual Message
+Request to send a packet to a client registered with the router
+
+| Bytes    | Field               | Description                              |
+| -------- | ------------------- | -----------------------------------------|
+| 0        | Packet Identifier   | 0x0F                                     |
+| 1-17     | Client ID           | Client to send packet to                 |
+| 18-X     | Payload             | Payload to send to client                |
+
+## Unknown Recipient
+Response to a 'Send to Client' request when the recipient is not registered with the router.
+
+| Bytes    | Field               | Description                              |
+| -------- | ------------------- | -----------------------------------------|
+| 0        | Packet Identifier   | 0x10                                     |
+| 1-17     | Client ID           | Unique identifier for client             |
+
+## Client Heartbeat
+Sent by a client every 30 seconds, to keep the nat alive and to check the connection is still working.
+
+| Bytes    | Field               | Description                              |
+| -------- | ------------------- | -----------------------------------------|
+| 0        | Packet Identifier   | 0x11                                     |
+
+## Client Heartbeat Response
+Response to a heartbeat packet.
+
+| Bytes    | Field               | Description                              |
+| -------- | ------------------- | -----------------------------------------|
+| 0        | Packet Identifier   | 0x12                                     |
+
+## Group Message
+Request to send a packet to a group
+
+| Bytes    | Field               | Description                              |
+| -------- | ------------------- | -----------------------------------------|
+| 0        | Packet Identifier   | 0x13                                     |
+| 1-17     | Group ID            | Group (GUID) to send packet to           |
+| 8-X      | Payload             | Payload to send to client                |
+
+## Subscribe Groups Request
+Subscribe to groups, full list, replaces existing subscriptions
+
+| Bytes    | Field               | Description                              |
+| -------- | ------------------- | -----------------------------------------|
+| 0        | Packet Identifier   | 0x14                                     |
+| 1-17 (n) | Group ID (repeats)  | Group to subscribe to                    |
+
+## Subscribe Groups Response
+Response to a Subscribe Group request
+
+| Bytes    | Field               | Description                              |
+| -------- | ------------------- | -----------------------------------------|
+| 0        | Packet Identifier   | 0x15                                     |

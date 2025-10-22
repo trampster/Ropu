@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 
-namespace Ropu.BalancerProtocol;
+namespace Ropu.Protocol;
 
 /// <summary>
 /// This is an unordered list of SocketAddresses
@@ -12,7 +12,7 @@ namespace Ropu.BalancerProtocol;
 /// </summary>
 public class SocketAddressList
 {
-    readonly SocketAddress[] _addresses;
+    SocketAddress[] _addresses;
     int _count = 0;
 
     public SocketAddressList(int capacity)
@@ -34,6 +34,10 @@ public class SocketAddressList
 
     public void Add(SocketAddress address)
     {
+        if (_count == _addresses.Length)
+        {
+            Array.Resize(ref _addresses, _count * 2);
+        }
         _addresses[_count].CopyFrom(address);
         _count++;
     }

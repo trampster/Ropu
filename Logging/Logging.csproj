@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\BalancerProtocol\BalancerProtocol.csproj" />
+    <ProjectReference Include="..\Protocol\Protocol.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

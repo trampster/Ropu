@@ -1,37 +1,90 @@
-using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
-using System.Runtime.InteropServices.Marshalling;
+using Ropu.Protocol;
 using Ropu.Logging;
-using Ropu.RouterProtocol;
 
-namespace Ropu.Client;
+namespace Ropu.Router;
 
-public class RouterListener : IDisposable
+public class Client
 {
-    readonly Socket _socket;
+    public Client()
+    {
+        AddedDate = DateTime.UtcNow;
+    }
+
+    public Guid ClientId
+    {
+        get;
+        set;
+    }
+
+    public SocketAddress Address
+    {
+        get;
+        set;
+    } = new SocketAddress(AddressFamily.InterNetwork);
+
+
+    public List<Guid> Groups
+    {
+        get;
+    } = [];
+
+    public DateTime AddedDate
+    {
+        get;
+    }
+
+    public bool IsExpired()
+    {
+        var expiryTime = AddedDate + TimeSpan.FromSeconds(60);
+        return expiryTime < DateTime.UtcNow;
+    }
+}
+
+public class Group
+{
+    public SocketAddressList SocketAddressList
+    {
+        get;
+    } = new(10);
+}
+
+public class RouterListener
+{
+    readonly RopuSocket _socket;
+    readonly DistributorsManager _distributorsManager;
     readonly ILogger _logger;
     readonly RouterPacketFactory _routerPacketFactory;
 
-    readonly ConcurrentDictionary<Guid, SocketAddress> _addressBook = [];
-    readonly HashSet<SocketAddress> _addresses = [];
+    readonly Dictionary<Guid, Client> _addressBook = [];
+    readonly Dictionary<SocketAddress, Client> _addresses = [];
 
-    [ThreadStatic]
-    static byte[]? _buffer;
+    readonly byte[] _sendBuffer = new byte[65535];
+
+    Guid[] _groupsBuffer = new Guid[2000];
+
+    // value is the number of clients subscribed
+    readonly Dictionary<Guid, Group> _groupInfos = new();
+
+    /// <summary>
+    /// Used for sending group subscriptions to distributors
+    /// </summary>
+    readonly GuidList _groupsList = new GuidList(2000);
 
     public RouterListener(
-        ushort port,
+        RopuSocket socket,
         RouterPacketFactory routerPacketFactory,
+        DistributorsManager distributorsManager,
         ILogger logger)
     {
         _routerPacketFactory = routerPacketFactory;
+        _distributorsManager = distributorsManager;
         _logger = logger.ForContext(nameof(RouterListener));
-        _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-        var endpoint = new IPEndPoint(IPAddress.Any, port);
-        _socket.Bind(endpoint);
+        _socket = socket;
     }
 
-    public IReadOnlyDictionary<Guid, SocketAddress> Clients => _addressBook;
+    public IReadOnlyDictionary<Guid, Client> Clients => _addressBook;
 
     public SocketAddress? RouterAddress
     {
@@ -39,54 +92,85 @@ public class RouterListener : IDisposable
         set;
     }
 
-    byte[] Buffer
+    DateTime _lastExpiryCheck = DateTime.MinValue;
+
+    public void PostReceive()
     {
-        get
+        var expiryCheckTime = _lastExpiryCheck + TimeSpan.FromSeconds(30);
+        if (expiryCheckTime < DateTime.UtcNow)
         {
-            if (_buffer == null)
-            {
-                _buffer = new byte[1024];
-            }
-            return _buffer;
+            CheckClientExpiries();
+            _lastExpiryCheck = DateTime.UtcNow;
         }
     }
 
-    public Task RunReceiveAsync(CancellationToken cancellationToken)
+    void CheckClientExpiries()
     {
-        var taskFactory = new TaskFactory();
-        return taskFactory.StartNew(() => RunReceive(cancellationToken), TaskCreationOptions.LongRunning);
-    }
-
-    byte[] _receiveBuffer = new byte[1024];
-
-    public void RunReceive(CancellationToken cancellationToken)
-    {
-        while (!cancellationToken.IsCancellationRequested)
+        foreach (var client in _addressBook.Values)
         {
-            var socketAddress = new SocketAddress(AddressFamily.InterNetworkV6);
-            var received = _socket.ReceiveFrom(_receiveBuffer, SocketFlags.None, socketAddress);
-            if (received != 0)
+            if (client.IsExpired())
             {
-                switch (_receiveBuffer[0])
+                _addressBook.Remove(client.ClientId);
+                _addresses.Remove(client.Address);
+
+                foreach (var groupId in client.Groups)
                 {
-                    case (byte)RouterPacketType.RegisterClient:
-                        HandleRegisterClientPacket(_receiveBuffer.AsSpan(0, received), socketAddress);
-                        break;
-                    case (byte)RouterPacketType.Heartbeat:
-                        HandleHeartbeatPacket(socketAddress);
-                        break;
-                    case (byte)RouterPacketType.IndividualMessage:
-                        HandleIndivdiualMessage(_receiveBuffer.AsSpan(0, received), socketAddress);
-                        break;
-                    default:
-                        _logger.Warning($"Received unknown packet type: {_receiveBuffer[0]}");
-                        break;
+                    var group = _groupInfos[groupId];
+                    group.SocketAddressList.Remove(client.Address);
+                    if (group.SocketAddressList.AsSpan().Length == 0)
+                    {
+                        // no longer need to be subscribed to this group
+                        _groupInfos.Remove(groupId);
+                        _groupsList.Remove(groupId);
+
+                        SendGroupSubscriptionsToDistributors();
+                    }
                 }
             }
         }
     }
 
-    void HandleIndivdiualMessage(Span<byte> packet, SocketAddress socketAddress)
+    void SendGroupSubscriptionsToDistributors()
+    {
+        //TODO: resend group subscriptions to all distributors
+
+    }
+
+    public void HandleSubscribeGroupsRequest(Span<byte> packet, SocketAddress socketAddress)
+    {
+        if (!_addresses.TryGetValue(socketAddress, out Client? client))
+        {
+            //don't know who this is
+            _logger.Warning("Received Subscribe Group Request from unknown client");
+            return;
+        }
+        _routerPacketFactory.TryParseSubscribeGroupsRequest(packet, _groupsBuffer, out Span<Guid> groups);
+        client.Groups.Clear();
+        bool didGroupListChange = false;
+        foreach (var groupId in groups)
+        {
+            client.Groups.Add(groupId);
+            if (_groupInfos.TryGetValue(groupId, out Group? group))
+            {
+                // existing group
+                group.SocketAddressList.Add(socketAddress);
+                continue;
+            }
+            // it's new
+            var newGroup = new Group();
+            newGroup.SocketAddressList.Add(socketAddress);
+            _groupInfos[groupId] = newGroup;
+            _groupsList.Add(groupId);
+            didGroupListChange = true;
+        }
+
+        if (didGroupListChange)
+        {
+            SendGroupSubscriptionsToDistributors();
+        }
+    }
+
+    public void HandleIndivdiualMessage(Span<byte> packet, SocketAddress socketAddress)
     {
         _logger.Information("Received Indivdiual Message");
         if (!_routerPacketFactory.TryParseUnitIdFromIndividualMessagePacket(packet, out Guid unitId))
@@ -95,51 +179,40 @@ public class RouterListener : IDisposable
             return;
         }
 
-        if (!_addressBook.TryGetValue(unitId, out SocketAddress? unitAddress))
+        if (!_addressBook.TryGetValue(unitId, out Client? client))
         {
             _logger.Warning($"Could not forward Individual Message because unit {unitId.ToString()} is not registered");
-            var buffer = Buffer;
-            var unknownRecipientPacket = _routerPacketFactory.BuildUnknownRecipientPacket(buffer, unitId);
-            _socket.SendTo(unknownRecipientPacket, SocketFlags.None, socketAddress);
+            var unknownRecipientPacket = _routerPacketFactory.BuildUnknownRecipientPacket(_sendBuffer, unitId);
+            _socket.SendTo(unknownRecipientPacket, socketAddress);
             return;
         }
 
-        _socket.SendTo(packet, SocketFlags.None, unitAddress);
+
+        _socket.SendTo(packet, client.Address);
     }
 
-    void HandleRegisterClientPacket(Span<byte> packet, SocketAddress socketAddress)
+    public void HandleRegisterClientPacket(Span<byte> packet, SocketAddress socketAddress)
     {
         if (!_routerPacketFactory.TryParseRegisterClientPacket(packet, out Guid clientId))
         {
             _logger.Warning($"Failed to parse Register Client packet");
             return;
         }
-        _addressBook[clientId] = socketAddress;
-        _addresses.Add(socketAddress);
+        var client = new Client();
+        client.ClientId = clientId;
+        client.Address.CopyFrom(socketAddress);
+        _addressBook[clientId] = client;
+        _addresses.Add(client.Address, client);
         _logger.Debug($"Client registered {clientId.ToString()}");
-        var response = _routerPacketFactory.BuildRegisterClientResponse(_receiveBuffer);
-        _socket.SendTo(response, SocketFlags.None, socketAddress);
+        var response = _routerPacketFactory.BuildRegisterClientResponse(_sendBuffer);
+        _socket.SendTo(response, socketAddress);
     }
 
-    void HandleHeartbeatPacket(SocketAddress socketAddress)
+    public void HandleHeartbeatPacket(SocketAddress socketAddress)
     {
-        if (_addresses.Contains(socketAddress))
+        if (_addresses.ContainsKey(socketAddress))
         {
-            _socket.SendTo(RouterPacketFactory.HeartbeatResponsePacket, SocketFlags.None, socketAddress);
+            _socket.SendTo(RouterPacketFactory.HeartbeatResponsePacket, socketAddress);
         }
-    }
-
-    protected virtual void Dispose(bool disposing)
-    {
-        if (disposing)
-        {
-            _socket.Dispose();
-        }
-    }
-
-    public void Dispose()
-    {
-        Dispose(disposing: true);
-        GC.SuppressFinalize(this);
     }
 }

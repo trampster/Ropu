@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using System.Net;
-using Ropu.BalancerProtocol;
+using Ropu.Protocol;
 using Ropu.IntergrationTests;
 using Ropu.Logging;
 using Ropu.Router;

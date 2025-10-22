@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
-using Ropu.BalancerProtocol;
+using Ropu.Protocol;
 using Ropu.Logging;
 
 namespace Ropu.Distributor;
@@ -88,15 +88,15 @@ public class BalancerClient : IDisposable
                 {
                     switch (_receiveThreadBuffer[0])
                     {
-                        case (byte)BalancerPacketTypes.RegisterDistributorResponse:
+                        case (byte)PacketTypes.RegisterDistributorResponse:
                             _logger.Debug("Received Register response");
                             HandleRegisterDistributorResponse(_receiveThreadBuffer.AsSpan(0, received));
                             break;
-                        case (byte)BalancerPacketTypes.HeartbeatResponse:
+                        case (byte)PacketTypes.BalancerHeartbeatResponse:
                             _logger.Debug("Received Heartbeat response");
                             _heartBeatResponseEvent.Set();
                             break;
-                        case (byte)BalancerPacketTypes.DistributorList:
+                        case (byte)PacketTypes.DistributorList:
                             HandleDistributorList(_receiveThreadBuffer.AsSpan(0, received));
                             break;
                         default:
@@ -195,7 +195,7 @@ public class BalancerClient : IDisposable
 
             var heartbeat = _balancerPacketFactory.BuildHeartbeatPacket(
                 _connectionManagementBuffer,
-                BalancerPacketTypes.DistributorHeartbeat,
+                PacketTypes.DistributorHeartbeat,
                 (ushort)_routerId,
                 (ushort)_registeredUsers.Count);
 

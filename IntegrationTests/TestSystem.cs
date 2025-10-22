@@ -1,6 +1,6 @@
 using System.Net;
 using Ropu.Balancer;
-using Ropu.BalancerProtocol;
+using Ropu.Protocol;
 using Ropu.Client;
 using Ropu.Distributor;
 using Ropu.Logging;

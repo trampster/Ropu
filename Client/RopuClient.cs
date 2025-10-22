@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 using Ropu.Logging;
 using Ropu.Shared;
 
@@ -26,7 +27,13 @@ public class RopuClient
         _routerClient = routerClient;
         _routerClient.UnknownRecipient += OnUnknownRecipient;
         _routerClient.SetIndividualMessageHandler(OnIndividualMessage);
+        _routerClient.GroupSubscribeReponse += OnGroupSubscribeReponse;
         _logger = logger.ForContext(nameof(RopuClient));
+    }
+
+    void OnGroupSubscribeReponse(object? sender, EventArgs e)
+    {
+        _groupsSubscribed.Value = true;
     }
 
     IndividualMessageHandler? _individualMessageHandler;
@@ -80,10 +87,19 @@ public class RopuClient
             _logger.Debug("Setting IsConnected to true");
 
             IsConnected = true;
+            _groupsSubscribed.Value = false;
+
 
             while (!cancellationToken.IsCancellationRequested && _routerClient.SendHeartbeat())
             {
                 Thread.Sleep(_heartbeatInterval);
+                lock (_groupsLock)
+                {
+                    if (!_groupsSubscribed.Value)
+                    {
+                        _routerClient.SendSubscribeGroups(_groupGuids.AsSpan(_groups.Count));
+                    }
+                }
             }
             IsConnected = false;
         }
@@ -130,5 +146,32 @@ public class RopuClient
         }
         _routerClient.SendToClient(unitId, routerAddress, data.Span);
         return true;
+    }
+
+    readonly Guid[] _groupGuids = new Guid[2000];
+    List<Group> _groups = new();
+    readonly ThreadSafeBool _groupsSubscribed = new();
+    readonly object _groupsLock = new object();
+
+
+    public void SubscribeGroups(List<Group> groups)
+    {
+        if (groups.Count > _groupGuids.Length)
+        {
+            throw new ArgumentException($"To many groups, limit is {_groupGuids.Length}");
+        }
+        lock (_groupsLock)
+        {
+            _groupsSubscribed.Value = false;
+            _groups = groups;
+            int index = 0;
+            foreach (var group in groups)
+            {
+                _groupGuids[index] = group.Guid;
+                index++;
+            }
+        }
+
+        _routerClient.SendSubscribeGroups(_groupGuids.AsSpan(0, _groups.Count));
     }
 }

@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BalancerProtocol\BalancerProtocol.csproj" />
+    <ProjectReference Include="..\Protocol\Protocol.csproj" />
     <ProjectReference Include="..\Logging\Logging.csproj" />
     <ProjectReference Include="..\Shared\Shared.csproj" />
   </ItemGroup>
