@@ -5,9 +5,10 @@ namespace Ropu.Protocol;
 
 public enum DistributorChangeType
 {
-    Full = 0,
+    FullList = 0,
     Added = 1,
-    Removed = 2
+    Removed = 2,
+    Changed = 3
 }
 
 public class BalancerPacketFactory
@@ -38,7 +39,7 @@ public class BalancerPacketFactory
         return buffer.AsSpan(0, 3);
     }
 
-    public bool TryParseRegisterDsitributorResponsePacket(Span<byte> packet, out ushort distributorId)
+    public bool TryParseRegisterDistributorResponsePacket(Span<byte> packet, out ushort distributorId)
     {
         if (packet.Length != 3)
         {
@@ -225,10 +226,7 @@ public class BalancerPacketFactory
 
         if (routerAddress == null)
         {
-            for (int index = 0; index < routerAddressSpan.Length; index++)
-            {
-                buffer[index] = 0;
-            }
+            routerAddressSpan.Clear();
         }
         else
         {
@@ -251,7 +249,7 @@ public class BalancerPacketFactory
             return false;
         }
 
-        success = buffer[0] == 0;
+        success = buffer[1] == 0;
 
         unitId = new Guid(buffer.Slice(2, 16));
         return true;

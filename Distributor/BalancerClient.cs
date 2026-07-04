@@ -12,7 +12,7 @@ public class BalancerClient : IDisposable
     readonly byte[] _requestDistributorListMessage = new byte[1];
     readonly byte[] _receiveThreadBuffer = new byte[1024];
     readonly SocketAddress _balancerEndpoint;
-    readonly Socket _socket;
+    readonly RopuSocket _socket;
     readonly ILogger _logger;
 
     readonly BalancerPacketFactory _balancerPacketFactory = new();
@@ -23,8 +23,10 @@ public class BalancerClient : IDisposable
         ILogger logger,
         IPEndPoint distributorIpEndpoint,
         IPEndPoint balancerEndpoint,
+        RopuSocket ropuSocket,
         ushort capacity)
     {
+        _socket = ropuSocket;
         _logger = logger;
         logger.ForContext(nameof(BalancerClient));
         _balancerEndpoint = balancerEndpoint.Serialize();
@@ -37,24 +39,19 @@ public class BalancerClient : IDisposable
 
         _balancerPacketFactory.BuildRequestDistributorList(_requestDistributorListMessage);
 
-        _socket = new Socket(SocketType.Dgram, ProtocolType.Udp);
-
         for (int index = 0; index < _distributorsBuffer.Length; index++)
         {
             _distributorsBuffer[index] = new SocketAddress(AddressFamily.InterNetwork);
         }
-
-        var endpoint = new IPEndPoint(IPAddress.Any, distributorIpEndpoint.Port);
-        _socket.Bind(endpoint);
     }
 
-    void ManageConnection(CancellationToken cancellationToken)
+    public void ManageConnection(CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested)
         {
             _logger.Information($"Registering with {_balancerEndpoint}");
             _registerResponseEvent.Reset();
-            _socket.SendTo(_registerMessage, SocketFlags.None, _balancerEndpoint);
+            _socket.SendTo(_registerMessage, _balancerEndpoint);
 
             if (_registerResponseEvent.WaitOne(2000))
             {
@@ -75,50 +72,17 @@ public class BalancerClient : IDisposable
     ManualResetEvent _registerResponseEvent = new(false);
     ManualResetEvent _heartBeatResponseEvent = new(false);
 
-    void RunReceive(CancellationToken cancellationToken)
+    public void HandleBalancerHeartbeatResponse()
     {
-        try
-        {
-            SocketAddress socketAddress = new SocketAddress(AddressFamily.InterNetworkV6);
-
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                var received = _socket.ReceiveFrom(_receiveThreadBuffer, SocketFlags.None, socketAddress);
-                if (received != 0)
-                {
-                    switch (_receiveThreadBuffer[0])
-                    {
-                        case (byte)PacketTypes.RegisterDistributorResponse:
-                            _logger.Debug("Received Register response");
-                            HandleRegisterDistributorResponse(_receiveThreadBuffer.AsSpan(0, received));
-                            break;
-                        case (byte)PacketTypes.BalancerHeartbeatResponse:
-                            _logger.Debug("Received Heartbeat response");
-                            _heartBeatResponseEvent.Set();
-                            break;
-                        case (byte)PacketTypes.DistributorList:
-                            HandleDistributorList(_receiveThreadBuffer.AsSpan(0, received));
-                            break;
-                        default:
-                            //unhandled message
-                            break;
-
-                    }
-                }
-            }
-        }
-        catch (Exception exception)
-        {
-            _logger.Warning($"Exception occured in RunReceive {exception.ToString()}");
-            throw;
-        }
+        _logger.Debug("Received Heartbeat response");
+        _heartBeatResponseEvent.Set();
     }
 
     readonly SocketAddress[] _distributorsBuffer = new SocketAddress[2000];
     SocketAddressList _distributors = new SocketAddressList(2000);
     ushort _sequenceNumber = 0;
 
-    void HandleDistributorList(Span<byte> packet)
+    public void HandleDistributorList(Span<byte> packet)
     {
         if (!_balancerPacketFactory.TryParseDistributorList(
             packet,
@@ -132,7 +96,7 @@ public class BalancerClient : IDisposable
 
         switch (changeType)
         {
-            case DistributorChangeType.Full:
+            case DistributorChangeType.FullList:
                 _distributors.Clear();
                 _distributors.AddRange(distributors);
                 _sequenceNumber = sequenceNumber;
@@ -153,15 +117,17 @@ public class BalancerClient : IDisposable
         if (sequenceNumber != expectedSequenceNumber)
         {
             // missed an update request full list
-            _socket.SendTo(_requestDistributorListMessage, SocketFlags.None, _balancerEndpoint);
+            _socket.SendTo(_requestDistributorListMessage, _balancerEndpoint);
             return;
         }
         _sequenceNumber = sequenceNumber;
     }
 
-    void HandleRegisterDistributorResponse(Span<byte> packet)
+    public void HandleRegisterDistributorResponse(Span<byte> packet)
     {
-        if (!_balancerPacketFactory.TryParseRegisterDsitributorResponsePacket(
+        _logger.Debug("Received Register response");
+
+        if (!_balancerPacketFactory.TryParseRegisterDistributorResponsePacket(
             packet,
             out ushort routerId))
         {
@@ -171,16 +137,6 @@ public class BalancerClient : IDisposable
         Interlocked.Exchange(ref _routerId, routerId);
 
         _registerResponseEvent.Set();
-    }
-
-    public async Task RunAsync(CancellationToken cancellationToken)
-    {
-        cancellationToken.Register(() => _socket.Close());
-        var taskFactory = new TaskFactory();
-        var receiveTask = taskFactory.StartNew(() => RunReceive(cancellationToken), TaskCreationOptions.LongRunning);
-        var connectionTask = taskFactory.StartNew(() => ManageConnection(cancellationToken), TaskCreationOptions.LongRunning);
-        var task = await Task.WhenAny(receiveTask, connectionTask);
-        await task;
     }
 
     readonly ConcurrentDictionary<int, EndPoint> _registeredUsers = new();
@@ -200,7 +156,7 @@ public class BalancerClient : IDisposable
                 (ushort)_registeredUsers.Count);
 
             _heartBeatResponseEvent.Reset();
-            _socket.SendTo(heartbeat, SocketFlags.None, _balancerEndpoint);
+            _socket.SendTo(heartbeat, _balancerEndpoint);
             if (!_heartBeatResponseEvent.WaitOne(2000))
             {
                 _logger.Information("Heartbeat response not received after 2000ms");

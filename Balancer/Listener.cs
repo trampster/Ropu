@@ -139,7 +139,7 @@ public class Listener : IDisposable
         var packet = _balancerPacketFactory.BuildDistributorList(
             _buffer,
             _distributorSequenceNumber++,
-            DistributorChangeType.Full,
+            DistributorChangeType.FullList,
             _socketAddressesBuffer.AsSpan(0, distributors.Length));
 
         _socket.SendTo(packet, SocketFlags.None, receivedAddress);

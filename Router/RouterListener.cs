@@ -50,7 +50,7 @@ public class Group
     } = new(10);
 }
 
-public class RouterListener
+public class RouterListener : IDistributorsListener
 {
     readonly RopuSocket _socket;
     readonly DistributorsManager _distributorsManager;
@@ -93,6 +93,29 @@ public class RouterListener
     }
 
     DateTime _lastExpiryCheck = DateTime.MinValue;
+    DateTime _lastSubscriptionCheck = DateTime.MinValue;
+    DateTime _lastSubscriptionRenewal = DateTime.MinValue;
+
+    DateTime _lastStreamCheckTime = DateTime.UtcNow;
+
+    public void BeforeReceive()
+    {
+        var expiryCheckTime = _lastStreamCheckTime + TimeSpan.FromSeconds(1);
+        if (expiryCheckTime < DateTime.UtcNow)
+        {
+            var streams = _stream.AsSpan();
+            for (int streamIndex = _stream.Length - 1; streamIndex >= 0; streamIndex--)
+            {
+                var stream = streams[streamIndex];
+                if (stream.IsExpired())
+                {
+                    _streamLookup.Remove(stream.GroupId);
+                    _stream.RemoveAt(streamIndex);
+                }
+            }
+        }
+        _lastStreamCheckTime += TimeSpan.FromSeconds(5);
+    }
 
     public void PostReceive()
     {
@@ -102,6 +125,39 @@ public class RouterListener
             CheckClientExpiries();
             _lastExpiryCheck = DateTime.UtcNow;
         }
+
+        var subscriptionCheckTime = _lastSubscriptionCheck + TimeSpan.FromSeconds(5);
+        if (subscriptionCheckTime < DateTime.UtcNow)
+        {
+            CheckDistributorSubscriptions();
+            _lastSubscriptionCheck = DateTime.UtcNow;
+
+            // we put it here so that we only check it every 5 seconds instead of on every packet
+            var subscriptionRenewalTime = _lastSubscriptionRenewal + TimeSpan.FromMinutes(7);
+            if (subscriptionRenewalTime < DateTime.UtcNow)
+            {
+                SendGroupSubscriptionsToDistributors();
+                _lastSubscriptionRenewal = DateTime.UtcNow;
+            }
+
+            var streams = _stream.AsSpan();
+            for (int streamIndex = _stream.Length - 1; streamIndex >= 0; streamIndex--)
+            {
+                var stream = streams[streamIndex];
+                if (stream.IsExpired())
+                {
+                    _streamLookup.Remove(stream.GroupId);
+                    _stream.RemoveAt(streamIndex);
+                }
+            }
+        }
+    }
+
+    void CheckDistributorSubscriptions()
+    {
+        var subscribeGroupsPacket = _routerPacketFactory.BuildSubscribeGroupsRequest(_sendBuffer, _groupsList.AsSpan());
+
+        _socket.SendBulk(_sendBuffer.AsMemory(subscribeGroupsPacket.Length), _distributorsManager.NotSubscribedDistributors, null);
     }
 
     void CheckClientExpiries()
@@ -132,8 +188,11 @@ public class RouterListener
 
     void SendGroupSubscriptionsToDistributors()
     {
-        //TODO: resend group subscriptions to all distributors
+        var subscribeGroupsPacket = _routerPacketFactory.BuildSubscribeGroupsRequest(_sendBuffer, _groupsList.AsSpan());
 
+        _distributorsManager.ClearSubsciptions();
+        _distributorsManager.OnSubscriptionSent(_distributorsManager.Distributors);
+        _socket.SendBulk(_sendBuffer.AsMemory(subscribeGroupsPacket.Length), _distributorsManager.DistributorsMemory, null);
     }
 
     public void HandleSubscribeGroupsRequest(Span<byte> packet, SocketAddress socketAddress)
@@ -187,7 +246,6 @@ public class RouterListener
             return;
         }
 
-
         _socket.SendTo(packet, client.Address);
     }
 
@@ -214,5 +272,71 @@ public class RouterListener
         {
             _socket.SendTo(RouterPacketFactory.HeartbeatResponsePacket, socketAddress);
         }
+    }
+
+    public void OnAdded(Span<SocketAddress> distributors)
+    {
+        var subscribeGroupsPacket = _routerPacketFactory.BuildSubscribeGroupsRequest(_sendBuffer, _groupsList.AsSpan());
+        _distributorsManager.OnSubscriptionSent(distributors);
+
+        foreach (var distributor in distributors)
+        {
+            _socket.SendTo(subscribeGroupsPacket, distributor);
+        }
+    }
+
+    public void HandleGroupMessage(Span<byte> packet, SocketAddress socketAddress)
+    {
+        if (_routerPacketFactory.TryParseGroupMessagePacket(packet, out Guid groupId, out GroupMessageType groupMessageType, out Span<byte> payload))
+        {
+            _logger.Warning($"Failed to parse Group Message Packet");
+            return;
+        }
+        if (groupMessageType == GroupMessageType.OneOff)
+        {
+            var distributorAddress = _distributorsManager.GetFreeDistributor();
+            if (distributorAddress == null)
+            {
+                _logger.Warning("No distributors available to handle group message");
+                return;
+            }
+            _socket.SendTo(packet, distributorAddress);
+            return;
+        }
+        //stream message
+        if (_streamLookup.TryGetValue(groupId, out Stream? stream))
+        {
+            // existing stream
+            _socket.SendTo(packet, stream.DistributorAddress);
+            return;
+        }
+
+        // it's a new stream so choose a distributor
+        var distributor = _distributorsManager.GetFreeDistributor();
+        if (distributor == null)
+        {
+            _logger.Warning($"No free distributor for streaming to group");
+            return;
+        }
+        var newStream = _stream.Add();
+        newStream.Refresh();
+        newStream.DistributorAddress = distributor;
+        newStream.GroupId = groupId;
+
+        _streamLookup.Add(groupId, newStream);
+        _socket.SendTo(packet, distributor);
+    }
+
+    readonly UnorderedList<Stream> _stream = new(100);
+    readonly Dictionary<Guid, Stream> _streamLookup = new();
+
+    public void HandleDistributorCapacity(Span<byte> packet, SocketAddress from)
+    {
+        if (!_routerPacketFactory.TryParseDistributorCapacityPacket(packet, out ushort capacity))
+        {
+            _logger.Warning("Failed to parse Distributor Capacity packet");
+            return;
+        }
+        _distributorsManager.UpdateCapacity(from, capacity);
     }
 }

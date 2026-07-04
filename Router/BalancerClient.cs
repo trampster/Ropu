@@ -93,7 +93,7 @@ public class BalancerClient
 
         switch (changeType)
         {
-            case DistributorChangeType.Full:
+            case DistributorChangeType.FullList:
                 _distributorsManager.ReplaceList(distributors);
                 _sequenceNumber = sequenceNumber;
                 return;
@@ -172,5 +172,10 @@ public class BalancerClient
             }
             Thread.Sleep(5000);
         }
+    }
+
+    public void HandleSubscribeGroupsResponse(Span<byte> span, SocketAddress fromAddress)
+    {
+        _distributorsManager.OnSubscriptionResponseReceived(fromAddress);
     }
 }

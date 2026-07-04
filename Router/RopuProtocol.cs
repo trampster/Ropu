@@ -22,7 +22,7 @@ public class RopuProtocol
     {
         _balancerClient = balancerClient;
         _routerClient = routerClient;
-        _logger = logger.ForContext(nameof(RouterListener));
+        _logger = logger.ForContext(nameof(RopuProtocol));
         _socket = socket;
     }
 
@@ -38,6 +38,9 @@ public class RopuProtocol
         {
             var socketAddress = new SocketAddress(AddressFamily.InterNetworkV6);
             var received = _socket.ReceiveFrom(socketAddress, _receiveBuffer);
+
+            _routerClient.BeforeReceive();
+
             if (received != 0)
             {
                 switch (_receiveBuffer[0])
@@ -54,6 +57,16 @@ public class RopuProtocol
                         break;
                     case (byte)PacketTypes.SubscribeGroupsRequest:
                         _routerClient.HandleSubscribeGroupsRequest(_receiveBuffer.AsSpan(0, received), socketAddress);
+                        break;
+                    case (byte)PacketTypes.GroupMessage:
+                        _routerClient.HandleGroupMessage(_receiveBuffer.AsSpan(0, received), socketAddress);
+                        break;
+                    case (byte)PacketTypes.DistributorCapacity:
+                        _routerClient.HandleDistributorCapacity(_receiveBuffer.AsSpan(0, received), socketAddress);
+                        break;
+                    // Balancer Packets
+                    case (byte)PacketTypes.SubscribeGroupsResponse:
+                        _balancerClient.HandleSubscribeGroupsResponse(_receiveBuffer.AsSpan(0, received), socketAddress);
                         break;
                     case (byte)PacketTypes.RegisterRouterResponse:
                         _balancerClient.HandleRegisterRouterResponse(_receiveBuffer.AsSpan(0, received));

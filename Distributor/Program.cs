@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using Ropu.Distributor;
 using Ropu.Logging;
+using Ropu.Protocol;
 
 Console.WriteLine("Ropu Distributor");
 
@@ -20,9 +21,10 @@ if (!ushort.TryParse(portString, out ushort port))
 
 var logger = new Logger(LogLevel.Debug);
 
-using var DistributorService = new DistributorService(port, logger);
 
-await DistributorService.Run(new());
+using var distributorService = new DistributorService(port, logger);
+
+await distributorService.Run(new());
 
 
 Console.WriteLine("Ropu Distributor Stopped");

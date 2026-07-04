@@ -24,6 +24,8 @@ public class SocketAddressList
         }
     }
 
+    public int Length => _count;
+
     public void AddRange(Span<SocketAddress> rangeToAdd)
     {
         foreach (var address in rangeToAdd)
@@ -32,14 +34,16 @@ public class SocketAddressList
         }
     }
 
-    public void Add(SocketAddress address)
+    public SocketAddress Add(SocketAddress address)
     {
         if (_count == _addresses.Length)
         {
             Array.Resize(ref _addresses, _count * 2);
         }
         _addresses[_count].CopyFrom(address);
+        var storedAddress = _addresses[_count];
         _count++;
+        return storedAddress;
     }
 
     public void Clear()
@@ -70,5 +74,10 @@ public class SocketAddressList
     public Span<SocketAddress> AsSpan()
     {
         return _addresses.AsSpan(0, _count);
+    }
+
+    public Memory<SocketAddress> AsMemory()
+    {
+        return _addresses.AsMemory(0, _count);
     }
 }

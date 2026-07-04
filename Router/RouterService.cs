@@ -18,10 +18,13 @@ public class RouterService : IDisposable
     {
         _ropuSocket = new RopuSocket(port);
 
-        _distributorsManager = new();
+        _distributorsManager = new(logger.ForContext(nameof(DistributorsManager)));
 
-
-        _routerListener = new RouterListener(_ropuSocket, new(), _distributorsManager, logger);
+        _routerListener = new RouterListener(
+            _ropuSocket,
+            new(),
+            _distributorsManager,
+            logger);
 
         _balancerClient = new BalancerClient(
             logger,

@@ -6,12 +6,19 @@ namespace Ropu.Protocol;
 public class RopuSocket : IDisposable
 {
     readonly Socket _socket;
+    readonly BulkSender _bulkSender;
 
     public RopuSocket(ushort port)
     {
         _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
         var endpoint = new IPEndPoint(IPAddress.Any, port);
         _socket.Bind(endpoint);
+        _bulkSender = new BulkSender(_socket);
+    }
+
+    public void SendBulk(ReadOnlyMemory<byte> buffer, Memory<SocketAddress> destinations, SocketAddress? except)
+    {
+        _bulkSender.SendBulk(buffer, destinations, except);
     }
 
     public void SendTo(Span<byte> packet, SocketAddress address)

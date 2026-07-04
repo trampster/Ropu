@@ -174,4 +174,14 @@ public class RouterClient
     {
         GroupSubscribeReponse?.Invoke(this, EventArgs.Empty);
     }
+
+    public void SendGroupMessage(Guid groupId, GroupMessageType groupMessageType, Span<byte> payload)
+    {
+        if (RouterAddress == null)
+        {
+            throw new InvalidOperationException("You must set a router address before calling SubscribeGroups");
+        }
+        var packet = _routerPacketFactory.BuildGroupMessagePacket(Buffer, groupId, groupMessageType, payload);
+        _socket.SendTo(packet, SocketFlags.None, RouterAddress);
+    }
 }

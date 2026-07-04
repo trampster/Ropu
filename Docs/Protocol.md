@@ -9,8 +9,8 @@ Sent by the Router to register with the Balancer
 | Bytes    | Field               | Description                              |
 | -------- | ------------------- | -----------------------------------------|
 | 0        | Packet Identifier   | 0x00                                     |
-| 1-4      | Router IP Address   | Public IPv4 address of router            |
-| 5-6      | Router Port         | Public port of router                    |
+| 1-2      | Router Port         | Public port of router                    |
+| 3-6      | Router IP Address   | Public IPv4 address of router            |
 | 7-8      | Router Capacity     | Number of clients the router can support |
 
 ## Register Router Response Packet
@@ -56,7 +56,7 @@ Request by a Client to be assigned to a router
 | Bytes    | Field               | Description                              |
 | -------- | ------------------- | -----------------------------------------|
 | 0        | Packet Identifier   | 0x05                                     |
-| 1-17     | Client ID           | ID of client (GUID)                      |
+| 1-16     | Client ID           | ID of client (GUID)                      |
 
 ## Router Assignment
 Response to a router assignement request specifying the router to use
@@ -64,8 +64,8 @@ Response to a router assignement request specifying the router to use
 | Bytes    | Field               | Description                              |
 | -------- | ------------------- | -----------------------------------------|
 | 0        | Packet Identifier   | 0x06                                     |
-| 1-4      | Router IP Address   | Public IPv4 address of router            |
-| 5-6      | Router Port         | Public port of router                    |
+| 1-2      | Router Port         | Public port of router                    |
+| 3-6      | Router IP Address   | Public IPv4 address of router            |
 
 ## Register Distributor Packet
 Sent by a Distributor to register with the Balancer
@@ -73,8 +73,8 @@ Sent by a Distributor to register with the Balancer
 | Bytes    | Field               | Description                              |
 | -------- | ------------------- | -----------------------------------------|
 | 0        | Packet Identifier   | 0x07                                     |
-| 1-4      | Router IP Address   | Public IPv4 address of router            |
-| 5-6      | Router Port         | Public port of router                    |
+| 1-2      | Distributor Port    | Public port of distributor               |
+| 3-6      | Distributor IP Address | Public IPv4 address of distributor    |
 | 7-8      | Capacity            | Number of routers it can distribute to   | 
 |          |                     | in 20 ms.                                |
 
@@ -93,7 +93,7 @@ Sent by client to get address of router which has the unit
 | Bytes    | Field               | Description                              |
 | -------- | ------------------- | -----------------------------------------|
 | 0        | Packet Identifier   | 0x09                                     |
-| 1-17     | UnitId              | ID of unit to resolve (GUID)             |
+| 1-16     | UnitId              | ID of unit to resolve (GUID)             |
 
 ## Resolve Unit Response
 Sent by client to get address of router which has the unit
@@ -103,19 +103,20 @@ Sent by client to get address of router which has the unit
 | 0        | Packet Identifier   | 0x0A                                     |
 | 1        | Success             | 0 = success, 1 = unit not found          |
 | 2-17     | UnitId              | ID of unit (GUID)                        |
-| 18-21    | Router IP Address   | Public IPv4 address of router            |
-| 22-23    | Router Port         | Public port of router                    |
+| 18-19    | Router Port         | Public port of router                    |
+| 20-23    | Router IP Address   | Public IPv4 address of router            |
 
 ## Distributors List
 Sent to all routers/distributor to tell them about changes to the distributor list.
 
-| Bytes    | Field                    | Description                              |
-| -------- | ------------------------ | -----------------------------------------|
-| 0        | Packet Identifier        | 0x0B                                     |
-| 1-2      | Sequence Number          | Increments for each change               |
-| 3        | Change Type              | 0=FullList,1=Added,2=Removed,3=Changed   |
-| 4-7      | distributor IP Address   | Public IPv4 address of distributor       |
-| 8-9      | distributor Port         | Public port of distributor               |
+| Bytes    | Field                         | Description                              |
+| -------- | ----------------------------- | -----------------------------------------|
+| 0        | Packet Identifier             | 0x0B                                     |
+| 1-2      | Sequence Number               | Increments for each change               |
+| 3        | Change Type                   | 0=FullList,1=Added,2=Removed,3=Changed   |
+| 4-9 (n)  | Distributor Address (repeats) | Public address of distributor            |
+|          |   Port (2 bytes)              | Public port of distributor               |
+|          |   IP Address (4 bytes)        | Public IPv4 address of distributor       |
 
 
 ## Request Distributors List
@@ -134,7 +135,7 @@ Sent by the client to register with the Router
 | Bytes    | Field               | Description                              |
 | -------- | ------------------- | -----------------------------------------|
 | 0        | Packet Identifier   | 0x0D                                     |
-| 1-17     | Client ID           | Unique identifier for client (GUID)      |
+| 1-16     | Client ID           | Unique identifier for client (GUID)      |
 
 
 ## Register Client Response
@@ -150,8 +151,8 @@ Request to send a packet to a client registered with the router
 | Bytes    | Field               | Description                              |
 | -------- | ------------------- | -----------------------------------------|
 | 0        | Packet Identifier   | 0x0F                                     |
-| 1-17     | Client ID           | Client to send packet to                 |
-| 18-X     | Payload             | Payload to send to client                |
+| 1-16     | Client ID           | Client to send packet to                 |
+| 17-X     | Payload             | Payload to send to client                |
 
 ## Unknown Recipient
 Response to a 'Send to Client' request when the recipient is not registered with the router.
@@ -159,7 +160,7 @@ Response to a 'Send to Client' request when the recipient is not registered with
 | Bytes    | Field               | Description                              |
 | -------- | ------------------- | -----------------------------------------|
 | 0        | Packet Identifier   | 0x10                                     |
-| 1-17     | Client ID           | Unique identifier for client             |
+| 1-16     | Client ID           | Unique identifier for client             |
 
 ## Client Heartbeat
 Sent by a client every 30 seconds, to keep the nat alive and to check the connection is still working.
@@ -181,20 +182,41 @@ Request to send a packet to a group
 | Bytes    | Field               | Description                              |
 | -------- | ------------------- | -----------------------------------------|
 | 0        | Packet Identifier   | 0x13                                     |
-| 1-17     | Group ID            | Group (GUID) to send packet to           |
-| 8-X      | Payload             | Payload to send to client                |
+| 1-16     | Group ID            | Group (GUID) to send packet to           |
+| 17       | Group Message Type  | 0 = one off, 1 = stream                  |  
+| 18-X     | Payload             | Payload to send to client                |
+
+TODO: add stream vs on off to this packet
+
+## Group Message Failure Response
+Request to send a packet to a group
+
+| Bytes    | Field               | Description                              |
+| -------- | ------------------- | -----------------------------------------|
+| 0        | Packet Identifier   | 0x14                                     |
+| 1-16     | Group ID            | Group (GUID) to send packet to           |
+| 17       | Failure reason      | 0 = Unknown, Busy = 1                     |
 
 ## Subscribe Groups Request
 Subscribe to groups, full list, replaces existing subscriptions
 
 | Bytes    | Field               | Description                              |
 | -------- | ------------------- | -----------------------------------------|
-| 0        | Packet Identifier   | 0x14                                     |
-| 1-17 (n) | Group ID (repeats)  | Group to subscribe to                    |
+| 0        | Packet Identifier   | 0x15                                     |
+| 1-16 (n) | Group ID (repeats)  | Group to subscribe to                    |
 
 ## Subscribe Groups Response
 Response to a Subscribe Group request
 
 | Bytes    | Field               | Description                              |
 | -------- | ------------------- | -----------------------------------------|
-| 0        | Packet Identifier   | 0x15                                     |
+| 0        | Packet Identifier   | 0x16                                     |
+
+## Distributor Capacity
+The current distributor spare capacity
+
+| Bytes    | Field               | Description                              |
+| -------- | ------------------- | -----------------------------------------|
+| 0        | Packet Identifier   | 0x17                                     |
+| 1-2      | Capacity            | Current spare capacity of the            |
+|          |                     | distributor                              |

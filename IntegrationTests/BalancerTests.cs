@@ -94,13 +94,13 @@ public class BalancerTests
         byte[] messageBuffer = new byte[1024];
         int messageLength = 0;
 
-        TaskCompletionSource messageRecieved = new();
+        TaskCompletionSource messageReceived = new();
 
         client1.SetIndividualMessageHandler(message =>
         {
             messageLength = message.Length;
             message.CopyTo(messageBuffer);
-            messageRecieved.SetResult();
+            messageReceived.SetResult();
         });
 
         var expectedMessage = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
@@ -109,7 +109,7 @@ public class BalancerTests
         await client0.SendToUnit(client1.UnitId, expectedMessage.AsMemory());
 
         // assert
-        Assert.That(await messageRecieved.Task.WaitOneAsync(TimeSpan.FromSeconds(5)), Is.True);
+        Assert.That(await messageReceived.Task.WaitOneAsync(TimeSpan.FromSeconds(5)), Is.True);
         Assert.That(messageBuffer.AsSpan(0, messageLength).ToArray(), Is.EquivalentTo(expectedMessage));
 
         system.Stop();

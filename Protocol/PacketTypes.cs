@@ -25,6 +25,8 @@ public enum PacketTypes
     ClientHeartbeat = 0x11,
     ClientHeartbeatResponse = 0x12,
     GroupMessage = 0x13,
-    SubscribeGroupsRequest = 0x14,
-    SubscribeGroupsResponse = 0x15,
+    GroupMessageFailureResponse = 0x14,
+    SubscribeGroupsRequest = 0x15,
+    SubscribeGroupsResponse = 0x16,
+    DistributorCapacity = 0x17
 }

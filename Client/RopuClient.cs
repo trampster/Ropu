@@ -174,4 +174,9 @@ public class RopuClient
 
         _routerClient.SendSubscribeGroups(_groupGuids.AsSpan(0, _groups.Count));
     }
+
+    public void SendGroupMessage(Group group, Span<byte> payload)
+    {
+        _routerClient.SendGroupMessage(group.Guid, Protocol.GroupMessageType.OneOff, payload);
+    }
 }

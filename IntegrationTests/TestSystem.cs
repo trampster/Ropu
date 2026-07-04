@@ -40,7 +40,7 @@ public class ServiceInstance<T> : IDisposable
         }
         catch (Exception exception)
         {
-            _logger.Warning($"Exception occured running ServiceInstance of type {typeof(T).ToString()}, {exception.ToString()}");
+            _logger.Warning($"Exception occurred running ServiceInstance of type {typeof(T).ToString()}, {exception.ToString()}");
         }
     }
 
