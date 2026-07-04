@@ -57,13 +57,13 @@ public class RouterPacketFactory
         GroupMessageType groupMessageType,
         Span<byte> payload)
     {
-        buffer[0] = (byte)PacketTypes.IndividualMessage;
+        buffer[0] = (byte)PacketTypes.GroupMessage;
         groupId.TryWriteBytes(buffer.AsSpan(1, 16));
 
         buffer[17] = (byte)groupMessageType;
 
         payload.CopyTo(buffer.AsSpan(18));
-        buffer[0] = (byte)PacketTypes.IndividualMessage;
+        buffer[0] = (byte)PacketTypes.GroupMessage;
 
 
         return buffer.AsSpan(0, 18 + payload.Length);
@@ -75,7 +75,7 @@ public class RouterPacketFactory
         out GroupMessageType groupMessageType,
         out Span<byte> payload)
     {
-        if (packet.Length < 17)
+        if (packet.Length < 18)
         {
             groupId = Guid.Empty;
             payload = [];
@@ -142,17 +142,24 @@ public class RouterPacketFactory
 
     public bool TryParseSubscribeGroupsRequest(Span<byte> packet, Guid[] groupsBuffer, out Span<Guid> groups)
     {
-        var payloadLength = groupsBuffer.Length - 1;
-        if (payloadLength % 16 != 0)
+        var payloadLength = packet.Length - 1;
+        if (payloadLength < 0 || payloadLength % 16 != 0)
+        {
+            groups = Span<Guid>.Empty;
+            return false;
+        }
+
+        var expectedGroupsCount = payloadLength / 16;
+        if (groupsBuffer.Length < expectedGroupsCount)
         {
             groups = Span<Guid>.Empty;
             return false;
         }
 
         int outIndex = 0;
-        for (int bufferIndex = 0; bufferIndex < packet.Length; bufferIndex += 16)
+        for (int bufferIndex = 1; bufferIndex < packet.Length; bufferIndex += 16)
         {
-            groupsBuffer[outIndex] = new Guid(packet.Slice(1, 16));
+            groupsBuffer[outIndex] = new Guid(packet.Slice(bufferIndex, 16));
             outIndex++;
         }
         groups = groupsBuffer.AsSpan(0, outIndex);
@@ -190,7 +197,7 @@ public class RouterPacketFactory
         return buffer.AsSpan(0, 18);
     }
 
-    public bool TryParseUnknownRecipientPacket(
+    public bool TryParseGroupMessageFailureResponse(
         Span<byte> packet,
         out Guid unitId,
         out GroupPacketFailureReason groupPacketFailureReason)
