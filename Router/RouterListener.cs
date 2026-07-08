@@ -58,7 +58,7 @@ public class RouterListener : IDistributorsListener
     readonly RouterPacketFactory _routerPacketFactory;
 
     readonly Dictionary<Guid, Client> _addressBook = [];
-    readonly Dictionary<SocketAddress, Client> _addresses = [];
+    readonly Dictionary<SocketAddress, Client> _addresses = new(new SocketAddressComparer());
 
     readonly byte[] _sendBuffer = new byte[65535];
 
@@ -157,7 +157,7 @@ public class RouterListener : IDistributorsListener
     {
         var subscribeGroupsPacket = _routerPacketFactory.BuildSubscribeGroupsRequest(_sendBuffer, _groupsList.AsSpan());
 
-        _socket.SendBulk(_sendBuffer.AsMemory(subscribeGroupsPacket.Length), _distributorsManager.NotSubscribedDistributors, null);
+        _socket.SendBulk(_sendBuffer.AsMemory(0, subscribeGroupsPacket.Length), _distributorsManager.NotSubscribedDistributors, null);
     }
 
     void CheckClientExpiries()
@@ -190,9 +190,9 @@ public class RouterListener : IDistributorsListener
     {
         var subscribeGroupsPacket = _routerPacketFactory.BuildSubscribeGroupsRequest(_sendBuffer, _groupsList.AsSpan());
 
-        _distributorsManager.ClearSubsciptions();
+        _distributorsManager.ClearSubscriptions();
         _distributorsManager.OnSubscriptionSent(_distributorsManager.Distributors);
-        _socket.SendBulk(_sendBuffer.AsMemory(subscribeGroupsPacket.Length), _distributorsManager.DistributorsMemory, null);
+        _socket.SendBulk(_sendBuffer.AsMemory(0, subscribeGroupsPacket.Length), _distributorsManager.DistributorsMemory, null);
     }
 
     public void HandleSubscribeGroupsRequest(Span<byte> packet, SocketAddress socketAddress)
@@ -203,7 +203,12 @@ public class RouterListener : IDistributorsListener
             _logger.Warning("Received Subscribe Group Request from unknown client");
             return;
         }
-        _routerPacketFactory.TryParseSubscribeGroupsRequest(packet, _groupsBuffer, out Span<Guid> groups);
+        _logger.Debug("SubscribeGroups Request received");
+        if (!_routerPacketFactory.TryParseSubscribeGroupsRequest(packet, _groupsBuffer, out Span<Guid> groups))
+        {
+            _logger.Warning("Failed to parse Subscribe Groups Request");
+            return;
+        }
         client.Groups.Clear();
         bool didGroupListChange = false;
         foreach (var groupId in groups)
@@ -227,11 +232,14 @@ public class RouterListener : IDistributorsListener
         {
             SendGroupSubscriptionsToDistributors();
         }
+
+        var subscribeGroupsResponse = _routerPacketFactory.BuildSubscribeGroupsResponse(_sendBuffer);
+        _socket.SendTo(subscribeGroupsResponse, socketAddress);
     }
 
-    public void HandleIndivdiualMessage(Span<byte> packet, SocketAddress socketAddress)
+    public void HandleIndividualMessage(Span<byte> packet, SocketAddress socketAddress)
     {
-        _logger.Information("Received Indivdiual Message");
+        _logger.Information("Received Individual Message");
         if (!_routerPacketFactory.TryParseUnitIdFromIndividualMessagePacket(packet, out Guid unitId))
         {
             _logger.Warning("Could not parse Individual Message2");
@@ -251,6 +259,7 @@ public class RouterListener : IDistributorsListener
 
     public void HandleRegisterClientPacket(Span<byte> packet, SocketAddress socketAddress)
     {
+        ushort port = socketAddress.GetPort();
         if (!_routerPacketFactory.TryParseRegisterClientPacket(packet, out Guid clientId))
         {
             _logger.Warning($"Failed to parse Register Client packet");
@@ -260,17 +269,23 @@ public class RouterListener : IDistributorsListener
         client.ClientId = clientId;
         client.Address.CopyFrom(socketAddress);
         _addressBook[clientId] = client;
+        _logger.Debug($"Client registered {clientId.ToString()} Address {client.Address}");
         _addresses.Add(client.Address, client);
-        _logger.Debug($"Client registered {clientId.ToString()}");
         var response = _routerPacketFactory.BuildRegisterClientResponse(_sendBuffer);
         _socket.SendTo(response, socketAddress);
     }
 
     public void HandleHeartbeatPacket(SocketAddress socketAddress)
     {
+        _logger.Debug($"Received heartbeat from {socketAddress}");
         if (_addresses.ContainsKey(socketAddress))
         {
+            _logger.Debug($"Sending heartbeat response to {socketAddress}");
             _socket.SendTo(RouterPacketFactory.HeartbeatResponsePacket, socketAddress);
+        }
+        else
+        {
+            _logger.Debug($"Received heartbeat from {socketAddress} but they are not registered");
         }
     }
 
@@ -287,11 +302,27 @@ public class RouterListener : IDistributorsListener
 
     public void HandleGroupMessage(Span<byte> packet, SocketAddress socketAddress)
     {
-        if (_routerPacketFactory.TryParseGroupMessagePacket(packet, out Guid groupId, out GroupMessageType groupMessageType, out Span<byte> payload))
+        if (!_routerPacketFactory.TryParseGroupMessagePacket(packet, out Guid groupId, out GroupMessageType groupMessageType, out Span<byte> payload))
         {
             _logger.Warning($"Failed to parse Group Message Packet");
             return;
         }
+        if (!_distributorsManager.IsDistributor(socketAddress))
+        {
+            _logger.Debug("Sending Group Message to distributor");
+            Distribute(packet, groupId, groupMessageType);
+        }
+        if (_groupInfos.TryGetValue(groupId, out var group))
+        {
+            _logger.Debug("Sending Group Message to subscribers");
+            packet.CopyTo(_sendBuffer);
+            var memory = _sendBuffer.AsMemory(0, packet.Length);
+            _socket.SendBulk(memory, group.SocketAddressList.AsMemory(), socketAddress);
+        }
+    }
+
+    void Distribute(Span<byte> packet, Guid groupId, GroupMessageType groupMessageType)
+    {
         if (groupMessageType == GroupMessageType.OneOff)
         {
             var distributorAddress = _distributorsManager.GetFreeDistributor();
@@ -300,6 +331,7 @@ public class RouterListener : IDistributorsListener
                 _logger.Warning("No distributors available to handle group message");
                 return;
             }
+            _logger.Debug($"Sending one-off group message to distributor {distributorAddress}");
             _socket.SendTo(packet, distributorAddress);
             return;
         }
@@ -337,6 +369,7 @@ public class RouterListener : IDistributorsListener
             _logger.Warning("Failed to parse Distributor Capacity packet");
             return;
         }
+        _logger.Debug($"Received distributor capacity {capacity}");
         _distributorsManager.UpdateCapacity(from, capacity);
     }
 }

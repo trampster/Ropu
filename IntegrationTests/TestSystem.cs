@@ -179,6 +179,11 @@ public class TestSystem : IDisposable
         {
             client.Stop();
         }
+
+        foreach (var distributor in _distributors)
+        {
+            distributor.Stop();
+        }
     }
 
     protected virtual void Dispose(bool disposing)

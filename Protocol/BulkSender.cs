@@ -17,6 +17,7 @@ public class BulkSender
     int _threadNumber = 0;
     volatile bool _stopping = false;
 
+    readonly SocketAddressComparer _socketAddressComparer = new();
 
     public BulkSender(Socket socket)
     {
@@ -82,7 +83,7 @@ public class BulkSender
                 for (int index = start; index <= end; index++)
                 {
                     var address = _destinations.Span[index];
-                    if (address == _except)
+                    if (_socketAddressComparer.Equals(address, _except))
                     {
                         continue;
                     }

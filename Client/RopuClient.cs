@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Ropu.Logging;
+using Ropu.Protocol;
 using Ropu.Shared;
 
 namespace Ropu.Client;
@@ -27,25 +28,41 @@ public class RopuClient
         _routerClient = routerClient;
         _routerClient.UnknownRecipient += OnUnknownRecipient;
         _routerClient.SetIndividualMessageHandler(OnIndividualMessage);
-        _routerClient.GroupSubscribeReponse += OnGroupSubscribeReponse;
+        _routerClient.SetGroupMessageHandler(OnGroupMessage);
+        _routerClient.GroupSubscribeResponse += OnGroupSubscribeResponse;
         _logger = logger.ForContext(nameof(RopuClient));
     }
 
-    void OnGroupSubscribeReponse(object? sender, EventArgs e)
+    void OnGroupSubscribeResponse(object? sender, EventArgs e)
     {
         _groupsSubscribed.Value = true;
+        while (_subscribeCompletions.TryTake(out var subscribeCompletions))
+        {
+            subscribeCompletions.SetResult();
+        }
     }
 
-    IndividualMessageHandler? _individualMessageHandler;
+    MessageHandler? _individualMessageHandler;
+    MessageHandler? _groupMessageHandler;
 
-    public void SetIndividualMessageHandler(IndividualMessageHandler? handler)
+    public void SetIndividualMessageHandler(MessageHandler? handler)
     {
         _individualMessageHandler = handler;
+    }
+
+    public void SetGroupMessageHandler(MessageHandler? handler)
+    {
+        _groupMessageHandler = handler;
     }
 
     void OnIndividualMessage(Span<byte> message)
     {
         _individualMessageHandler?.Invoke(message);
+    }
+
+    void OnGroupMessage(Span<byte> message)
+    {
+        _groupMessageHandler?.Invoke(message);
     }
 
     public Guid UnitId => _clientId;
@@ -90,8 +107,13 @@ public class RopuClient
             _groupsSubscribed.Value = false;
 
 
-            while (!cancellationToken.IsCancellationRequested && _routerClient.SendHeartbeat())
+            while (!cancellationToken.IsCancellationRequested)
             {
+                if (!_routerClient.SendHeartbeat())
+                {
+                    _logger.Debug("SendHeartbeat failed");
+                    break;
+                }
                 Thread.Sleep(_heartbeatInterval);
                 lock (_groupsLock)
                 {
@@ -148,6 +170,11 @@ public class RopuClient
         return true;
     }
 
+    public void SendToGroup(Guid groupId, GroupMessageType messageType, Memory<byte> data)
+    {
+        _routerClient.SendToGroup(groupId, messageType, data.Span);
+    }
+
     readonly Guid[] _groupGuids = new Guid[2000];
     List<Group> _groups = new();
     readonly ThreadSafeBool _groupsSubscribed = new();
@@ -173,6 +200,25 @@ public class RopuClient
         }
 
         _routerClient.SendSubscribeGroups(_groupGuids.AsSpan(0, _groups.Count));
+    }
+
+    ConcurrentBag<TaskCompletionSource> _subscribeCompletions = new();
+
+    public async Task<bool> WaitForSubscribeGroups()
+    {
+        var completionSource = new TaskCompletionSource();
+        _subscribeCompletions.Add(completionSource);
+
+        if (_groupsSubscribed.Value)
+        {
+            return true;
+        }
+        var completedTask = await Task.WhenAny(completionSource.Task, Task.Delay(2000));
+        if (completedTask == completionSource.Task)
+        {
+            return true;
+        }
+        return false;
     }
 
     public void SendGroupMessage(Group group, Span<byte> payload)

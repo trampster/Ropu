@@ -39,7 +39,7 @@ consider the Distributor offline and no longer assign clients to it.
 | Bytes    | Field               | Description                              |
 | -------- | ------------------- | -----------------------------------------|
 | 0        | Packet Identifier   | 0x03                                     |
-| 1-2      | Distributor ID      | Unique identifier for distrubuted        |
+| 1-2      | Distributor ID      | Unique identifier for distributor        |
 | 3-4      | Registered Users    | Number of registered users               |
 
 ## Heartbeat Response Packet
@@ -59,7 +59,7 @@ Request by a Client to be assigned to a router
 | 1-16     | Client ID           | ID of client (GUID)                      |
 
 ## Router Assignment
-Response to a router assignement request specifying the router to use
+Response to a router assignment request specifying the router to use
 
 | Bytes    | Field               | Description                              |
 | -------- | ------------------- | -----------------------------------------|
@@ -70,13 +70,13 @@ Response to a router assignement request specifying the router to use
 ## Register Distributor Packet
 Sent by a Distributor to register with the Balancer
 
-| Bytes    | Field               | Description                              |
-| -------- | ------------------- | -----------------------------------------|
-| 0        | Packet Identifier   | 0x07                                     |
-| 1-2      | Distributor Port    | Public port of distributor               |
-| 3-6      | Distributor IP Address | Public IPv4 address of distributor    |
-| 7-8      | Capacity            | Number of routers it can distribute to   | 
-|          |                     | in 20 ms.                                |
+| Bytes    | Field                  | Description                              |
+| -------- | ---------------------- | -----------------------------------------|
+| 0        | Packet Identifier      | 0x07                                     |
+| 1-2      | Distributor Port       | Public port of distributor               |
+| 3-6      | Distributor IP Address | Public IPv4 address of distributor       |
+| 7-8      | Capacity               | Number of routers it can distribute to   | 
+|          |                        | in 20 ms.                                |
 
 ## Register Distributor Response Packet
 Sent by the Balancer to acknowledge Router registration
@@ -127,7 +127,7 @@ Routers/distributors should send this if they miss a sequence number.
 | 0        | Packet Identifier        | 0x0C                                     |
 
 # Router Protocol
-This is the protocol used for comunication from clients to the router and from distributors to routers
+This is the protocol used for communication from clients to the router and from distributors to routers
 
 ## Register Client
 Sent by the client to register with the Router
@@ -189,7 +189,7 @@ Request to send a packet to a group
 TODO: add stream vs on off to this packet
 
 ## Group Message Failure Response
-Request to send a packet to a group
+Failed to send a packet to a group
 
 | Bytes    | Field               | Description                              |
 | -------- | ------------------- | -----------------------------------------|

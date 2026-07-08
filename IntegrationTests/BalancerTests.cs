@@ -5,6 +5,7 @@ using Ropu.IntergrationTests;
 using Ropu.Logging;
 using Ropu.Router;
 using Ropu.Shared;
+using System.Security.Cryptography;
 
 namespace IntegrationTests;
 
@@ -116,7 +117,75 @@ public class BalancerTests
     }
 
     [Test]
-    public async Task Dispatchers_Nine_RouterLearnsOfDistributors()
+    public async Task Clients_Three_CanSendGroupMessage()
+    {
+        using var system = new TestSystem(2, 3, 2, new Logger(LogLevel.Debug));
+        system.Start();
+
+        try
+        {
+            // arrange
+
+            var clients = system.Clients;
+
+            await system.WaitForClientsToConnect();
+
+            var client0 = clients[0].Service;
+            var client1 = clients[1].Service;
+            var client2 = clients[2].Service;
+
+            var group = new Ropu.Client.Group()
+            {
+                Name = "Group1",
+                Guid = Guid.NewGuid()
+            };
+
+            foreach (var client in clients)
+            {
+                client.Service.SubscribeGroups([group]);
+                Assert.That(await client.Service.WaitForSubscribeGroups(), "SubscribeGroups timed out");
+            }
+
+            byte[] messageBuffer1 = new byte[1024];
+            int messageLength1 = 0;
+            TaskCompletionSource messageReceived1 = new();
+            client1.SetGroupMessageHandler(message =>
+            {
+                messageLength1 = message.Length;
+                message.CopyTo(messageBuffer1);
+                messageReceived1.SetResult();
+            });
+
+            byte[] messageBuffer2 = new byte[1024];
+            int messageLength2 = 0;
+            TaskCompletionSource messageReceived2 = new();
+            client2.SetGroupMessageHandler(message =>
+            {
+                messageLength2 = message.Length;
+                message.CopyTo(messageBuffer2);
+                messageReceived2.SetResult();
+            });
+
+            var expectedMessage = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+            // act
+            client0.SendToGroup(group.Guid, GroupMessageType.OneOff, expectedMessage.AsMemory());
+
+            // assert
+            Assert.That(await messageReceived1.Task.WaitOneAsync(TimeSpan.FromSeconds(5)), Is.True, "client1 didn't receive group message");
+            Assert.That(messageBuffer1.AsSpan(0, messageLength1).ToArray(), Is.EquivalentTo(expectedMessage));
+
+            Assert.That(await messageReceived2.Task.WaitOneAsync(TimeSpan.FromSeconds(5)), Is.True, "client2 didn't receive group message");
+            Assert.That(messageBuffer2.AsSpan(0, messageLength2).ToArray(), Is.EquivalentTo(expectedMessage));
+        }
+        finally
+        {
+            system.Stop();
+        }
+    }
+
+    [Test]
+    public async Task Routers_Nine_RouterLearnsOfDistributors()
     {
         // arrange
         using var system = new TestSystem(9, 2, 2, new Logger(LogLevel.Debug));

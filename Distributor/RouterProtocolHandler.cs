@@ -89,18 +89,20 @@ public class RouterProtocolHandler
         _spareCapacity = capacity;
         _logger = logger.ForContext(nameof(RouterProtocolHandler));
         _routerPacketFactory = new RouterPacketFactory();
+
+        _streamExpiryCheck = DateTime.Now + StreamTimeout;
     }
 
     Guid[] _groupsBuffer = new Guid[10000];
     readonly Dictionary<Guid, Group> _groups = new();
-    readonly Dictionary<SocketAddress, GroupSubscriptions> _routersGroups = new();
+    readonly Dictionary<SocketAddress, GroupSubscriptions> _routersGroups = new(new SocketAddressComparer());
     readonly SocketAddressList _routers = new(2000);
 
     public void HandleSubscribeGroupsRequest(Span<byte> packet, SocketAddress from)
     {
         if (!_routerPacketFactory.TryParseSubscribeGroupsRequest(packet, _groupsBuffer, out Span<Guid> groups))
         {
-            _logger.Warning("Failed to parse subscibe group request packet");
+            _logger.Warning("Failed to parse subscribe group request packet");
             return;
         }
 
@@ -119,6 +121,8 @@ public class RouterProtocolHandler
         else
         {
             _routers.Add(from);
+            var capacityPacket = _routerPacketFactory.BuildDistributorCapacityPacket(_sendBuffer, (ushort)_spareCapacity);
+            _socket.SendTo(capacityPacket.Span, from);
         }
 
         // add new groups
@@ -173,7 +177,7 @@ public class RouterProtocolHandler
 
             if (group.IsStreaming)
             {
-                // Number of recipents could have changed since last packet update
+                // Number of recipients could have changed since last packet update
                 // the space capacity
                 _spareCapacity += group.Subscribers.Length - group.StreamNumber;
             }
@@ -211,29 +215,29 @@ public class RouterProtocolHandler
         _capacityBeforePacket = _spareCapacity;
         if (_streamExpiryCheck + StreamTimeout < DateTime.UtcNow)
         {
-            foreach (var subsciption in _routersGroups.Values)
+            foreach (var subscription in _routersGroups.Values)
             {
-                if (!subsciption.Current)
+                if (!subscription.Current)
                 {
                     //remove
-                    _toRemove.Add(subsciption.RouterAddress);
-                    foreach (var group in subsciption.Groups)
+                    _toRemove.Add(subscription.RouterAddress);
+                    foreach (var group in subscription.Groups)
                     {
                         if (_groups.TryGetValue(group, out Group? groupSubscribers))
                         {
-                            groupSubscribers.Subscribers.Remove(subsciption.RouterAddress);
+                            groupSubscribers.Subscribers.Remove(subscription.RouterAddress);
                             if (groupSubscribers.Subscribers.Length == 0)
                             {
                                 _groups.Remove(group);
                             }
                         }
                     }
-                    _routers.Remove(subsciption.RouterAddress);
+                    _routers.Remove(subscription.RouterAddress);
                     continue;
                 }
                 // set to false, if it still false on the next check it means
                 // the it didn't resubscribe
-                subsciption.Current = false;
+                subscription.Current = false;
             }
             foreach (var toRemove in _toRemove)
             {
@@ -260,7 +264,7 @@ public class RouterProtocolHandler
 
         if (_capacityBeforePacket != _spareCapacity)
         {
-            // inform routers of space capacity change
+            // inform routers of spare capacity change
             var packet = _routerPacketFactory.BuildDistributorCapacityPacket(_sendBuffer, (ushort)_spareCapacity);
             _socket.SendBulk(_sendBuffer.AsMemory(0, packet.Length), _routers.AsMemory(), null);
         }

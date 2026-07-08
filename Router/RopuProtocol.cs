@@ -53,7 +53,7 @@ public class RopuProtocol
                         _routerClient.HandleHeartbeatPacket(socketAddress);
                         break;
                     case (byte)PacketTypes.IndividualMessage:
-                        _routerClient.HandleIndivdiualMessage(_receiveBuffer.AsSpan(0, received), socketAddress);
+                        _routerClient.HandleIndividualMessage(_receiveBuffer.AsSpan(0, received), socketAddress);
                         break;
                     case (byte)PacketTypes.SubscribeGroupsRequest:
                         _routerClient.HandleSubscribeGroupsRequest(_receiveBuffer.AsSpan(0, received), socketAddress);

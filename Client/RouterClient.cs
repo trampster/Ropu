@@ -5,7 +5,7 @@ using Ropu.Protocol;
 
 namespace Ropu.Client;
 
-public delegate void IndividualMessageHandler(Span<byte> message);
+public delegate void MessageHandler(Span<byte> message);
 
 public class RouterClient
 {
@@ -75,6 +75,17 @@ public class RouterClient
         _socket.SendTo(packet, SocketFlags.None, router);
     }
 
+    public void SendToGroup(Guid groupId, GroupMessageType messageType, Span<byte> data)
+    {
+        if (RouterAddress == null)
+        {
+            throw new InvalidOperationException("You must set a router address before calling SendHeartbeat");
+        }
+        var packet = _routerPacketFactory.BuildGroupMessagePacket(Buffer, groupId, messageType, data);
+        _logger.Debug("SendingToGroup");
+        _socket.SendTo(packet, SocketFlags.None, RouterAddress);
+    }
+
     public Task RunReceiveAsync(CancellationToken cancellationToken)
     {
         var taskFactory = new TaskFactory();
@@ -103,7 +114,7 @@ public class RouterClient
                             _logger.Debug("Received register response");
                             _registerResponseEvent.Set();
                             break;
-                        case (byte)PacketTypes.ClientHeartbeat:
+                        case (byte)PacketTypes.ClientHeartbeatResponse:
                             _heartbeatResponseEvent.Set();
                             break;
                         case (byte)PacketTypes.UnknownRecipient:
@@ -111,6 +122,9 @@ public class RouterClient
                             break;
                         case (byte)PacketTypes.IndividualMessage:
                             HandleIndividualMessage(_receiveBuffer.AsSpan(0, received));
+                            break;
+                        case (byte)PacketTypes.GroupMessage:
+                            HandleGroupMessage(_receiveBuffer.AsSpan(0, received));
                             break;
                         case (byte)PacketTypes.SubscribeGroupsResponse:
                             HandleSubscribeGroupsResponse(_receiveBuffer.AsSpan(0, received));
@@ -123,27 +137,45 @@ public class RouterClient
             }
             catch (Exception exception)
             {
-                _logger.Warning($"Exception occured in RunReceive {exception.ToString()}");
+                _logger.Warning($"Exception occurred in RunReceive {exception.ToString()}");
                 throw;
             }
         }
     }
 
-    IndividualMessageHandler? _individualMessageHandler;
+    MessageHandler? _individualMessageHandler;
 
-    public void SetIndividualMessageHandler(IndividualMessageHandler? handler)
+    public void SetIndividualMessageHandler(MessageHandler? handler)
     {
         _individualMessageHandler = handler;
+    }
+
+    MessageHandler? _groupMessageHandler;
+
+    public void SetGroupMessageHandler(MessageHandler? handler)
+    {
+        _groupMessageHandler = handler;
     }
 
     void HandleIndividualMessage(Span<byte> packet)
     {
         if (!_routerPacketFactory.TryParseIndividualMessagePacket(packet, out Guid clientId, out Span<byte> payload))
         {
-            _logger.Warning("Could not parse individual message1");
+            _logger.Warning("Could not parse individual message");
             return;
         }
         _individualMessageHandler?.Invoke(payload);
+    }
+
+    void HandleGroupMessage(Span<byte> packet)
+    {
+        if (!_routerPacketFactory.TryParseGroupMessagePacket(packet, out Guid groupId, out GroupMessageType groupMessageType, out Span<byte> payload))
+        {
+            _logger.Warning("Could not parse group message");
+            return;
+        }
+        _logger.Debug("Received group message");
+        _groupMessageHandler?.Invoke(payload);
     }
 
     public event EventHandler<Guid>? UnknownRecipient;
@@ -152,7 +184,7 @@ public class RouterClient
     {
         if (!_routerPacketFactory.TryParseUnknownRecipientPacket(packet, out Guid clientId))
         {
-            _logger.Warning("Failed to parse Unknown Recipient pakcet");
+            _logger.Warning("Failed to parse Unknown Recipient packet");
             return;
         }
         UnknownRecipient?.Invoke(this, clientId);
@@ -165,14 +197,15 @@ public class RouterClient
             throw new InvalidOperationException("You must set a router address before calling SubscribeGroups");
         }
         var packet = _routerPacketFactory.BuildSubscribeGroupsRequest(Buffer, groups);
+        _logger.Debug("Sending SubscribeGroups");
         _socket.SendTo(packet, SocketFlags.None, RouterAddress);
     }
 
-    public event EventHandler? GroupSubscribeReponse;
+    public event EventHandler? GroupSubscribeResponse;
 
     void HandleSubscribeGroupsResponse(Span<byte> span)
     {
-        GroupSubscribeReponse?.Invoke(this, EventArgs.Empty);
+        GroupSubscribeResponse?.Invoke(this, EventArgs.Empty);
     }
 
     public void SendGroupMessage(Guid groupId, GroupMessageType groupMessageType, Span<byte> payload)

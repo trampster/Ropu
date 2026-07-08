@@ -290,7 +290,7 @@ public class Listener : IDisposable
         _socket.SendTo(registerResponsePacket, SocketFlags.None, receivedEndPoint);
     }
 
-    void HandleRegisterDistributor(int recieved, SocketAddress fromAddress)
+    void HandleRegisterDistributor(int received, SocketAddress fromAddress)
     {
         _logger.Debug("RegisterDistributor packet received");
         var distributor = _distributors.FindNextUnused();
@@ -299,7 +299,7 @@ public class Listener : IDisposable
             //TODO: max capacity reached, need to tell router to back off
             return;
         }
-        if (!_balancerPacketFactory.TryParseRegisterDistributorPacket(_buffer.AsSpan(0, recieved), distributor.Address, out ushort? capacity))
+        if (!_balancerPacketFactory.TryParseRegisterDistributorPacket(_buffer.AsSpan(0, received), distributor.Address, out ushort? capacity))
         {
             _logger.Warning($"Failed to parse RegisterDistributor packet");
             return;

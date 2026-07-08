@@ -36,7 +36,7 @@ public class DistributorsManager
     // These are distributors we have sent subscriptions to but havn't recieved responses
     readonly SocketAddressList _notSubscribedDistributors = new(2000);
 
-    readonly Dictionary<SocketAddress, Distributor> _lookup = new();
+    readonly Dictionary<SocketAddress, Distributor> _lookup = new(new SocketAddressComparer());
     readonly UnorderedList<Distributor> _distributors = new(2000);
 
     public DistributorsManager(ILogger logger)
@@ -96,7 +96,7 @@ public class DistributorsManager
         DistributorsChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    public void ClearSubsciptions()
+    public void ClearSubscriptions()
     {
         _notSubscribedDistributors.Clear();
     }
@@ -187,5 +187,10 @@ public class DistributorsManager
             return null;
         }
         return candidateDistributor.Address;
+    }
+
+    public bool IsDistributor(SocketAddress socketAddress)
+    {
+        return _lookup.ContainsKey(socketAddress);
     }
 }

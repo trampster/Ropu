@@ -37,34 +37,35 @@ public class RopuProtocol
         {
             var socketAddress = new SocketAddress(AddressFamily.InterNetworkV6);
             var received = _socket.ReceiveFrom(socketAddress, _receiveBuffer);
-            if (received != 0)
+            if (received == 0)
             {
-                _routerClient.OnBeforePacket();
-                switch (_receiveBuffer[0])
-                {
-                    // Balancer Packets
-                    case (byte)PacketTypes.RegisterDistributorResponse:
-                        _balancerClient.HandleRegisterDistributorResponse(_receiveBuffer.AsSpan(0, received));
-                        break;
-                    case (byte)PacketTypes.BalancerHeartbeatResponse:
-                        _balancerClient.HandleBalancerHeartbeatResponse();
-                        break;
-                    case (byte)PacketTypes.DistributorList:
-                        _balancerClient.HandleDistributorList(_receiveBuffer.AsSpan(0, received));
-                        break;
-                    default:
-                        _logger.Warning($"Received unknown packet type: {_receiveBuffer[0]}");
-                        break;
-                    // Router Packets
-                    case (byte)PacketTypes.SubscribeGroupsRequest:
-                        _routerClient.HandleSubscribeGroupsRequest(_receiveBuffer.AsSpan(0, received), socketAddress);
-                        break;
-                    case (byte)PacketTypes.GroupMessage:
-                        _routerClient.HandleGroupMessage(_receiveBuffer.AsSpan(0, received), socketAddress);
-                        break;
-                }
-                _routerClient.OnAfterPacket();
+                continue;
             }
+            _routerClient.OnBeforePacket();
+            switch (_receiveBuffer[0])
+            {
+                // Balancer Packets
+                case (byte)PacketTypes.RegisterDistributorResponse:
+                    _balancerClient.HandleRegisterDistributorResponse(_receiveBuffer.AsSpan(0, received));
+                    break;
+                case (byte)PacketTypes.BalancerHeartbeatResponse:
+                    _balancerClient.HandleBalancerHeartbeatResponse();
+                    break;
+                case (byte)PacketTypes.DistributorList:
+                    _balancerClient.HandleDistributorList(_receiveBuffer.AsSpan(0, received));
+                    break;
+                default:
+                    _logger.Warning($"Received unknown packet type: {_receiveBuffer[0]}");
+                    break;
+                // Router Packets
+                case (byte)PacketTypes.SubscribeGroupsRequest:
+                    _routerClient.HandleSubscribeGroupsRequest(_receiveBuffer.AsSpan(0, received), socketAddress);
+                    break;
+                case (byte)PacketTypes.GroupMessage:
+                    _routerClient.HandleGroupMessage(_receiveBuffer.AsSpan(0, received), socketAddress);
+                    break;
+            }
+            _routerClient.OnAfterPacket();
         }
     }
 }
