@@ -270,7 +270,10 @@ public class RouterListener : IDistributorsListener
         client.Address.CopyFrom(socketAddress);
         _addressBook[clientId] = client;
         _logger.Debug($"Client registered {clientId.ToString()} Address {client.Address}");
-        _addresses.Add(client.Address, client);
+        if (!_addresses.TryAdd(client.Address, client))
+        {
+            _logger.Warning("Received Client Registration for client that's already registered");
+        }
         var response = _routerPacketFactory.BuildRegisterClientResponse(_sendBuffer);
         _socket.SendTo(response, socketAddress);
     }
