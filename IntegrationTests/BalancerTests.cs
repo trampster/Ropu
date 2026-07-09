@@ -94,13 +94,16 @@ public class BalancerTests
 
         byte[] messageBuffer = new byte[1024];
         int messageLength = 0;
-
         TaskCompletionSource messageReceived = new();
+        Guid fromId = Guid.Empty;
+        Guid toId = Guid.Empty;
 
-        client1.SetIndividualMessageHandler(message =>
+        client1.SetIndividualMessageHandler((fromClientId, toClientId, message) =>
         {
             messageLength = message.Length;
             message.CopyTo(messageBuffer);
+            fromId = fromClientId;
+            toId = toClientId;
             messageReceived.SetResult();
         });
 
@@ -112,6 +115,8 @@ public class BalancerTests
         // assert
         Assert.That(await messageReceived.Task.WaitOneAsync(TimeSpan.FromSeconds(5)), Is.True);
         Assert.That(messageBuffer.AsSpan(0, messageLength).ToArray(), Is.EquivalentTo(expectedMessage));
+        Assert.That(fromId, Is.EqualTo(client0.UnitId));
+        Assert.That(toId, Is.EqualTo(client1.UnitId));
 
         system.Stop();
     }
@@ -149,20 +154,30 @@ public class BalancerTests
             byte[] messageBuffer1 = new byte[1024];
             int messageLength1 = 0;
             TaskCompletionSource messageReceived1 = new();
-            client1.SetGroupMessageHandler(message =>
+            Guid fromId1 = Guid.Empty;
+            Guid toId1 = Guid.Empty;
+
+            client1.SetGroupMessageHandler((fromUintId, toGroupId, message) =>
             {
                 messageLength1 = message.Length;
                 message.CopyTo(messageBuffer1);
+                fromId1 = fromUintId;
+                toId1 = toGroupId;
                 messageReceived1.SetResult();
             });
 
             byte[] messageBuffer2 = new byte[1024];
             int messageLength2 = 0;
             TaskCompletionSource messageReceived2 = new();
-            client2.SetGroupMessageHandler(message =>
+            Guid fromId2 = Guid.Empty;
+            Guid toId2 = Guid.Empty;
+
+            client2.SetGroupMessageHandler((fromUintId, toGroupId, message) =>
             {
                 messageLength2 = message.Length;
                 message.CopyTo(messageBuffer2);
+                fromId2 = fromUintId;
+                toId2 = toGroupId;
                 messageReceived2.SetResult();
             });
 
@@ -174,9 +189,13 @@ public class BalancerTests
             // assert
             Assert.That(await messageReceived1.Task.WaitOneAsync(TimeSpan.FromSeconds(5)), Is.True, "client1 didn't receive group message");
             Assert.That(messageBuffer1.AsSpan(0, messageLength1).ToArray(), Is.EquivalentTo(expectedMessage));
+            Assert.That(fromId1, Is.EqualTo(client0.UnitId));
+            Assert.That(toId1, Is.EqualTo(group.Guid));
 
             Assert.That(await messageReceived2.Task.WaitOneAsync(TimeSpan.FromSeconds(5)), Is.True, "client2 didn't receive group message");
             Assert.That(messageBuffer2.AsSpan(0, messageLength2).ToArray(), Is.EquivalentTo(expectedMessage));
+            Assert.That(fromId2, Is.EqualTo(client0.UnitId));
+            Assert.That(toId2, Is.EqualTo(group.Guid));
         }
         finally
         {

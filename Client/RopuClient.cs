@@ -55,14 +55,14 @@ public class RopuClient
         _groupMessageHandler = handler;
     }
 
-    void OnIndividualMessage(Span<byte> message)
+    void OnIndividualMessage(Guid fromClientId, Guid toClientId, Span<byte> message)
     {
-        _individualMessageHandler?.Invoke(message);
+        _individualMessageHandler?.Invoke(fromClientId, toClientId, message);
     }
 
-    void OnGroupMessage(Span<byte> message)
+    void OnGroupMessage(Guid fromClientId, Guid groupId, Span<byte> message)
     {
-        _groupMessageHandler?.Invoke(message);
+        _groupMessageHandler?.Invoke(fromClientId, groupId, message);
     }
 
     public Guid UnitId => _clientId;
@@ -166,13 +166,13 @@ public class RopuClient
 
             _addressLookup[unitId] = routerAddress;
         }
-        _routerClient.SendToClient(unitId, routerAddress, data.Span);
+        _routerClient.SendToClient(_clientId, unitId, routerAddress, data.Span);
         return true;
     }
 
     public void SendToGroup(Guid groupId, GroupMessageType messageType, Memory<byte> data)
     {
-        _routerClient.SendToGroup(groupId, messageType, data.Span);
+        _routerClient.SendToGroup(_clientId, groupId, messageType, data.Span);
     }
 
     readonly Guid[] _groupGuids = new Guid[2000];
@@ -223,6 +223,6 @@ public class RopuClient
 
     public void SendGroupMessage(Group group, Span<byte> payload)
     {
-        _routerClient.SendGroupMessage(group.Guid, Protocol.GroupMessageType.OneOff, payload);
+        _routerClient.SendGroupMessage(_clientId, group.Guid, Protocol.GroupMessageType.OneOff, payload);
     }
 }

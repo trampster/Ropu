@@ -240,9 +240,9 @@ public class RouterListener : IDistributorsListener
     public void HandleIndividualMessage(Span<byte> packet, SocketAddress socketAddress)
     {
         _logger.Information("Received Individual Message");
-        if (!_routerPacketFactory.TryParseUnitIdFromIndividualMessagePacket(packet, out Guid unitId))
+        if (!_routerPacketFactory.TryParseToUnitIdFromIndividualMessagePacket(packet, out Guid unitId))
         {
-            _logger.Warning("Could not parse Individual Message2");
+            _logger.Warning("Could not parse Individual Message");
             return;
         }
 
@@ -302,7 +302,7 @@ public class RouterListener : IDistributorsListener
 
     public void HandleGroupMessage(Span<byte> packet, SocketAddress socketAddress)
     {
-        if (!_routerPacketFactory.TryParseGroupMessagePacket(packet, out Guid groupId, out GroupMessageType groupMessageType, out Span<byte> payload))
+        if (!_routerPacketFactory.TryParseGroupMessagePacket(packet, out Guid _, out Guid groupId, out GroupMessageType groupMessageType, out Span<byte> payload))
         {
             _logger.Warning($"Failed to parse Group Message Packet");
             return;

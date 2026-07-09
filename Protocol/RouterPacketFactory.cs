@@ -27,77 +27,83 @@ public class RouterPacketFactory
         return buffer.AsSpan(0, 1);
     }
 
-    public Span<byte> BuildIndividualMessagePacket(byte[] buffer, Guid clientId, Span<byte> payload)
+    public Span<byte> BuildIndividualMessagePacket(byte[] buffer, Guid fromClientId, Guid toClientId, Span<byte> payload)
     {
         buffer[0] = (byte)PacketTypes.IndividualMessage;
-        clientId.TryWriteBytes(buffer.AsSpan(1, 16));
+        fromClientId.TryWriteBytes(buffer.AsSpan(1, 16));
+        toClientId.TryWriteBytes(buffer.AsSpan(17, 16));
 
-        payload.CopyTo(buffer.AsSpan(17));
+        payload.CopyTo(buffer.AsSpan(33));
 
-        return buffer.AsSpan(0, 17 + payload.Length);
+        return buffer.AsSpan(0, 33 + payload.Length);
     }
 
-    public bool TryParseIndividualMessagePacket(Span<byte> packet, out Guid clientId, out Span<byte> payload)
+    public bool TryParseIndividualMessagePacket(Span<byte> packet, out Guid fromClientId, out Guid toClientId, out Span<byte> payload)
     {
-        if (packet.Length < 17)
+        if (packet.Length < 34)
         {
-            clientId = Guid.Empty;
+            fromClientId = Guid.Empty;
+            toClientId = Guid.Empty;
             payload = [];
             return false;
         }
 
-        clientId = new Guid(packet.Slice(1, 16));
-        payload = packet.Slice(17);
+        fromClientId = new Guid(packet.Slice(1, 16));
+        toClientId = new Guid(packet.Slice(17, 16));
+        payload = packet.Slice(33);
         return true;
     }
 
     public Span<byte> BuildGroupMessagePacket(
         byte[] buffer,
+        Guid fromClientId,
         Guid groupId,
         GroupMessageType groupMessageType,
         Span<byte> payload)
     {
         buffer[0] = (byte)PacketTypes.GroupMessage;
-        groupId.TryWriteBytes(buffer.AsSpan(1, 16));
+        fromClientId.TryWriteBytes(buffer.AsSpan(1, 16));
+        groupId.TryWriteBytes(buffer.AsSpan(17, 16));
 
-        buffer[17] = (byte)groupMessageType;
+        buffer[33] = (byte)groupMessageType;
 
-        payload.CopyTo(buffer.AsSpan(18));
-        buffer[0] = (byte)PacketTypes.GroupMessage;
+        payload.CopyTo(buffer.AsSpan(34));
 
-
-        return buffer.AsSpan(0, 18 + payload.Length);
+        return buffer.AsSpan(0, 34 + payload.Length);
     }
 
     public bool TryParseGroupMessagePacket(
         Span<byte> packet,
+        out Guid fromClientId,
         out Guid groupId,
         out GroupMessageType groupMessageType,
         out Span<byte> payload)
     {
         if (packet.Length < 18)
         {
+            fromClientId = Guid.Empty;
             groupId = Guid.Empty;
             payload = [];
             groupMessageType = GroupMessageType.OneOff;
             return false;
         }
 
-        groupId = new Guid(packet.Slice(1, 16));
-        groupMessageType = (GroupMessageType)packet[17];
-        payload = packet.Slice(18);
+        fromClientId = new Guid(packet.Slice(1, 16));
+        groupId = new Guid(packet.Slice(17, 16));
+        groupMessageType = (GroupMessageType)packet[33];
+        payload = packet.Slice(34);
         return true;
     }
 
-    public bool TryParseUnitIdFromIndividualMessagePacket(Span<byte> packet, out Guid clientId)
+    public bool TryParseToUnitIdFromIndividualMessagePacket(Span<byte> packet, out Guid clientId)
     {
-        if (packet.Length < 17)
+        if (packet.Length < 33)
         {
             clientId = Guid.Empty;
             return false;
         }
 
-        clientId = new Guid(packet.Slice(1, 16));
+        clientId = new Guid(packet.Slice(17, 16));
         return true;
     }
 

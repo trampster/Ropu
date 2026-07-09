@@ -159,7 +159,7 @@ public class RouterProtocolHandler
 
     public void HandleGroupMessage(Span<byte> packet, SocketAddress from)
     {
-        if (!_routerPacketFactory.TryParseGroupMessagePacket(packet, out Guid groupId, out GroupMessageType groupMessageType, out Span<byte> payload))
+        if (!_routerPacketFactory.TryParseGroupMessagePacket(packet, out Guid _, out Guid groupId, out GroupMessageType groupMessageType, out Span<byte> payload))
         {
             _logger.Warning("Failed to parse group message");
             return;

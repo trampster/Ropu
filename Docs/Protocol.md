@@ -151,8 +151,9 @@ Request to send a packet to a client registered with the router
 | Bytes    | Field               | Description                              |
 | -------- | ------------------- | -----------------------------------------|
 | 0        | Packet Identifier   | 0x0F                                     |
-| 1-16     | Client ID           | Client to send packet to                 |
-| 17-X     | Payload             | Payload to send to client                |
+| 1-16     | From Unit ID        | Unit to send packet to                 |
+| 17-32    | To Unit ID          | Unit to send packet to                 |
+| 33-X     | Payload             | Payload to send to client                |
 
 ## Unknown Recipient
 Response to a 'Send to Client' request when the recipient is not registered with the router.
@@ -182,9 +183,10 @@ Request to send a packet to a group
 | Bytes    | Field               | Description                              |
 | -------- | ------------------- | -----------------------------------------|
 | 0        | Packet Identifier   | 0x13                                     |
-| 1-16     | Group ID            | Group (GUID) to send packet to           |
-| 17       | Group Message Type  | 0 = one off, 1 = stream                  |  
-| 18-X     | Payload             | Payload to send to client                |
+| 1-16     | From Client ID      | Client message is from                   |
+| 17-32    | Group ID            | Group (GUID) to send packet to           |
+| 33       | Group Message Type  | 0 = one off, 1 = stream                  |  
+| 34-X     | Payload             | Payload to send to client                |
 
 TODO: add stream vs on off to this packet
 
