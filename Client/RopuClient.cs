@@ -80,7 +80,6 @@ public class RopuClient
 
         var routerClientTask = _routerClient.RunReceiveAsync(cancellationToken);
         var balancerClientTask = _balancerClient.RunReceiveAsync(cancellationToken);
-        var receiveTask = _routerClient.RunReceiveAsync(cancellationToken);
         var manageConnectionTask = Task.Run(() => ManageConnection(cancellationToken));
         return TaskHelpers.RunTasksAsync(routerClientTask, balancerClientTask, manageConnectionTask);
     }

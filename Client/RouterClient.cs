@@ -174,7 +174,6 @@ public class RouterClient
             _logger.Warning("Could not parse group message");
             return;
         }
-        _logger.Debug("Received group message");
         _groupMessageHandler?.Invoke(fromClientId, groupId, payload);
     }
 

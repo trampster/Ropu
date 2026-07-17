@@ -204,6 +204,107 @@ public class BalancerTests
     }
 
     [Test]
+    public async Task Clients_Three_CanStreamSendGroupMessage()
+    {
+        using var system = new TestSystem(2, 3, 2, new Logger(LogLevel.Debug));
+        system.Start();
+
+        try
+        {
+            // arrange
+
+            var clients = system.Clients;
+
+            await system.WaitForClientsToConnect();
+
+            var client0 = clients[0].Service;
+            var client1 = clients[1].Service;
+            var client2 = clients[2].Service;
+
+            var group = new Ropu.Client.Group()
+            {
+                Name = "Group1",
+                Guid = Guid.NewGuid()
+            };
+
+            foreach (var client in clients)
+            {
+                client.Service.SubscribeGroups([group]);
+                Assert.That(await client.Service.WaitForSubscribeGroups(), "SubscribeGroups timed out");
+            }
+
+            List<(Guid FromId, Guid ToGroupId, byte[] Message)> client1ReceivedMessages = new();
+            TaskCompletionSource messagesReceived1 = new();
+
+            const int streamLength = 100;
+
+            object listLock = new();
+
+            client1.SetGroupMessageHandler((fromUintId, toGroupId, message) =>
+            {
+                lock (listLock)
+                {
+                    client1ReceivedMessages.Add((fromUintId, toGroupId, message.ToArray()));
+                    if (client1ReceivedMessages.Count == streamLength)
+                    {
+                        messagesReceived1.SetResult();
+                    }
+                }
+            });
+
+
+            List<(Guid FromId, Guid ToGroupId, byte[] Message)> client2ReceivedMessages = new();
+            TaskCompletionSource messagesReceived2 = new();
+
+            client2.SetGroupMessageHandler((fromUintId, toGroupId, message) =>
+            {
+                lock (listLock)
+                {
+                    client2ReceivedMessages.Add((fromUintId, toGroupId, message.ToArray()));
+                    if (client2ReceivedMessages.Count == streamLength)
+                    {
+                        messagesReceived2.SetResult();
+
+                    }
+                }
+            });
+
+            var expectedMessage = new byte[1];
+
+            // act
+            for (int index = 0; index < streamLength; index++)
+            {
+                expectedMessage[0] = (byte)index;
+                client0.SendToGroup(group.Guid, GroupMessageType.Stream, expectedMessage.AsMemory());
+            }
+
+            // assert
+            Assert.That(await messagesReceived1.Task.WaitOneAsync(TimeSpan.FromSeconds(10)), Is.True, $"client1 didn't receive group message stream, messages {client1ReceivedMessages.Count}");
+            Assert.That(await messagesReceived2.Task.WaitOneAsync(TimeSpan.FromSeconds(10)), Is.True, $"client2 didn't receive group message stream, messages {client2ReceivedMessages.Count}");
+
+            lock (listLock)
+            {
+                for (int index = 0; index < streamLength; index++)
+                {
+                    Assert.That(client1ReceivedMessages[index].FromId, Is.EqualTo(client0.UnitId));
+                    Assert.That(client1ReceivedMessages[index].ToGroupId, Is.EqualTo(group.Guid));
+                    Assert.That(client1ReceivedMessages[index].Message.Length, Is.EqualTo(1));
+                    Assert.That(client1ReceivedMessages[index].Message[0], Is.EqualTo(index));
+
+                    Assert.That(client2ReceivedMessages[index].FromId, Is.EqualTo(client0.UnitId));
+                    Assert.That(client2ReceivedMessages[index].ToGroupId, Is.EqualTo(group.Guid));
+                    Assert.That(client2ReceivedMessages[index].Message.Length, Is.EqualTo(1));
+                    Assert.That(client2ReceivedMessages[index].Message[0], Is.EqualTo(index));
+                }
+            }
+        }
+        finally
+        {
+            system.Stop();
+        }
+    }
+
+    [Test]
     public async Task Routers_Nine_RouterLearnsOfDistributors()
     {
         // arrange
